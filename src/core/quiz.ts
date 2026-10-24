@@ -3,6 +3,8 @@
 export interface QuizQuestion {
   /** Texte affiché, ex. « 7 × 8 ». */
   prompt: string;
+  /** Texte après la case réponse, ex. « = 56 » pour « 7 × ? = 56 » ; sinon « = » suit le texte. */
+  suffix?: string;
   answer: number;
 }
 

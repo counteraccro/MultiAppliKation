@@ -498,8 +498,8 @@ button {
 .mode-buttons {
   width: 100%;
   display: grid;
-  /* minmax(0, …) : les trois boutons restent dans l'écran, même étroit. */
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* minmax(0, …) : les quatre boutons restent dans l'écran, même étroit. */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
   margin-top: 8px;
 }
@@ -519,9 +519,10 @@ button {
   color: var(--text-soft);
 }
 
-/* Téléphone : trois boutons côte à côte, on resserre. */
+/* Téléphone : quatre boutons sur deux lignes, on resserre. */
 @media (max-width: 560px) {
   .mode-buttons {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
 
@@ -553,6 +554,11 @@ button {
 .button.mode.mix {
   background: #6bcb77;
   box-shadow: 0 4px 0 #3e9a4b;
+}
+
+.button.mode.mystery {
+  background: #9b5de5;
+  box-shadow: 0 4px 0 #7338b8;
 }
 
 /* Choix des tables du mélange */
@@ -1101,6 +1107,15 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+/* Nombre caché : « 7 × ? = 56 » est plus long, il doit tenir sur une ligne. */
+.equation.long {
+  font-size: clamp(2.2rem, 10vw, 4.5rem);
+}
+
+.prompt:empty {
+  display: none;
+}
+
 .answer-box {
   min-width: 2.2em;
   padding: 0 0.2em;
@@ -1204,6 +1219,10 @@ button {
 
   .equation {
     font-size: 3rem;
+  }
+
+  .equation.long {
+    font-size: 2.4rem;
   }
 
   .key {

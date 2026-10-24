@@ -12,7 +12,7 @@ export interface Sticker {
 
 /** Ce qui vient de se passer : une série finie, dans un mode. */
 export interface SeriesEvent {
-  mode: 'learn' | 'review' | 'defi' | 'mix';
+  mode: 'learn' | 'review' | 'defi' | 'mix' | 'hidden';
   /** Plus longue suite de bonnes réponses de la série. */
   bestStreak: number;
   correct: number;
@@ -110,6 +110,13 @@ const RULES: Rule[] = [
     name: 'Mélange parfait',
     hint: 'Un mélange de 20 questions sans erreur.',
     won: (_, event) => event.mode === 'mix' && event.total >= 20 && event.correct === event.total,
+  },
+  {
+    id: 'hidden-perfect',
+    emoji: '🔍',
+    name: 'Détective',
+    hint: 'Un nombre caché sans aucune erreur.',
+    won: (_, event) => event.mode === 'hidden' && event.correct === event.total,
   },
   {
     id: 'days-5',

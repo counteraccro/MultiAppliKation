@@ -33,6 +33,18 @@
 - Pas de chrono ; une erreur revient plus tard, comme en « Apprendre ».
 - Les réponses comptent aussi pour les boîtes de la révision.
 
+## 5. Nombre caché — plus difficile
+
+- On donne le résultat, il manque un facteur : « 7 × ? = 56 » ou « ? × 8 = 56 »
+  (le trou à gauche ou à droite au hasard). Un seul trou, pour une seule réponse possible.
+- La réponse se tape au pavé, comme ailleurs : c'est de la mémoire, pas un choix.
+- 15 questions toutes différentes, prises dans les 36 multiplications de 2 à 9
+  (avec 1 ou 10, le trou est trivial). Pas de chrono ; une erreur revient plus tard.
+- **Ne touche à rien d'autre** : ni les boîtes (grille des progrès, « N / 55 connues »,
+  révision), ni les étoiles, ni le record du défi. Plus difficile, il fausserait ses résultats.
+- Compte comme un jour de jeu ; séries d'affilée, fête et autocollants comme ailleurs.
+- Prépare la division sans le dire : 7 × ? = 56, c'est 56 ÷ 7.
+
 ## Ce qui rend le jeu amusant (tous les modes)
 
 - **Fête** : confettis et petite musique pour 3 étoiles, un record, une série sans faute
@@ -41,11 +53,12 @@
   Bouton 🔊 / 🔇 dans la barre de jeu, retenu par l'appareil.
 - **Série** : « 🔥 5 d'affilée ! » à partir de 3 bonnes réponses de suite, fête à chaque multiple de 5.
 - **Course contre le record** (défi) : 👻 avance au rythme du record, 🏃 d'une case par question.
-- **Album d'autocollants** (23) : étoiles, une table toute verte (un animal par table),
+- **Album d'autocollants** (24) : étoiles, une table toute verte (un animal par table),
   10 et 20 d'affilée, défi (premier, sans erreur, moins d'une minute), mélange parfait,
+  nombre caché sans erreur (🔍 Détective),
   5 et 15 jours de jeu, grille toute verte. Ceux qui manquent sont en ombre, avec ce qu'il faut faire.
 
 ## Seuils à régler à l'essai
 
 Le seuil « rapide » (≈ 5 s), la pénalité (5 s), le nombre de questions
-(10, 15, 20) : à ajuster en la regardant jouer.
+(10, 15, 20, 15 au nombre caché) : à ajuster en la regardant jouer.

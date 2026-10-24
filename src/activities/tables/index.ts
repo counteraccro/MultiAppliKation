@@ -7,8 +7,9 @@ import type { Attempt } from '../../core/series';
 import { formatDuration } from '../../core/time';
 import type { Activity } from '../types';
 import { renderAlbum } from './album';
-import { readTablesData, recordAttempt, recordDefi, recordMixTables, recordStars } from './data';
+import { readTablesData, recordAttempt, recordDay, recordDefi, recordMixTables, recordStars } from './data';
 import { DefiSession, PENALTY_MS, type DefiResult } from './defi-session';
+import { HiddenSession, type HiddenResult } from './hidden-session';
 import { renderTablesHome } from './home';
 import { LearnSession, type LearnResult } from './learn-session';
 import { renderMixChoice } from './mix-choice';
@@ -51,6 +52,13 @@ export const tables: Activity = {
       ctx.save(data);
     };
 
+    // Nombre caché : plus difficile, il ne touche pas aux boîtes ; il compte seulement comme un jour de jeu.
+    const onPlayed = () => {
+      const data = load();
+      recordDay(data);
+      ctx.save(data);
+    };
+
     /** Fin de série (le reste déjà enregistré) : colle les autocollants gagnés. */
     const unlock = (event: SeriesEvent): Sticker[] => {
       const data = load();
@@ -66,6 +74,7 @@ export const tables: Activity = {
           onReview: review,
           onDefi: defi,
           onMix: mixChoice,
+          onHidden: hidden,
           onProgress: progress,
           onAlbum: album,
         }),
@@ -125,6 +134,17 @@ export const tables: Activity = {
           label: 'Mélange',
           onQuit: home,
           onDone: (summary) => showMixResult(chosen, session.result(), summary),
+        });
+      });
+
+    const hidden = () =>
+      show(() => {
+        const session = new HiddenSession({ onFirstAttempt: onPlayed });
+        return renderQuestionScreen(root, {
+          session,
+          label: 'Nombre caché',
+          onQuit: home,
+          onDone: (summary) => showHiddenResult(session.result(), summary),
         });
       });
 
@@ -244,6 +264,30 @@ export const tables: Activity = {
           actions: [
             { label: 'Rejouer', primary: true, onClick: () => mix(chosen) },
             { label: 'Autres tables', onClick: mixChoice },
+            { label: 'Les tables', onClick: home },
+          ],
+        }),
+      );
+    }
+
+    function showHiddenResult(result: HiddenResult, { bestStreak }: SeriesSummary) {
+      const all = result.correct === result.total;
+      const rewards = unlock({ mode: 'hidden', bestStreak, correct: result.correct, total: result.total });
+      show(() =>
+        renderResult(root, {
+          title: 'Nombre caché',
+          celebrate: all,
+          rewards,
+          highlight: h(
+            'p',
+            { class: 'big-count' },
+            h('strong', {}, `${result.correct} / ${result.total}`),
+            h('small', {}, 'du premier coup'),
+          ),
+          message: all ? 'Tout trouvé, bravo détective !' : 'Continue, chaque essai te fait progresser !',
+          toPractice: result.toPractice.map((q) => `${q.a} × ${q.b} = ${q.a * q.b}`),
+          actions: [
+            { label: 'Rejouer', primary: true, onClick: hidden },
             { label: 'Les tables', onClick: home },
           ],
         }),

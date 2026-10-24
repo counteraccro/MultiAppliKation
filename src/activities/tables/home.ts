@@ -23,6 +23,7 @@ export interface TablesHomeActions {
   onReview(): void;
   onDefi(): void;
   onMix(): void;
+  onHidden(): void;
   onProgress(): void;
   onAlbum(): void;
 }
@@ -31,7 +32,7 @@ export function renderTablesHome(
   root: HTMLElement,
   ctx: ActivityContext,
   data: TablesData,
-  { onLearn, onReview, onDefi, onMix, onProgress, onAlbum }: TablesHomeActions,
+  { onLearn, onReview, onDefi, onMix, onHidden, onProgress, onAlbum }: TablesHomeActions,
 ): void {
   const suggested = suggestedTable(data);
 
@@ -73,6 +74,12 @@ export function renderTablesHome(
           { class: 'button mode primary mix', type: 'button', onclick: onMix },
           'Mélange',
           h('small', {}, 'Tables au choix'),
+        ),
+        h(
+          'button',
+          { class: 'button mode primary mystery', type: 'button', onclick: onHidden },
+          'Nombre caché',
+          h('small', {}, '7 × ? = 56'),
         ),
         h(
           'button',

@@ -48,7 +48,9 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
   let bestStreak = 0;
 
   const prompt = h('span', { class: 'prompt' });
+  const suffix = h('span', { class: 'prompt' });
   const answerBox = h('span', { class: 'answer-box', 'aria-live': 'polite' });
+  const equation = h('div', { class: 'equation' }, prompt, answerBox, suffix);
   const feedback = h('p', { class: 'feedback', 'aria-live': 'polite' });
   const progress = h('div', { class: 'progress', 'aria-hidden': 'true' });
   const progressText = h('span', { class: 'visually-hidden' });
@@ -156,7 +158,10 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
     state = 'asking';
     renderProgress();
     typed = '';
-    prompt.textContent = `${question.prompt} =`;
+    // Nombre caché : la case est au milieu (« 7 × ? = 56 »), l'opération plus longue s'affiche plus petit.
+    prompt.textContent = question.suffix === undefined ? `${question.prompt} =` : question.prompt;
+    suffix.textContent = question.suffix ?? '';
+    equation.classList.toggle('long', question.suffix !== undefined);
     answerBox.className = 'answer-box';
     feedback.textContent = '';
     keypad.setSubmitLabel('OK');
@@ -184,7 +189,7 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
         { class: 'question' },
         chrono?.el,
         race?.el,
-        h('div', { class: 'equation' }, prompt, answerBox),
+        equation,
         feedback,
         streakEl,
       ),
