@@ -64,7 +64,7 @@ export function renderTablesHome(
           'button',
           { class: 'button mode primary', type: 'button', onclick: onReview },
           'Révision',
-          h('small', {}, `${knownCount(data.leitner)} / ${ALL_PAIRS.length} sues`),
+          h('small', {}, `${knownCount(data.leitner)} / ${ALL_PAIRS.length} connues`),
         ),
         h(
           'button',

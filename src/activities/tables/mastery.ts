@@ -12,8 +12,8 @@ export const MASTERY_LABELS: Record<Mastery, string> = {
   unseen: 'Pas encore vue',
   learning: 'À travailler',
   progress: 'En progrès',
-  known: 'Sue',
-  mastered: 'Bien sue',
+  known: 'Connu',
+  mastered: 'Bravo',
 };
 
 /** 3 × 7 et 7 × 3 ont le même niveau : c'est la même chose à retenir. */

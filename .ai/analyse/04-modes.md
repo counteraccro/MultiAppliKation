@@ -28,7 +28,8 @@
 ## 4. Mélange — tables au choix
 
 - Elle coche les tables qu'elle veut (une ou plusieurs) ; le dernier choix est gardé.
-- Au plus 20 questions tirées de ces tables, sans doublon (3 × 7 et 7 × 3 comptent pour une).
+- 10 questions par table, 20 au plus, toutes différentes (3 × 7 et 7 × 3 comptent pour une) ;
+  avec deux tables, la multiplication commune est posée dans les deux sens pour arriver à 20.
 - Pas de chrono ; une erreur revient plus tard, comme en « Apprendre ».
 - Les réponses comptent aussi pour les boîtes de la révision.
 

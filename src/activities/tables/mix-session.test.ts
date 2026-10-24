@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MIX_SIZE, mixKeys, MixSession, mixSize } from './mix-session';
+import { MIX_SIZE, mixKeys, mixQuestions, MixSession, mixSize } from './mix-session';
 import { pairKey } from './questions';
 
 describe('mixKeys', () => {
@@ -21,13 +21,21 @@ describe('MixSession', () => {
     expect(keys.size).toBe(MIX_SIZE);
   });
 
-  it('pose moins de questions quand les tables en ont moins', () => {
+  it('pose 10 questions par table, 20 au plus', () => {
     expect(mixSize([4])).toBe(10);
     expect(new MixSession([4]).total).toBe(10);
+    expect(mixSize([2, 5])).toBe(20);
+    expect(mixSize([2, 5, 9])).toBe(20);
+  });
+
+  it('avec deux tables, pose la multiplication commune dans les deux sens', () => {
+    const prompts = mixQuestions([2, 5]).map((q) => q.prompt);
+    expect(prompts).toHaveLength(20);
+    expect(prompts).toContain('2 × 5');
+    expect(prompts).toContain('5 × 2');
   });
 
   it('fait revenir une erreur et la garde à retravailler', () => {
-    // 2 et 5 : 19 multiplications (2 × 5 est commune aux deux).
     const session = new MixSession([2, 5]);
     let asked = 0;
     for (let q = session.current(); q; q = session.current()) {
@@ -35,9 +43,9 @@ describe('MixSession', () => {
       asked++;
     }
     const result = session.result();
-    expect(result.total).toBe(19);
-    expect(asked).toBe(20);
-    expect(result.correct).toBe(18);
+    expect(result.total).toBe(20);
+    expect(asked).toBe(21);
+    expect(result.correct).toBe(19);
     expect(result.toPractice).toHaveLength(1);
   });
 });

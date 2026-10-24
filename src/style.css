@@ -637,7 +637,7 @@ button {
   color: var(--primary);
 }
 
-/* Grille des progrès : du gris (pas encore vue) au vert foncé (bien sue). */
+/* Grille des progrès : du gris (pas encore vue) au vert foncé (bravo). */
 
 .m-unseen {
   --cell: #efe8db;
