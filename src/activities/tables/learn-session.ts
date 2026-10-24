@@ -1,16 +1,8 @@
-import { shuffle, type QuizSession } from '../../core/quiz';
+import { shuffle } from '../../core/quiz';
+import { Series, type Attempt } from '../../core/series';
 import { FAST_MS, tableQuestions, type Multiplication } from './questions';
 
 export type Stars = 0 | 1 | 2 | 3;
-
-/** Une question ratée revient après ce nombre d'autres questions. */
-const RETRY_GAP = 3;
-
-interface FirstAttempt {
-  question: Multiplication;
-  correct: boolean;
-  elapsedMs: number;
-}
 
 export interface LearnResult {
   stars: Stars;
@@ -20,45 +12,22 @@ export interface LearnResult {
   toPractice: Multiplication[];
 }
 
-/**
- * Mode « Apprendre » : les 10 multiplications d'une table, dans le désordre.
- * Seul le premier essai compte pour les étoiles ; une question ratée revient
- * un peu plus tard dans la série, jusqu'à être trouvée.
- */
-export class LearnSession implements QuizSession<Multiplication> {
-  readonly total: number;
-  private readonly queue: Multiplication[];
-  private readonly firstAttempts = new Map<Multiplication, FirstAttempt>();
+export interface LearnOptions {
+  random?: () => number;
+  onFirstAttempt?: (attempt: Attempt<Multiplication>) => void;
+}
 
+/** Mode « Apprendre » : les 10 multiplications d'une table, dans le désordre. */
+export class LearnSession extends Series<Multiplication> {
   constructor(
     readonly table: number,
-    random: () => number = Math.random,
+    { random = Math.random, onFirstAttempt }: LearnOptions = {},
   ) {
-    this.queue = shuffle(tableQuestions(table), random);
-    this.total = this.queue.length;
-  }
-
-  get attempted(): number {
-    return this.firstAttempts.size;
-  }
-
-  current(): Multiplication | undefined {
-    return this.queue[0];
-  }
-
-  answer(value: number, elapsedMs: number): boolean {
-    const question = this.queue.shift();
-    if (!question) throw new Error('La série est finie');
-    const correct = value === question.answer;
-    if (!this.firstAttempts.has(question)) {
-      this.firstAttempts.set(question, { question, correct, elapsedMs });
-    }
-    if (!correct) this.queue.splice(RETRY_GAP, 0, question);
-    return correct;
+    super(shuffle(tableQuestions(table), random), onFirstAttempt);
   }
 
   result(): LearnResult {
-    const attempts = [...this.firstAttempts.values()];
+    const attempts = this.attempts();
     const correct = attempts.filter((a) => a.correct).length;
     const allFast = attempts.every((a) => a.correct && a.elapsedMs < FAST_MS);
     return {

@@ -9,4 +9,4 @@
 6. Plus tard : sons, grille des progrès, petites animations,
    export / import de profil si besoin, autres activités.
 
-Étapes 1 et 2 faites le 24/10/2026.
+Étapes 1 à 3 faites le 24/10/2026.

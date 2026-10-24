@@ -21,3 +21,19 @@ export function multiplication(a: number, b: number): Multiplication {
 export function tableQuestions(table: number): Multiplication[] {
   return TABLES.map((k) => multiplication(table, k));
 }
+
+/** 3 × 7 et 7 × 3 sont la même chose à retenir : même clé, « 3x7 ». */
+export function pairKey(a: number, b: number): string {
+  return `${Math.min(a, b)}x${Math.max(a, b)}`;
+}
+
+/** Les 55 multiplications à retenir (a ≤ b). */
+export const ALL_PAIRS: readonly string[] = TABLES.flatMap((a) =>
+  TABLES.filter((b) => b >= a).map((b) => pairKey(a, b)),
+);
+
+/** Question tirée d'une clé, dans un sens au hasard (3 × 7 ou 7 × 3). */
+export function questionFromKey(key: string, random: () => number = Math.random): Multiplication {
+  const [a, b] = key.split('x').map(Number) as [number, number];
+  return random() < 0.5 ? multiplication(a, b) : multiplication(b, a);
+}

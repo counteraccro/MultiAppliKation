@@ -518,6 +518,16 @@ button {
   color: var(--text-soft);
 }
 
+.button.mode.primary {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 4px 0 var(--primary-dark);
+}
+
+.button.mode.primary small {
+  color: rgba(255, 255, 255, 0.85);
+}
+
 .button:disabled {
   opacity: 0.5;
   cursor: default;
@@ -750,4 +760,24 @@ button {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.big-count {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text-soft);
+}
+
+.big-count strong {
+  font-size: 4.5rem;
+  line-height: 1;
+  color: var(--primary);
+}
+
+.big-count small {
+  font-size: 1rem;
 }

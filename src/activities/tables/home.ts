@@ -3,7 +3,8 @@ import { topbar } from '../../components/topbar';
 import { h } from '../../core/dom';
 import type { ActivityContext } from '../types';
 import { starsOf, type TablesData } from './data';
-import { SUGGESTED_ORDER, TABLES } from './questions';
+import { ALL_PAIRS, SUGGESTED_ORDER, TABLES } from './questions';
+import { knownCount } from './review-session';
 
 /** Table conseillée : la première, dans l'ordre conseillé, sans étoile (sinon pas encore à 3). */
 export function suggestedTable(data: TablesData): number | undefined {
@@ -13,11 +14,16 @@ export function suggestedTable(data: TablesData): number | undefined {
   );
 }
 
+export interface TablesHomeActions {
+  onLearn(table: number): void;
+  onReview(): void;
+}
+
 export function renderTablesHome(
   root: HTMLElement,
   ctx: ActivityContext,
   data: TablesData,
-  onLearn: (table: number) => void,
+  { onLearn, onReview }: TablesHomeActions,
 ): void {
   const suggested = suggestedTable(data);
 
@@ -48,7 +54,12 @@ export function renderTablesHome(
       h(
         'div',
         { class: 'mode-buttons' },
-        h('button', { class: 'button mode', type: 'button', disabled: true }, 'Révision', h('small', {}, 'bientôt')),
+        h(
+          'button',
+          { class: 'button mode primary', type: 'button', onclick: onReview },
+          'Révision',
+          h('small', {}, `${knownCount(data.leitner)} / ${ALL_PAIRS.length} sues`),
+        ),
         h('button', { class: 'button mode', type: 'button', disabled: true }, 'Défi', h('small', {}, 'bientôt')),
       ),
     ),
