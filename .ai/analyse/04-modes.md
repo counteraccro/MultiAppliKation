@@ -33,6 +33,18 @@
 - Pas de chrono ; une erreur revient plus tard, comme en « Apprendre ».
 - Les réponses comptent aussi pour les boîtes de la révision.
 
+## Ce qui rend le jeu amusant (tous les modes)
+
+- **Fête** : confettis et petite musique pour 3 étoiles, un record, une série sans faute
+  ou un autocollant gagné ; les étoiles du résultat arrivent une à une.
+- **Sons** synthétisés (pas de fichier) : bonne réponse, erreur douce, palier de série.
+  Bouton 🔊 / 🔇 dans la barre de jeu, retenu par l'appareil.
+- **Série** : « 🔥 5 d'affilée ! » à partir de 3 bonnes réponses de suite, fête à chaque multiple de 5.
+- **Course contre le record** (défi) : 👻 avance au rythme du record, 🏃 d'une case par question.
+- **Album d'autocollants** (23) : étoiles, une table toute verte (un animal par table),
+  10 et 20 d'affilée, défi (premier, sans erreur, moins d'une minute), mélange parfait,
+  5 et 15 jours de jeu, grille toute verte. Ceux qui manquent sont en ombre, avec ce qu'il faut faire.
+
 ## Seuils à régler à l'essai
 
 Le seuil « rapide » (≈ 5 s), la pénalité (5 s), le nombre de questions

@@ -1,4 +1,4 @@
-import { renderQuestionScreen } from '../../components/question-screen';
+import { renderQuestionScreen, type SeriesSummary } from '../../components/question-screen';
 import { renderResult } from '../../components/result';
 import { stars } from '../../components/stars';
 import { h } from '../../core/dom';
@@ -11,7 +11,9 @@ import { DefiSession, PENALTY_MS, type DefiResult } from './defi-session';
 import { renderTablesHome } from './home';
 import { LearnSession, type LearnResult } from './learn-session';
 import { renderMixChoice } from './mix-choice';
+import { renderAlbum } from './album';
 import { renderProgress } from './progress-screen';
+import { unlockStickers, type SeriesEvent, type Sticker } from './stickers';
 import { MixSession, type MixResult } from './mix-session';
 import { ALL_PAIRS, type Multiplication } from './questions';
 import { knownCount, ReviewSession, type ReviewResult } from './review-session';
@@ -49,7 +51,25 @@ export const tables: Activity = {
       ctx.save(data);
     };
 
-    const home = () => show(() => renderTablesHome(root, ctx, load(), { onLearn: learn, onReview: review, onDefi: defi, onMix: mixChoice, onProgress: progress }));
+    /** Fin de série (le reste déjà enregistré) : colle les autocollants gagnés. */
+    const unlock = (event: SeriesEvent): Sticker[] => {
+      const data = load();
+      const fresh = unlockStickers(data, event);
+      if (fresh.length > 0) ctx.save(data);
+      return fresh;
+    };
+
+    const home = () =>
+      show(() =>
+        renderTablesHome(root, ctx, load(), {
+          onLearn: learn,
+          onReview: review,
+          onDefi: defi,
+          onMix: mixChoice,
+          onProgress: progress,
+          onAlbum: album,
+        }),
+      );
 
     const learn = (table: number) =>
       show(() => {
@@ -58,7 +78,7 @@ export const tables: Activity = {
           session,
           label: `Table de ${table}`,
           onQuit: home,
-          onDone: () => showLearnResult(table, session.result()),
+          onDone: (summary) => showLearnResult(table, session.result(), summary),
         });
       });
 
@@ -70,7 +90,7 @@ export const tables: Activity = {
           session,
           label: 'Révision',
           onQuit: home,
-          onDone: () => showReviewResult(session.result(), before),
+          onDone: (summary) => showReviewResult(session.result(), before, summary),
         });
       });
 
@@ -81,13 +101,15 @@ export const tables: Activity = {
           session,
           label: 'Défi',
           chrono: { penaltyMs: PENALTY_MS },
+          recordMs: load().defiRecordMs,
           wrongHint: `+${PENALTY_MS / 1000} s.`,
           onQuit: home,
-          onDone: () => showDefiResult(session.result()),
+          onDone: (summary) => showDefiResult(session.result(), summary),
         });
       });
 
     const progress = () => show(() => renderProgress(root, ctx, load(), home));
+    const album = () => show(() => renderAlbum(root, ctx, load(), home));
 
     const mixChoice = () =>
       show(() => renderMixChoice(root, ctx, load().mixTables ?? [], { onStart: mix, onBack: home }));
@@ -102,19 +124,22 @@ export const tables: Activity = {
           session,
           label: 'Mélange',
           onQuit: home,
-          onDone: () => showMixResult(chosen, session.result()),
+          onDone: (summary) => showMixResult(chosen, session.result(), summary),
         });
       });
 
-    function showLearnResult(table: number, result: LearnResult) {
+    function showLearnResult(table: number, result: LearnResult, { bestStreak }: SeriesSummary) {
       const data = load();
       const record = result.stars > 0 && recordStars(data, table, result.stars);
       if (record) ctx.save(data);
+      const rewards = unlock({ mode: 'learn', bestStreak, correct: result.correct, total: result.total });
       show(() =>
         renderResult(root, {
           title: `Table de ${table}`,
           highlight: stars(result.stars, 3, 'large'),
           record,
+          celebrate: record || result.stars === 3,
+          rewards,
           message: `${result.correct} sur ${result.total} du premier coup. ${MESSAGES[result.stars]}`,
           toPractice: result.toPractice.map((q) => `${q.prompt} = ${q.answer}`),
           actions: [
@@ -125,7 +150,8 @@ export const tables: Activity = {
       );
     }
 
-    function showReviewResult(result: ReviewResult, before: LeitnerState) {
+    function showReviewResult(result: ReviewResult, before: LeitnerState, { bestStreak }: SeriesSummary) {
+      const rewards = unlock({ mode: 'review', bestStreak, correct: result.correct, total: result.total });
       const after = load().leitner;
       // Ce qui a bougé pendant cette révision : visible dès la première fois,
       // alors qu'une multiplication n'est « sue » qu'après plusieurs révisions.
@@ -134,6 +160,8 @@ export const tables: Activity = {
       show(() =>
         renderResult(root, {
           title: 'Révision',
+          celebrate: result.correct === result.total,
+          rewards,
           highlight: h(
             'p',
             { class: 'big-count' },
@@ -152,11 +180,18 @@ export const tables: Activity = {
       );
     }
 
-    function showDefiResult(result: DefiResult) {
+    function showDefiResult(result: DefiResult, { bestStreak }: SeriesSummary) {
       const data = load();
       const previous = data.defiRecordMs;
       const record = recordDefi(data, result.scoreMs);
       if (record) ctx.save(data);
+      const rewards = unlock({
+        mode: 'defi',
+        bestStreak,
+        correct: result.total - result.errors,
+        total: result.total,
+        defiScoreMs: result.scoreMs,
+      });
 
       const penalties = result.errors * PENALTY_MS;
       const detail =
@@ -173,6 +208,8 @@ export const tables: Activity = {
       show(() =>
         renderResult(root, {
           title: 'Défi',
+          celebrate: record,
+          rewards,
           highlight: h('p', { class: 'big-count' }, h('strong', {}, formatDuration(result.scoreMs)), h('small', {}, detail)),
           record,
           message,
@@ -185,11 +222,14 @@ export const tables: Activity = {
       );
     }
 
-    function showMixResult(chosen: number[], result: MixResult) {
+    function showMixResult(chosen: number[], result: MixResult, { bestStreak }: SeriesSummary) {
       const all = result.correct === result.total;
+      const rewards = unlock({ mode: 'mix', bestStreak, correct: result.correct, total: result.total });
       show(() =>
         renderResult(root, {
           title: 'Mélange',
+          celebrate: all,
+          rewards,
           highlight: h(
             'p',
             { class: 'big-count' },

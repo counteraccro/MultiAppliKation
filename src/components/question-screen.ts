@@ -1,13 +1,23 @@
 import { h } from '../core/dom';
 import type { QuizSession } from '../core/quiz';
+import { isMuted, setMuted, sounds } from '../core/sound';
 import { createChrono } from './chrono';
 import { createKeypad } from './keypad';
+import { createRace } from './race';
 
 const MAX_DIGITS = 3;
 /** Temps pendant lequel une bonne réponse reste affichée avant la suivante. */
 const CORRECT_PAUSE_MS = 450;
 /** Au-delà, des points de progression ne tiendraient pas sur un téléphone : on affiche « 5 / 20 ». */
 const MAX_DOTS = 12;
+/** Le compteur « d'affilée » apparaît à partir de là ; il fait la fête à chaque multiple de 5. */
+const STREAK_SHOWN_FROM = 3;
+const STREAK_MILESTONE = 5;
+
+export interface SeriesSummary {
+  /** Plus longue suite de bonnes réponses. */
+  bestStreak: number;
+}
 
 export interface QuestionScreenOptions {
   session: QuizSession;
@@ -15,9 +25,11 @@ export interface QuestionScreenOptions {
   label: string;
   /** Chrono visible (défi) ; une erreur ajoute `penaltyMs`. */
   chrono?: { penaltyMs: number };
+  /** Défi : course contre ce record (ms), s'il existe. */
+  recordMs?: number;
   /** Phrase sous la bonne réponse après une erreur. */
   wrongHint?: string;
-  onDone(): void;
+  onDone(summary: SeriesSummary): void;
   onQuit(): void;
 }
 
@@ -32,6 +44,8 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
   let shownAt = 0;
   let state: 'asking' | 'correct' | 'wrong' = 'asking';
   let timer: number | undefined;
+  let streak = 0;
+  let bestStreak = 0;
 
   const prompt = h('span', { class: 'prompt' });
   const answerBox = h('span', { class: 'answer-box', 'aria-live': 'polite' });
@@ -40,6 +54,27 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
   const progressText = h('span', { class: 'visually-hidden' });
   const chrono = options.chrono && createChrono();
   const wrongHint = options.wrongHint ?? 'Elle reviendra un peu plus tard.';
+  const streakEl = h('p', { class: 'streak', 'aria-live': 'polite' });
+  const race =
+    chrono && options.recordMs !== undefined
+      ? createRace({
+          recordMs: options.recordMs,
+          total: session.total,
+          elapsed: chrono.elapsed,
+          attempted: () => session.attempted,
+        })
+      : undefined;
+
+  const soundButton = h('button', { class: 'sound-toggle', type: 'button' });
+  const renderSound = () => {
+    soundButton.textContent = isMuted() ? '🔇' : '🔊';
+    soundButton.setAttribute('aria-label', isMuted() ? 'Remettre le son' : 'Couper le son');
+  };
+  soundButton.addEventListener('click', () => {
+    setMuted(!isMuted());
+    renderSound();
+  });
+  renderSound();
 
   const keypad = createKeypad({
     onDigit(digit) {
@@ -63,9 +98,18 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
         state = 'correct';
         answerBox.classList.add('is-correct');
         feedback.textContent = 'Bravo !';
+        streak++;
+        bestStreak = Math.max(bestStreak, streak);
+        const milestone = streak % STREAK_MILESTONE === 0;
+        if (milestone) sounds.streak();
+        else sounds.correct();
+        renderStreak(milestone);
         timer = window.setTimeout(next, CORRECT_PAUSE_MS);
       } else {
         state = 'wrong';
+        streak = 0;
+        sounds.wrong();
+        renderStreak(false);
         answerBox.classList.add('is-wrong');
         answerBox.textContent = String(question.answer);
         feedback.textContent = `C’était ${question.answer}. ${wrongHint}`;
@@ -79,6 +123,14 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
   function renderAnswer() {
     answerBox.textContent = typed || '?';
     answerBox.classList.toggle('is-empty', typed === '');
+  }
+
+  function renderStreak(milestone: boolean) {
+    streakEl.textContent = streak >= STREAK_SHOWN_FROM ? `🔥 ${streak} d’affilée !` : '';
+    // Relance l'animation à chaque bonne réponse.
+    streakEl.classList.remove('bump', 'milestone');
+    void streakEl.offsetWidth;
+    if (streak >= STREAK_SHOWN_FROM) streakEl.classList.add(milestone ? 'milestone' : 'bump');
   }
 
   function renderProgress() {
@@ -99,7 +151,7 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
   function next() {
     window.clearTimeout(timer);
     const question = session.current();
-    if (!question) return options.onDone();
+    if (!question) return options.onDone({ bestStreak });
     state = 'asking';
     renderProgress();
     typed = '';
@@ -123,8 +175,17 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
         h('span', { class: 'play-label' }, options.label),
         progress,
         progressText,
+        soundButton,
       ),
-      h('div', { class: 'question' }, chrono?.el, h('div', { class: 'equation' }, prompt, answerBox), feedback),
+      h(
+        'div',
+        { class: 'question' },
+        chrono?.el,
+        race?.el,
+        h('div', { class: 'equation' }, prompt, answerBox),
+        feedback,
+        streakEl,
+      ),
       h('div', { class: 'keypad-area' }, keypad.el),
     ),
   );
@@ -135,5 +196,6 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
     window.clearTimeout(timer);
     keypad.destroy();
     chrono?.destroy();
+    race?.destroy();
   };
 }

@@ -1,4 +1,6 @@
 import { h } from '../core/dom';
+import { sounds } from '../core/sound';
+import { launchConfetti } from './confetti';
 
 export interface ResultAction {
   label: string;
@@ -15,12 +17,17 @@ export interface ResultOptions {
   record?: boolean;
   /** Questions à retravailler. */
   toPractice?: string[];
+  /** Belle réussite : confettis et musique. */
+  celebrate?: boolean;
+  /** Autocollants gagnés pendant cette série. */
+  rewards?: { emoji: string; name: string }[];
   actions: ResultAction[];
 }
 
 /** Écran de fin de série, commun à tous les modes et toutes les activités. */
 export function renderResult(root: HTMLElement, options: ResultOptions): void {
   const practice = options.toPractice ?? [];
+  const rewards = options.rewards ?? [];
   root.append(
     h(
       'section',
@@ -29,6 +36,17 @@ export function renderResult(root: HTMLElement, options: ResultOptions): void {
       options.highlight,
       options.record && h('p', { class: 'record' }, 'Nouveau record !'),
       h('p', { class: 'subtitle' }, options.message),
+      rewards.length > 0 &&
+        h(
+          'div',
+          { class: 'rewards' },
+          h('h2', {}, rewards.length > 1 ? 'Nouveaux autocollants !' : 'Nouvel autocollant !'),
+          h(
+            'ul',
+            {},
+            ...rewards.map((r) => h('li', {}, h('span', { class: 'sticker-emoji', 'aria-hidden': 'true' }, r.emoji), r.name)),
+          ),
+        ),
       practice.length > 0 &&
         h(
           'div',
@@ -49,4 +67,9 @@ export function renderResult(root: HTMLElement, options: ResultOptions): void {
       ),
     ),
   );
+
+  if (options.celebrate || rewards.length > 0) {
+    launchConfetti();
+    sounds.win();
+  }
 }

@@ -589,15 +589,23 @@ button {
   cursor: default;
 }
 
-/* Carte « Mes progrès » sous les boutons de l'accueil des Tables */
+/* Cartes « Mes progrès » et « Mes autocollants » sous les boutons de l'accueil des Tables */
+
+.home-cards {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
 
 .progress-card {
-  width: 100%;
   display: flex;
-  align-items: center;
-  gap: 14px;
-  min-height: 60px;
-  padding: 10px 18px;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 8px;
+  min-height: 72px;
+  padding: 10px 16px;
   border: 0;
   border-radius: 18px;
   background: var(--surface);
@@ -610,17 +618,26 @@ button {
   transform: scale(0.98);
 }
 
-.progress-card-title {
-  font-size: 1.15rem;
+.card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 1.1rem;
   font-weight: 800;
   white-space: nowrap;
 }
 
+.card-arrow {
+  font-size: 1.6rem;
+  line-height: 1;
+  color: var(--primary);
+}
+
 .progress-bar {
-  flex: 1;
   display: flex;
   gap: 2px;
-  height: 16px;
+  height: 14px;
   border-radius: 999px;
   overflow: hidden;
 }
@@ -630,11 +647,276 @@ button {
   background: var(--cell);
 }
 
-.progress-card-arrow {
-  font-size: 1.8rem;
+.album-count {
   font-weight: 800;
+  color: var(--text-soft);
+}
+
+@media (max-width: 560px) {
+  .progress-card {
+    padding: 10px 12px;
+  }
+
+  .card-title {
+    font-size: 0.95rem;
+  }
+}
+
+/* Album d'autocollants */
+
+.album {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.sticker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 10px;
+  border: 3px dashed var(--border);
+  border-radius: var(--radius);
+  text-align: center;
+}
+
+.sticker .sticker-emoji {
+  font-size: 2.8rem;
+  line-height: 1.2;
+  /* Pas encore gagné : une ombre grise. */
+  filter: grayscale(1) brightness(0.4) opacity(0.18);
+}
+
+.sticker strong {
+  color: var(--text-soft);
+}
+
+.sticker small {
+  font-size: 0.8rem;
+  color: var(--text-soft);
+}
+
+.sticker.won {
+  border: 3px solid transparent;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.sticker.won .sticker-emoji {
+  filter: none;
+}
+
+.sticker.won strong {
+  color: var(--text);
+}
+
+@media (max-width: 560px) {
+  .album {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Autocollants gagnés, sur l'écran de résultat */
+
+.rewards {
+  width: 100%;
+  max-width: 420px;
+  padding: 16px;
+  border-radius: var(--radius);
+  background: #fff6d6;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.rewards h2 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+
+.rewards ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 20px;
+}
+
+.rewards li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-weight: 800;
+}
+
+.rewards .sticker-emoji {
+  font-size: 3rem;
+  line-height: 1.2;
+  animation: sticker-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes sticker-in {
+  from { transform: scale(0) rotate(-30deg); }
+  to { transform: scale(1) rotate(0); }
+}
+
+/* Confettis */
+
+.confetti {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 50;
+}
+
+.confetti span {
+  position: absolute;
+  top: -20px;
+  border-radius: 2px;
+  animation-name: confetti-fall;
+  animation-timing-function: cubic-bezier(0.25, 0.6, 0.5, 1);
+  animation-fill-mode: forwards;
+}
+
+@keyframes confetti-fall {
+  to {
+    transform: translate(var(--drift), 105vh) rotate(var(--spin));
+  }
+}
+
+/* Série en cours, rebond de la bonne réponse */
+
+.streak {
+  min-height: 1.5em;
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #e8590c;
+}
+
+.streak.bump {
+  animation: bump 0.35s ease-out;
+}
+
+.streak.milestone {
+  animation: milestone 0.8s ease-out;
+}
+
+@keyframes bump {
+  40% { transform: scale(1.15); }
+}
+
+@keyframes milestone {
+  20% { transform: scale(1.5) rotate(-6deg); }
+  45% { transform: scale(1.3) rotate(5deg); }
+  70% { transform: scale(1.4) rotate(-3deg); }
+}
+
+.answer-box.is-correct {
+  animation: pop 0.35s ease-out;
+}
+
+@keyframes pop {
+  40% { transform: scale(1.2); }
+}
+
+/* Étoiles du résultat : elles arrivent une à une. */
+.stars-large .star.on {
+  display: inline-block;
+  animation: star-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.stars-large .star.on:nth-child(2) {
+  animation-delay: 0.3s;
+}
+
+.stars-large .star.on:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+@keyframes star-in {
+  from { transform: scale(0) rotate(-90deg); opacity: 0; }
+  to { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+.record {
+  animation: bump 0.6s ease-out 0.4s both;
+}
+
+/* Bouton son, dans la barre de jeu */
+
+.sound-toggle {
+  border: 0;
+  background: none;
+  padding: 6px;
+  font-size: 1.3rem;
   line-height: 1;
-  color: var(--primary);
+}
+
+/* Course contre le record (défi) */
+
+.race {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.race-track {
+  position: relative;
+  width: 100%;
+  height: 34px;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.runner,
+.race-finish {
+  position: absolute;
+  top: 50%;
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.runner {
+  transform: translate(-50%, -50%);
+  transition: left 0.3s ease;
+}
+
+/* L'emoji court vers la gauche : on le retourne vers le drapeau. */
+.runner.player {
+  transform: translate(-50%, -50%) scaleX(-1);
+}
+
+.runner.ghost {
+  opacity: 0.6;
+  /* Il avance déjà à chaque image : pas de transition, elle le ferait traîner. */
+  transition: none;
+}
+
+.race-finish {
+  right: 6px;
+  transform: translateY(-50%);
+}
+
+.race-status {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #2b8a3e;
+}
+
+.race.behind .race-status {
+  color: var(--text-soft);
 }
 
 /* Grille des progrès : du gris (pas encore vue) au vert foncé (bravo). */
@@ -1034,6 +1316,15 @@ button {
   .chrono-penalty.show {
     animation: none;
     opacity: 1;
+  }
+
+  .streak.bump,
+  .streak.milestone,
+  .answer-box.is-correct,
+  .stars-large .star.on,
+  .record,
+  .rewards .sticker-emoji {
+    animation: none;
   }
 }
 

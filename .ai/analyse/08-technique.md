@@ -22,6 +22,6 @@
 ## Limites iOS
 
 - Pas de vibration (Safari ne la permet pas).
-- Sons (plus tard) : ne jouent qu'après un premier appui.
+- Sons (Web Audio) : ne jouent qu'après un premier appui, débloqués au premier toucher.
 - Bloquer le zoom au double appui sur le pavé.
 - Stockage séparé entre Safari et l'app installée (voir 06-profils-donnees.md).

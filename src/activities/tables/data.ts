@@ -13,12 +13,19 @@ export interface TablesData {
   defiRecordMs?: number;
   /** Tables du dernier mélange, cochées d'office la fois suivante. */
   mixTables?: number[];
+  /** Autocollants gagnés : { "streak-10": date (ms) }. */
+  stickers?: Record<string, number>;
+  /** Nombre de jours différents où elle a joué, et le dernier (« 2026-10-24 »). */
+  daysPlayed?: number;
+  lastPlayedDay?: string;
 }
 
 /** Lit la progression enregistrée, en complétant ce qui manque (premier lancement, ancien format). */
 export function readTablesData(raw: unknown): TablesData {
   const data = (typeof raw === 'object' && raw !== null ? raw : {}) as Partial<TablesData>;
-  return { ...data, stars: { ...data.stars }, leitner: { ...data.leitner } };
+  const copy: TablesData = { ...data, stars: { ...data.stars }, leitner: { ...data.leitner } };
+  if (data.stickers) copy.stickers = { ...data.stickers };
+  return copy;
 }
 
 export function starsOf(data: TablesData, table: number): Stars {
@@ -49,4 +56,19 @@ export function recordAttempt(data: TablesData, attempt: Attempt<Multiplication>
   const { question, correct, elapsedMs } = attempt;
   const outcome = !correct ? 'wrong' : elapsedMs < FAST_MS ? 'fast' : 'slow';
   applyOutcome(data.leitner, pairKey(question.a, question.b), outcome, now);
+  recordDay(data, now);
+}
+
+/** Jour local, « 2026-10-24 ». */
+export function dayOf(time: number): string {
+  const d = new Date(time);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** Compte un jour de jeu de plus, une seule fois par jour. */
+export function recordDay(data: TablesData, now = Date.now()): void {
+  const day = dayOf(now);
+  if (data.lastPlayedDay === day) return;
+  data.lastPlayedDay = day;
+  data.daysPlayed = (data.daysPlayed ?? 0) + 1;
 }

@@ -7,6 +7,7 @@ import { starsOf, type TablesData } from './data';
 import { DEFI_SIZE } from './defi-session';
 import { MASTERY_LABELS, MASTERY_LEVELS, masteryCounts } from './mastery';
 import { ALL_PAIRS, SUGGESTED_ORDER, TABLES } from './questions';
+import { stickerCount, STICKERS } from './stickers';
 import { knownCount } from './review-session';
 
 /** Table conseillée : la première, dans l'ordre conseillé, sans étoile (sinon pas encore à 3). */
@@ -23,13 +24,14 @@ export interface TablesHomeActions {
   onDefi(): void;
   onMix(): void;
   onProgress(): void;
+  onAlbum(): void;
 }
 
 export function renderTablesHome(
   root: HTMLElement,
   ctx: ActivityContext,
   data: TablesData,
-  { onLearn, onReview, onDefi, onMix, onProgress }: TablesHomeActions,
+  { onLearn, onReview, onDefi, onMix, onProgress, onAlbum }: TablesHomeActions,
 ): void {
   const suggested = suggestedTable(data);
 
@@ -83,7 +85,7 @@ export function renderTablesHome(
           ),
         ),
       ),
-      progressCard(data, onProgress),
+      h('div', { class: 'home-cards' }, progressCard(data, onProgress), albumCard(data, onAlbum)),
     ),
   );
 }
@@ -100,7 +102,7 @@ function progressCard(data: TablesData, onProgress: () => void): HTMLElement {
       'aria-label': `Mes progrès : ${levels.map((l) => `${MASTERY_LABELS[l]} ${counts[l]}`).join(', ')}`,
       onclick: onProgress,
     },
-    h('span', { class: 'progress-card-title' }, 'Mes progrès'),
+    h('span', { class: 'card-title' }, 'Mes progrès', h('span', { class: 'card-arrow', 'aria-hidden': 'true' }, '›')),
     h(
       'span',
       { class: 'progress-bar', 'aria-hidden': 'true' },
@@ -108,6 +110,21 @@ function progressCard(data: TablesData, onProgress: () => void): HTMLElement {
         .filter((l) => counts[l] > 0)
         .map((l) => h('span', { class: `m-${l}`, style: `flex-grow: ${counts[l]}` })),
     ),
-    h('span', { class: 'progress-card-arrow', 'aria-hidden': 'true' }, '›'),
+  );
+}
+
+/** Accès à l'album : combien d'autocollants sur combien. */
+function albumCard(data: TablesData, onAlbum: () => void): HTMLElement {
+  const count = stickerCount(data);
+  return h(
+    'button',
+    {
+      class: 'progress-card',
+      type: 'button',
+      'aria-label': `Mes autocollants : ${count} sur ${STICKERS.length}`,
+      onclick: onAlbum,
+    },
+    h('span', { class: 'card-title' }, 'Mes autocollants', h('span', { class: 'card-arrow', 'aria-hidden': 'true' }, '›')),
+    h('span', { class: 'album-count', 'aria-hidden': 'true' }, `🌟 ${count} / ${STICKERS.length}`),
   );
 }

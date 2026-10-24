@@ -12,3 +12,4 @@
 Étapes 1 à 5 faites le 24/10/2026 (essai sur iPhone et iPad à faire), plus versions et avertissement de mise à jour.
 Mode « Mélange » (tables au choix) ajouté le 24/10/2026.
 Grille des progrès (étape 6) faite le 24/10/2026.
+Fête, sons, séries, course contre le record et album d'autocollants (étape 6) faits le 24/10/2026.
