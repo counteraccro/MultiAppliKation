@@ -11,6 +11,7 @@ import { DefiSession, PENALTY_MS, type DefiResult } from './defi-session';
 import { renderTablesHome } from './home';
 import { LearnSession, type LearnResult } from './learn-session';
 import { renderMixChoice } from './mix-choice';
+import { renderProgress } from './progress-screen';
 import { MixSession, type MixResult } from './mix-session';
 import { ALL_PAIRS, type Multiplication } from './questions';
 import { knownCount, ReviewSession, type ReviewResult } from './review-session';
@@ -48,7 +49,7 @@ export const tables: Activity = {
       ctx.save(data);
     };
 
-    const home = () => show(() => renderTablesHome(root, ctx, load(), { onLearn: learn, onReview: review, onDefi: defi, onMix: mixChoice }));
+    const home = () => show(() => renderTablesHome(root, ctx, load(), { onLearn: learn, onReview: review, onDefi: defi, onMix: mixChoice, onProgress: progress }));
 
     const learn = (table: number) =>
       show(() => {
@@ -85,6 +86,8 @@ export const tables: Activity = {
           onDone: () => showDefiResult(session.result()),
         });
       });
+
+    const progress = () => show(() => renderProgress(root, ctx, load(), home));
 
     const mixChoice = () =>
       show(() => renderMixChoice(root, ctx, load().mixTables ?? [], { onStart: mix, onBack: home }));

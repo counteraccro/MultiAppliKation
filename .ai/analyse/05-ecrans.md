@@ -11,7 +11,11 @@
    dans l'app (pas le clavier iOS, qui cache la moitié de l'écran),
    le chrono en défi.
 5. **Résultat** : étoiles gagnées ou nouveau record, multiplications à retravailler.
-6. **Progrès** (facultatif) : grille 10×10 colorée selon la maîtrise de chaque case.
+6. **Mes progrès** (carte sous les boutons, avec une barre aux couleurs de la grille) : grille 10×10
+   colorée selon la boîte de chaque multiplication — pas encore vue (gris),
+   à travailler (rouge, boîte 1), en progrès (jaune, 2–3), sue (vert clair, 4),
+   bien sue (vert, 5). Toucher une case l'affiche avec sa jumelle (3 × 7 et 7 × 3) ;
+   la légende compte les 55 multiplications par niveau.
 
 ## Appareils
 
