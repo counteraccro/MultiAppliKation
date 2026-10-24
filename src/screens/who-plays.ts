@@ -1,7 +1,7 @@
 import type { App } from '../app';
 import { h } from '../core/dom';
 import { onLongPress } from '../core/long-press';
-import { avatar } from './avatar';
+import { avatar } from '../components/avatar';
 import { openDeleteProfile } from './delete-profile';
 
 export function renderWhoPlays(root: HTMLElement, app: App): void {

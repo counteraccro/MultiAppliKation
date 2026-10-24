@@ -2,7 +2,7 @@ import { activities } from '../activities';
 import type { App } from '../app';
 import { h } from '../core/dom';
 import type { Profile } from '../core/storage';
-import { avatar } from './avatar';
+import { topbar } from '../components/topbar';
 
 export function renderActivityChoice(root: HTMLElement, app: App, profile: Profile): void {
   const tiles = activities.map((activity) => {
@@ -24,12 +24,7 @@ export function renderActivityChoice(root: HTMLElement, app: App, profile: Profi
     h(
       'section',
       { class: 'screen' },
-      h(
-        'header',
-        { class: 'topbar' },
-        h('button', { class: 'back', type: 'button', onclick: () => app.go({ name: 'who-plays' }) }, '← Changer de joueur'),
-        h('span', { class: 'player' }, avatar(profile.name, profile.color, 'small'), profile.name),
-      ),
+      topbar('Changer de joueur', () => app.go({ name: 'who-plays' }), profile),
       h('h1', { class: 'title' }, `Bonjour ${profile.name} !`),
       h('p', { class: 'subtitle' }, 'À quoi on joue ?'),
       h('div', { class: 'tile-grid' }, ...tiles),

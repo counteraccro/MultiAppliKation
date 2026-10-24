@@ -1,7 +1,7 @@
 import type { App } from '../app';
 import { h } from '../core/dom';
 import { NAME_MAX_LENGTH, PROFILE_COLORS } from '../core/profiles';
-import { avatar } from './avatar';
+import { avatar } from '../components/avatar';
 
 export function renderNewProfile(root: HTMLElement, app: App): void {
   let color: string = PROFILE_COLORS[app.store.list().length % PROFILE_COLORS.length]!;

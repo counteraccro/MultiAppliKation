@@ -393,3 +393,361 @@ button {
   flex: 1;
   font-size: 1.1rem;
 }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Étoiles */
+
+.stars {
+  display: inline-flex;
+  gap: 2px;
+  line-height: 1;
+}
+
+.star {
+  color: var(--border);
+}
+
+.star.on {
+  color: #f7b500;
+}
+
+.stars-small {
+  font-size: 1.4rem;
+}
+
+.stars-large {
+  gap: 8px;
+  font-size: 4.5rem;
+}
+
+/* Accueil des Tables */
+
+.table-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.table-tile {
+  min-height: 120px;
+  gap: 8px;
+  padding: 16px 8px;
+}
+
+.table-tile.suggested {
+  border-color: var(--primary);
+}
+
+.table-number {
+  font-size: 2.4rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+/* Téléphone : toujours 5 × 2, pour voir les 10 tables et les boutons sans défiler. */
+@media (max-width: 560px) {
+  .table-grid {
+    gap: 8px;
+  }
+
+  .table-tile {
+    min-height: 88px;
+    padding: 18px 2px 10px;
+    border-radius: 16px;
+  }
+
+  .table-number {
+    font-size: 1.5rem;
+  }
+
+  .table-tile .stars-small {
+    font-size: 0.85rem;
+  }
+
+  .badge {
+    top: 4px;
+    right: 50%;
+    transform: translateX(50%);
+    padding: 0 6px;
+    font-size: 0.6rem;
+    white-space: nowrap;
+  }
+}
+
+.mode-buttons {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.button.mode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 80px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.button.mode small {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-soft);
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Série de questions : portrait = question en haut, pavé en bas sous le pouce. */
+
+.play {
+  max-width: 1000px;
+  min-height: calc(100dvh - max(16px, env(safe-area-inset-top)) - max(16px, env(safe-area-inset-bottom)));
+  margin: 0 auto;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas: 'bar' 'question' 'keypad';
+  gap: 16px;
+}
+
+.play-bar {
+  grid-area: bar;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.quit {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border: 0;
+  border-radius: 50%;
+  background: var(--border);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.play-label {
+  font-weight: 800;
+  color: var(--text-soft);
+}
+
+.progress {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.dot.done {
+  background: var(--primary);
+}
+
+.question {
+  grid-area: question;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.equation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3em;
+  font-size: clamp(3rem, 14vw, 5.5rem);
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.answer-box {
+  min-width: 2.2em;
+  padding: 0 0.2em;
+  border-radius: 0.2em;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.answer-box.is-empty {
+  color: var(--border);
+}
+
+.answer-box.is-correct {
+  background: #2ecc71;
+  color: #fff;
+}
+
+/* Erreur : la bonne réponse, en couleur douce, sans écran rouge. */
+.answer-box.is-wrong {
+  background: #fff1d6;
+  color: #b86e00;
+}
+
+.feedback {
+  min-height: 2.8em;
+  max-width: 22em;
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-soft);
+}
+
+.keypad-area {
+  grid-area: keypad;
+  display: flex;
+  justify-content: center;
+}
+
+.keypad {
+  width: 100%;
+  max-width: 380px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.key {
+  min-height: 64px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: 0 4px 0 var(--border);
+  font-size: 1.8rem;
+  font-weight: 800;
+}
+
+.key:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--border);
+}
+
+.key-back {
+  background: var(--border);
+}
+
+.key-submit {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 4px 0 var(--primary-dark);
+}
+
+.key-submit:active {
+  box-shadow: 0 2px 0 var(--primary-dark);
+}
+
+/* Écran large en paysage (iPad, ordinateur) : question à gauche, pavé à droite. */
+@media (orientation: landscape) and (min-width: 700px) {
+  .play {
+    grid-template-columns: 1fr minmax(300px, 380px);
+    grid-template-rows: auto 1fr;
+    grid-template-areas: 'bar bar' 'question keypad';
+    column-gap: 32px;
+  }
+
+  .keypad-area {
+    align-items: center;
+  }
+}
+
+/* Petit écran en paysage (iPhone couché) : on serre le pavé. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .play {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto 1fr;
+    grid-template-areas: 'bar bar' 'question keypad';
+  }
+
+  .equation {
+    font-size: 3rem;
+  }
+
+  .key {
+    min-height: 48px;
+  }
+}
+
+/* Résultat */
+
+.record {
+  margin: 0;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: #f7b500;
+  color: #fff;
+  font-weight: 800;
+}
+
+.to-practice {
+  width: 100%;
+  max-width: 420px;
+  padding: 16px 20px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.to-practice h2 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+  color: var(--text-soft);
+}
+
+.to-practice ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 6px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.result-actions {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
