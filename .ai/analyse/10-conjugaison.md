@@ -158,7 +158,8 @@ Identifiants sans accent : `etre`, `esperer`… ; temps `present`, `imparfait`, 
 3. Accueil (onglets des temps, tuiles des verbes) + mode **Apprendre**. Fait le 24/10/2026 (0.13.0) :
    la série d'essai est retirée ; l'onglet ouvert est retenu ; chaque réponse est déjà rangée
    dans sa boîte, pour que la Révision (étape 4) parte de ce qui a été vu.
-4. **Révision**.
+4. **Révision**. Faite le 24/10/2026 (0.14.0) : bouton désactivé (« Joue d'abord un verbe »)
+   tant qu'aucune forme n'a été vue ; moins de 15 questions s'il y a moins de formes vues.
 5. **Mélange**.
 6. Autocollants, classe (ce qui est proposé d'abord selon la classe).
 

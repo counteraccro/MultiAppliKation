@@ -3,6 +3,7 @@ import { topbar } from '../../components/topbar';
 import { h } from '../../core/dom';
 import type { ActivityContext } from '../types';
 import { starsOf, type ConjugaisonData } from './data';
+import { knownCount, seenForms } from './review-session';
 import { CONJUGATIONS, TENSES, type Conjugation, type TenseId } from './verbs';
 
 /** Les 20 verbes d'un temps, dans l'ordre conseillé. */
@@ -17,13 +18,14 @@ export function suggestedConjugation(data: ConjugaisonData, tense: TenseId): Con
 export interface ConjugaisonHomeActions {
   onLearn(conjugation: Conjugation): void;
   onTense(tense: TenseId): void;
+  onReview(): void;
 }
 
 export function renderConjugaisonHome(
   root: HTMLElement,
   ctx: ActivityContext,
   data: ConjugaisonData,
-  { onLearn, onTense }: ConjugaisonHomeActions,
+  { onLearn, onTense, onReview }: ConjugaisonHomeActions,
 ): void {
   const tense = data.tense ?? 'present';
   const suggested = suggestedConjugation(data, tense);
@@ -67,6 +69,18 @@ export function renderConjugaisonHome(
       h('p', { class: 'subtitle' }, 'Choisis un temps, puis un verbe pour gagner des étoiles.'),
       h('div', { class: 'tense-tabs', role: 'tablist', 'aria-label': 'Temps' }, ...tabs),
       h('div', { class: 'verb-grid', role: 'tabpanel' }, ...tiles),
+      h('div', { class: 'mode-buttons verb-modes' }, reviewButton(data, onReview)),
     ),
+  );
+}
+
+/** Révision : rien à réviser tant qu'aucun verbe n'a été joué en « Apprendre ». */
+function reviewButton(data: ConjugaisonData, onReview: () => void): HTMLElement {
+  const ready = seenForms(data.leitner).length > 0;
+  return h(
+    'button',
+    { class: 'button mode primary', type: 'button', disabled: !ready, onclick: onReview },
+    'Révision',
+    h('small', {}, ready ? `${knownCount(data.leitner)} / ${CONJUGATIONS.length} connus` : 'Joue d’abord un verbe'),
   );
 }

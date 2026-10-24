@@ -560,6 +560,13 @@ button {
   font-weight: 800;
 }
 
+/* Autant de colonnes que de boutons (Révision, puis Mélange), sur toute la largeur. */
+.mode-buttons.verb-modes {
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+}
+
 /* Téléphone : 4 verbes par rangée, « commencer » tient encore sur une ligne. */
 @media (max-width: 560px) {
   .tense-tab {

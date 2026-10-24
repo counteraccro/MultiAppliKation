@@ -1,13 +1,16 @@
 import { renderQuestionScreen } from '../../components/question-screen';
 import { renderResult } from '../../components/result';
 import { stars } from '../../components/stars';
+import { h } from '../../core/dom';
+import type { LeitnerState } from '../../core/leitner';
 import type { Attempt } from '../../core/series';
 import type { Activity } from '../types';
 import { readConjugaisonData, recordAttempt, recordStars } from './data';
 import { renderConjugaisonHome } from './home';
 import { LearnSession, type LearnResult } from './learn-session';
 import type { ConjugationQuestion } from './questions';
-import type { Conjugation, TenseId } from './verbs';
+import { knownCount, promotedCount, ReviewSession, type ReviewResult } from './review-session';
+import { CONJUGATIONS, type Conjugation, type TenseId } from './verbs';
 
 const MESSAGES: Record<LearnResult['stars'], string> = {
   0: 'Continue, chaque essai te fait progresser !',
@@ -19,7 +22,7 @@ const MESSAGES: Record<LearnResult['stars'], string> = {
 /** « j’ai chanté », « nous chantons » : pas d'espace après « j’ ». */
 const sentence = (q: ConjugationQuestion) => `${q.prompt}${q.prompt.endsWith('’') ? '' : ' '}${q.answer}`;
 
-// Étape 3 (voir .ai/analyse/10-conjugaison.md) : accueil par temps et mode « Apprendre ».
+// Étapes 3 et 4 (voir .ai/analyse/10-conjugaison.md) : accueil par temps, « Apprendre » et « Révision ».
 export const conjugaison: Activity = {
   id: 'conjugaison',
   title: 'Conjugaison',
@@ -44,7 +47,7 @@ export const conjugaison: Activity = {
       ctx.save(data);
     };
 
-    const home = () => show(() => renderConjugaisonHome(root, ctx, load(), { onLearn: learn, onTense: chooseTense }));
+    const home = () => show(() => renderConjugaisonHome(root, ctx, load(), { onLearn: learn, onTense: chooseTense, onReview: review }));
 
     const chooseTense = (tense: TenseId) => {
       const data = load();
@@ -64,6 +67,47 @@ export const conjugaison: Activity = {
           onDone: () => showResult(conjugation, session.result()),
         });
       });
+
+    const review = () =>
+      show(() => {
+        const before = load().leitner;
+        const session = new ReviewSession(before, { onFirstAttempt });
+        return renderQuestionScreen(root, {
+          session,
+          label: 'Révision',
+          input: 'letters',
+          onQuit: home,
+          onDone: () => showReviewResult(session.result(), before),
+        });
+      });
+
+    function showReviewResult(result: ReviewResult, before: LeitnerState) {
+      const after = load().leitner;
+      // Ce qui a bougé pendant cette révision : visible dès la première fois,
+      // alors qu'un verbe-temps n'est « connu » qu'après plusieurs révisions.
+      const promoted = promotedCount(before, after);
+      const known = knownCount(after);
+      show(() =>
+        renderResult(root, {
+          title: 'Révision',
+          celebrate: result.correct === result.total,
+          highlight: h(
+            'p',
+            { class: 'big-count' },
+            h('strong', {}, String(promoted)),
+            h('small', {}, promoted > 1 ? 'formes montent d’une boîte' : 'forme monte d’une boîte'),
+          ),
+          message:
+            `${result.correct} sur ${result.total} du premier coup.` +
+            (known > 0 ? ` Tu connais ${known} verbe${known > 1 ? 's' : ''} sur ${CONJUGATIONS.length} (un verbe à un temps).` : ''),
+          toPractice: result.toPractice.map((q) => `${sentence(q)} (${q.context})`),
+          actions: [
+            { label: 'Encore une révision', primary: true, onClick: review },
+            { label: 'Conjugaison', onClick: home },
+          ],
+        }),
+      );
+    }
 
     function showResult(conjugation: Conjugation, result: LearnResult) {
       const data = load();
