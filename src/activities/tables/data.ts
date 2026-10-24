@@ -68,6 +68,12 @@ export function dayOf(time: number): string {
 /** Compte un jour de jeu de plus, une seule fois par jour. */
 export function recordDay(data: TablesData, now = Date.now()): void {
   const day = dayOf(now);
+  if (data.daysPlayed === undefined) {
+    // Profil d'avant les jours de jeu : on retrouve au moins les jours encore visibles dans les boîtes.
+    const seen = new Set(Object.values(data.leitner).map((entry) => dayOf(entry.lastSeen)));
+    data.daysPlayed = seen.size;
+    if (seen.has(day)) data.lastPlayedDay = day;
+  }
   if (data.lastPlayedDay === day) return;
   data.lastPlayedDay = day;
   data.daysPlayed = (data.daysPlayed ?? 0) + 1;

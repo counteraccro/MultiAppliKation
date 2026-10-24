@@ -53,4 +53,14 @@ describe('recordDay', () => {
     expect(data.daysPlayed).toBe(2);
     expect(data.lastPlayedDay).toBe(dayOf(day + 86_400_000));
   });
+
+  it('retrouve les jours déjà joués d’un ancien profil', () => {
+    const data = readTablesData(undefined);
+    const day = new Date(2026, 9, 20, 10).getTime();
+    data.leitner['2x3'] = { box: 2, lastSeen: day };
+    data.leitner['2x4'] = { box: 2, lastSeen: day + 3_600_000 };
+    data.leitner['3x5'] = { box: 1, lastSeen: day + 2 * 86_400_000 };
+    recordDay(data, day + 4 * 86_400_000);
+    expect(data.daysPlayed).toBe(3);
+  });
 });

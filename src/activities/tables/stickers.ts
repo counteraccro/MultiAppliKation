@@ -1,6 +1,5 @@
-import { pairKey, ALL_PAIRS, TABLES } from './questions';
-import type { TablesData } from './data';
-import { starsOf } from './data';
+import { starsOf, type TablesData } from './data';
+import { ALL_PAIRS, pairKey, TABLES } from './questions';
 import { KNOWN_BOX } from './review-session';
 
 export interface Sticker {
@@ -135,7 +134,9 @@ const RULES: Rule[] = [
   },
 ];
 
-export const STICKERS: readonly Sticker[] = RULES.map(({ id, emoji, name, hint }) => ({ id, emoji, name, hint }));
+const toSticker = ({ id, emoji, name, hint }: Rule): Sticker => ({ id, emoji, name, hint });
+
+export const STICKERS: readonly Sticker[] = RULES.map(toSticker);
 
 export function hasSticker(data: TablesData, id: string): boolean {
   return data.stickers?.[id] !== undefined;
@@ -153,5 +154,5 @@ export function unlockStickers(data: TablesData, event: SeriesEvent, now = Date.
   const fresh = RULES.filter((rule) => !hasSticker(data, rule.id) && rule.won(data, event));
   data.stickers = { ...data.stickers };
   for (const rule of fresh) data.stickers[rule.id] = now;
-  return STICKERS.filter((s) => fresh.some((rule) => rule.id === s.id));
+  return fresh.map(toSticker);
 }

@@ -2,6 +2,10 @@ import { h } from '../core/dom';
 
 export interface Race {
   el: HTMLElement;
+  /** Une question est posée : le fantôme avance en continu. */
+  start(): void;
+  /** Réponse donnée (pénalité comprise) : on fige la course. */
+  pause(): void;
   destroy(): void;
 }
 
@@ -27,29 +31,50 @@ export function createRace(options: {
   );
 
   // Les coureurs vont de 7 % (départ) à 85 % (juste avant le drapeau).
-  const at = (progress: number) => `${7 + progress * 78}%`;
+  const at = (progress: number) => `${7 + Math.min(1, progress) * 78}%`;
   let frame: number | undefined;
+  let running = false;
   let ahead: boolean | undefined;
 
   const draw = () => {
-    const ghostAt = Math.min(1, options.elapsed() / options.recordMs);
+    const ghostAt = options.elapsed() / options.recordMs;
     const playerAt = options.attempted() / options.total;
     ghost.style.left = at(ghostAt);
     player.style.left = at(playerAt);
-    const isAhead = playerAt >= ghostAt;
+    // Pendant une question, l'enfant n'avance qu'en répondant : il n'est derrière
+    // que si le fantôme a déjà dépassé la case suivante. Au même rythme que le record, il reste devant.
+    const credit = running ? 1 / options.total : 0;
+    const isAhead = playerAt + credit >= ghostAt;
     if (isAhead !== ahead) {
       ahead = isAhead;
       status.textContent = isAhead ? 'Devant ton record !' : 'Ton record est devant…';
       el.classList.toggle('behind', !isAhead);
     }
-    frame = requestAnimationFrame(draw);
+    frame = running ? requestAnimationFrame(draw) : undefined;
   };
+
+  const stopDrawing = () => {
+    if (frame !== undefined) cancelAnimationFrame(frame);
+    frame = undefined;
+  };
+
   draw();
 
   return {
     el,
+    start() {
+      if (running) return;
+      running = true;
+      draw();
+    },
+    pause() {
+      running = false;
+      stopDrawing();
+      draw();
+    },
     destroy() {
-      if (frame !== undefined) cancelAnimationFrame(frame);
+      running = false;
+      stopDrawing();
     },
   };
 }

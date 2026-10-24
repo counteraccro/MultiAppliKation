@@ -6,17 +6,17 @@ import { boxOf, type LeitnerState } from '../../core/leitner';
 import type { Attempt } from '../../core/series';
 import { formatDuration } from '../../core/time';
 import type { Activity } from '../types';
+import { renderAlbum } from './album';
 import { readTablesData, recordAttempt, recordDefi, recordMixTables, recordStars } from './data';
 import { DefiSession, PENALTY_MS, type DefiResult } from './defi-session';
 import { renderTablesHome } from './home';
 import { LearnSession, type LearnResult } from './learn-session';
 import { renderMixChoice } from './mix-choice';
-import { renderAlbum } from './album';
-import { renderProgress } from './progress-screen';
-import { unlockStickers, type SeriesEvent, type Sticker } from './stickers';
 import { MixSession, type MixResult } from './mix-session';
+import { renderProgress } from './progress-screen';
 import { ALL_PAIRS, type Multiplication } from './questions';
 import { knownCount, ReviewSession, type ReviewResult } from './review-session';
+import { unlockStickers, type SeriesEvent, type Sticker } from './stickers';
 
 const MESSAGES: Record<LearnResult['stars'], string> = {
   0: 'Continue, chaque essai te fait progresser !',
@@ -185,6 +185,8 @@ export const tables: Activity = {
       const previous = data.defiRecordMs;
       const record = recordDefi(data, result.scoreMs);
       if (record) ctx.save(data);
+      // Le premier défi pose le record sans le battre : pas de bandeau « Nouveau record ! ».
+      const beaten = record && previous !== undefined;
       const rewards = unlock({
         mode: 'defi',
         bestStreak,
@@ -208,10 +210,10 @@ export const tables: Activity = {
       show(() =>
         renderResult(root, {
           title: 'Défi',
-          celebrate: record,
+          celebrate: beaten,
           rewards,
           highlight: h('p', { class: 'big-count' }, h('strong', {}, formatDuration(result.scoreMs)), h('small', {}, detail)),
-          record,
+          record: beaten,
           message,
           toPractice: result.toPractice.map((q) => `${q.prompt} = ${q.answer}`),
           actions: [

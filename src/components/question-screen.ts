@@ -116,6 +116,7 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
         keypad.setSubmitLabel('→');
         if (chrono) chrono.addPenalty(options.chrono!.penaltyMs);
       }
+      race?.pause();
       renderProgress();
     },
   });
@@ -162,6 +163,7 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
     renderAnswer();
     shownAt = performance.now();
     chrono?.start();
+    race?.start();
   }
 
   root.append(
