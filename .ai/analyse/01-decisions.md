@@ -13,6 +13,8 @@
 | Profils | Plusieurs |
 | Progression entre appareils | **Un appareil par enfant**, pas de synchronisation |
 | Appareils | Navigateur (ordinateur), iPhone, iPad |
+| Classe du profil | CP à 6ᵉ, guide la difficulté sans rien bloquer ; changement protégé par un adulte |
+| Conjugaison (CM1) | Présent, futur, imparfait, passé composé ; **accent faux = faux** ; réponse tapée sur un clavier de lettres dessiné dans l'appli |
 | Dépôt | github.com/counteraccro/MultiAppliKation, dossier `~/Documents/htdocs/MultiAppliKation` |
 
 ## Écarté

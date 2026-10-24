@@ -19,3 +19,4 @@ Application en ligne : https://counteraccro.github.io/MultiAppliKation/
 7. [Architecture](07-architecture.md) — une boîte à activités
 8. [Technique](08-technique.md) — PWA, Vite, TypeScript, hébergement
 9. [Étapes](09-etapes.md) — ordre de travail
+10. [Conjugaison](10-conjugaison.md) — deuxième activité : verbes, clavier de lettres, modes
