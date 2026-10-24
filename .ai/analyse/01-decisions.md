@@ -6,7 +6,7 @@
 | Pourquoi pas Swift | Avec un compte Apple gratuit, l'app installée par Xcode expire au bout de 7 jours (99 €/an pour 1 an) |
 | Nom | **MultiAppliKation** (deux p) ; sous l'icône : **MultiAppli** |
 | Première activité | Les tables de multiplication de 1 à 10 |
-| Modes | Étoiles par table, défi chronométré, révision intelligente |
+| Modes | Étoiles par table, défi chronométré, révision intelligente, mélange de tables au choix |
 | Défi | Sur **toutes** les tables |
 | Chrono | **Visible** pendant le défi |
 | Son | Plus tard |

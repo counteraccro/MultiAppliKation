@@ -25,6 +25,13 @@
 - Score = temps total + 5 s par erreur.
 - Elle bat **son propre record** (un record par profil).
 
+## 4. Mélange — tables au choix
+
+- Elle coche les tables qu'elle veut (une ou plusieurs) ; le dernier choix est gardé.
+- Au plus 20 questions tirées de ces tables, sans doublon (3 × 7 et 7 × 3 comptent pour une).
+- Pas de chrono ; une erreur revient plus tard, comme en « Apprendre ».
+- Les réponses comptent aussi pour les boîtes de la révision.
+
 ## Seuils à régler à l'essai
 
 Le seuil « rapide » (≈ 5 s), la pénalité (5 s), le nombre de questions

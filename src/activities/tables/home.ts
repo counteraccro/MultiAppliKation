@@ -20,13 +20,14 @@ export interface TablesHomeActions {
   onLearn(table: number): void;
   onReview(): void;
   onDefi(): void;
+  onMix(): void;
 }
 
 export function renderTablesHome(
   root: HTMLElement,
   ctx: ActivityContext,
   data: TablesData,
-  { onLearn, onReview, onDefi }: TablesHomeActions,
+  { onLearn, onReview, onDefi, onMix }: TablesHomeActions,
 ): void {
   const suggested = suggestedTable(data);
 
@@ -62,6 +63,12 @@ export function renderTablesHome(
           { class: 'button mode primary', type: 'button', onclick: onReview },
           'Révision',
           h('small', {}, `${knownCount(data.leitner)} / ${ALL_PAIRS.length} sues`),
+        ),
+        h(
+          'button',
+          { class: 'button mode primary mix', type: 'button', onclick: onMix },
+          'Mélange',
+          h('small', {}, 'Tables au choix'),
         ),
         h(
           'button',

@@ -6,10 +6,12 @@ import { boxOf, type LeitnerState } from '../../core/leitner';
 import type { Attempt } from '../../core/series';
 import { formatDuration } from '../../core/time';
 import type { Activity } from '../types';
-import { readTablesData, recordAttempt, recordDefi, recordStars } from './data';
+import { readTablesData, recordAttempt, recordDefi, recordMixTables, recordStars } from './data';
 import { DefiSession, PENALTY_MS, type DefiResult } from './defi-session';
 import { renderTablesHome } from './home';
 import { LearnSession, type LearnResult } from './learn-session';
+import { renderMixChoice } from './mix-choice';
+import { MixSession, type MixResult } from './mix-session';
 import { ALL_PAIRS, type Multiplication } from './questions';
 import { knownCount, ReviewSession, type ReviewResult } from './review-session';
 
@@ -46,7 +48,7 @@ export const tables: Activity = {
       ctx.save(data);
     };
 
-    const home = () => show(() => renderTablesHome(root, ctx, load(), { onLearn: learn, onReview: review, onDefi: defi }));
+    const home = () => show(() => renderTablesHome(root, ctx, load(), { onLearn: learn, onReview: review, onDefi: defi, onMix: mixChoice }));
 
     const learn = (table: number) =>
       show(() => {
@@ -81,6 +83,23 @@ export const tables: Activity = {
           wrongHint: `+${PENALTY_MS / 1000} s.`,
           onQuit: home,
           onDone: () => showDefiResult(session.result()),
+        });
+      });
+
+    const mixChoice = () =>
+      show(() => renderMixChoice(root, ctx, load().mixTables ?? [], { onStart: mix, onBack: home }));
+
+    const mix = (chosen: number[]) =>
+      show(() => {
+        const data = load();
+        recordMixTables(data, chosen);
+        ctx.save(data);
+        const session = new MixSession(chosen, { onFirstAttempt });
+        return renderQuestionScreen(root, {
+          session,
+          label: 'Mélange',
+          onQuit: home,
+          onDone: () => showMixResult(chosen, session.result()),
         });
       });
 
@@ -157,6 +176,29 @@ export const tables: Activity = {
           toPractice: result.toPractice.map((q) => `${q.prompt} = ${q.answer}`),
           actions: [
             { label: 'Rejouer', primary: true, onClick: defi },
+            { label: 'Les tables', onClick: home },
+          ],
+        }),
+      );
+    }
+
+    function showMixResult(chosen: number[], result: MixResult) {
+      const all = result.correct === result.total;
+      show(() =>
+        renderResult(root, {
+          title: 'Mélange',
+          highlight: h(
+            'p',
+            { class: 'big-count' },
+            h('strong', {}, `${result.correct} / ${result.total}`),
+            h('small', {}, 'du premier coup'),
+          ),
+          message: `${chosen.length > 1 ? 'Tables' : 'Table'} de ${chosen.join(', ')}. ` +
+            (all ? 'Tout juste, bravo !' : 'Continue, chaque essai te fait progresser !'),
+          toPractice: result.toPractice.map((q) => `${q.prompt} = ${q.answer}`),
+          actions: [
+            { label: 'Rejouer', primary: true, onClick: () => mix(chosen) },
+            { label: 'Autres tables', onClick: mixChoice },
             { label: 'Les tables', onClick: home },
           ],
         }),

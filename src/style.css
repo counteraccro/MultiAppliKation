@@ -498,7 +498,7 @@ button {
 .mode-buttons {
   width: 100%;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
   margin-top: 8px;
 }
@@ -531,6 +531,40 @@ button {
 .button.mode.defi {
   background: #ff9f43;
   box-shadow: 0 4px 0 #d97a1c;
+}
+
+.button.mode.mix {
+  background: #6bcb77;
+  box-shadow: 0 4px 0 #3e9a4b;
+}
+
+/* Choix des tables du mélange */
+
+.table-tile .check {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+  visibility: hidden;
+}
+
+.table-tile.chosen {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+
+.table-tile.chosen .check {
+  visibility: visible;
+}
+
+.mix-start {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
 }
 
 .button:disabled {

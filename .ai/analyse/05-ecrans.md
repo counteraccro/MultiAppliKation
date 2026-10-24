@@ -6,7 +6,7 @@
    « + » pour en créer un.
 2. **Choix de l'activité** : une seule tuile au début, « Les Tables ».
 3. **Accueil des Tables** : grille des 10 tables avec leurs étoiles,
-   deux gros boutons « Révision » et « Défi ».
+   trois gros boutons « Révision », « Mélange » (choix des tables) et « Défi ».
 4. **Question** : la multiplication en très grand, un pavé numérique dessiné
    dans l'app (pas le clavier iOS, qui cache la moitié de l'écran),
    le chrono en défi.

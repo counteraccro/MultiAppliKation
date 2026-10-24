@@ -10,3 +10,4 @@
    export / import de profil si besoin, autres activités.
 
 Étapes 1 à 5 faites le 24/10/2026 (essai sur iPhone et iPad à faire), plus versions et avertissement de mise à jour.
+Mode « Mélange » (tables au choix) ajouté le 24/10/2026.

@@ -11,6 +11,8 @@ export interface TablesData {
   leitner: LeitnerState;
   /** Meilleur score au défi (ms, pénalités comprises) ; absent avant le premier défi. */
   defiRecordMs?: number;
+  /** Tables du dernier mélange, cochées d'office la fois suivante. */
+  mixTables?: number[];
 }
 
 /** Lit la progression enregistrée, en complétant ce qui manque (premier lancement, ancien format). */
@@ -35,6 +37,11 @@ export function recordDefi(data: TablesData, scoreMs: number): boolean {
   if (data.defiRecordMs !== undefined && scoreMs >= data.defiRecordMs) return false;
   data.defiRecordMs = scoreMs;
   return true;
+}
+
+/** Garde les tables choisies pour le prochain mélange. */
+export function recordMixTables(data: TablesData, tables: readonly number[]): void {
+  data.mixTables = [...tables];
 }
 
 /** Range une réponse dans les boîtes, quel que soit le mode où elle a été donnée. */
