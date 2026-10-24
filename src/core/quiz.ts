@@ -5,7 +5,12 @@ export interface QuizQuestion {
   prompt: string;
   /** Texte après la case réponse, ex. « = 56 » pour « 7 × ? = 56 » ; sinon « = » suit le texte. */
   suffix?: string;
-  answer: number;
+  /** En petit au-dessus de la question, ex. « manger · futur ». */
+  context?: string;
+  /** Réponse attendue : un nombre (pavé) ou des mots (clavier de lettres). */
+  answer: number | string;
+  /** Autres réponses justes, ex. « allée » quand le genre ne se voit pas. */
+  alsoAccepted?: readonly string[];
 }
 
 export interface QuizSession<Q extends QuizQuestion = QuizQuestion> {
@@ -15,8 +20,24 @@ export interface QuizSession<Q extends QuizQuestion = QuizQuestion> {
   readonly attempted: number;
   /** Question à poser, ou undefined quand la série est finie. */
   current(): Q | undefined;
-  /** Enregistre la réponse à la question courante ; renvoie true si elle est juste. */
-  answer(value: number, elapsedMs: number): boolean;
+  /** Enregistre la réponse tapée à la question courante ; renvoie true si elle est juste. */
+  answer(typed: string, elapsedMs: number): boolean;
+}
+
+/** Ce qui ne compte pas dans une réponse en mots : espaces en trop, majuscules. Les accents comptent. */
+export function normalizeAnswer(text: string): string {
+  return text.normalize('NFC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('fr');
+}
+
+/** Toutes les réponses justes, l'attendue en premier. */
+export function acceptedAnswers(question: QuizQuestion): string[] {
+  return [String(question.answer), ...(question.alsoAccepted ?? [])];
+}
+
+export function isCorrect(question: QuizQuestion, typed: string): boolean {
+  if (typeof question.answer === 'number') return typed.trim() !== '' && Number(typed) === question.answer;
+  const answer = normalizeAnswer(typed);
+  return acceptedAnswers(question).some((a) => normalizeAnswer(a) === answer);
 }
 
 /** Mélange de Fisher-Yates ; `random` est remplaçable pour les tests. */

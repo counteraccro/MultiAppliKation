@@ -1311,6 +1311,115 @@ button {
   }
 }
 
+/* Réponse en mots (conjugaison) : clavier de lettres sous la question, même sur grand écran. */
+
+.play.letters {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas: 'bar' 'question' 'keypad';
+}
+
+.question-context {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-soft);
+}
+
+.question-context:empty {
+  display: none;
+}
+
+.equation.words {
+  font-size: clamp(1.8rem, 8vw, 3.2rem);
+}
+
+.equation.words .answer-box {
+  min-width: 4em;
+  /* Un espace tapé (« avons ␣ ») doit se voir. */
+  white-space: pre;
+}
+
+.answer-box mark {
+  border-radius: 0.1em;
+  background: #ffcf70;
+  color: #7a4500;
+}
+
+.keyboard {
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.kb-row {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+
+.kb-key {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 56px;
+  min-height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 0 3px 0 var(--border);
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.kb-key:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--border);
+}
+
+.kb-accent {
+  background: #fff1d6;
+  box-shadow: 0 3px 0 #f0c98a;
+}
+
+.kb-back {
+  flex-grow: 1.5;
+  max-width: 84px;
+  background: var(--border);
+}
+
+.kb-space {
+  flex-grow: 5;
+  max-width: 320px;
+  font-size: 1rem;
+  color: var(--text-soft);
+}
+
+.kb-submit {
+  flex-grow: 2;
+  max-width: 140px;
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 3px 0 var(--primary-dark);
+}
+
+/* iPhone couché : on serre pour que tout tienne. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .kb-key {
+    min-height: 36px;
+    font-size: 1.1rem;
+  }
+
+  .keyboard {
+    gap: 5px;
+  }
+}
+
 /* Résultat */
 
 .record {

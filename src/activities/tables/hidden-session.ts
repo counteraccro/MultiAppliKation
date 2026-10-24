@@ -18,6 +18,7 @@ export interface HiddenQuestion extends QuizQuestion {
   a: number;
   b: number;
   hidden: 'a' | 'b';
+  answer: number;
 }
 
 export function hiddenQuestion(a: number, b: number, hidden: 'a' | 'b'): HiddenQuestion {

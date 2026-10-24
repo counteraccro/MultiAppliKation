@@ -15,7 +15,10 @@ Une question = un **verbe**, un **temps**, une **personne** → une forme écrit
 ### Par classe : le programme officiel
 
 Source : [programme de français du cycle 3](https://www.education.gouv.fr/sites/default/files/programme-de-fran-ais-pour-le-cycle-3-439824.pdf),
-partie « Approfondir sa maîtrise de la conjugaison ». Les **mêmes verbes** à toutes les classes :
+partie « Approfondir sa maîtrise de la conjugaison ».
+Source complémentaire : [SOS Cartables, conjugaison CM1 CM2](https://sos-cartables.fr/conjugaison-cm1-cm2/)
+(leçons et exercices, pas de tableaux complets : utile pour la façon d'expliquer,
+pas comme référence des formes). Les **mêmes verbes** à toutes les classes :
 être, avoir, 1ᵉʳ et 2ᵉ groupes, et 8 irréguliers du 3ᵉ groupe (**faire, aller, dire, venir,
 pouvoir, voir, vouloir, prendre**). Ce sont les temps qui s'ajoutent :
 

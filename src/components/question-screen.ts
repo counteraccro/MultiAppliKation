@@ -1,11 +1,15 @@
+import { closestAnswer, diffParts } from '../core/diff';
 import { h } from '../core/dom';
-import type { QuizSession } from '../core/quiz';
+import { acceptedAnswers, normalizeAnswer, type QuizSession } from '../core/quiz';
 import { isMuted, setMuted, sounds } from '../core/sound';
 import { createChrono } from './chrono';
+import { createKeyboard } from './keyboard';
 import { createKeypad } from './keypad';
 import { createRace } from './race';
 
 const MAX_DIGITS = 3;
+/** Assez pour « sommes allées », pas assez pour taper n'importe quoi. */
+const MAX_LETTERS = 24;
 /** Temps pendant lequel une bonne réponse reste affichée avant la suivante. */
 const CORRECT_PAUSE_MS = 450;
 /** Au-delà, des points de progression ne tiendraient pas sur un téléphone : on affiche « 5 / 20 ». */
@@ -23,6 +27,8 @@ export interface QuestionScreenOptions {
   session: QuizSession;
   /** Ex. « Table de 7 ». */
   label: string;
+  /** Pavé de chiffres (par défaut) ou clavier de lettres, pour répondre en mots. */
+  input?: 'digits' | 'letters';
   /** Chrono visible (défi) ; une erreur ajoute `penaltyMs`. */
   chrono?: { penaltyMs: number };
   /** Défi : course contre ce record (ms), s'il existe. */
@@ -40,6 +46,7 @@ export interface QuestionScreenOptions {
  */
 export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenOptions): () => void {
   const { session } = options;
+  const letters = options.input === 'letters';
   let typed = '';
   let shownAt = 0;
   let state: 'asking' | 'correct' | 'wrong' = 'asking';
@@ -50,7 +57,8 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
   const prompt = h('span', { class: 'prompt' });
   const suffix = h('span', { class: 'prompt' });
   const answerBox = h('span', { class: 'answer-box', 'aria-live': 'polite' });
-  const equation = h('div', { class: 'equation' }, prompt, answerBox, suffix);
+  const equation = h('div', { class: `equation${letters ? ' words' : ''}` }, prompt, answerBox, suffix);
+  const context = h('p', { class: 'question-context' });
   const feedback = h('p', { class: 'feedback', 'aria-live': 'polite' });
   const progress = h('div', { class: 'progress', 'aria-hidden': 'true' });
   const progressText = h('span', { class: 'visually-hidden' });
@@ -78,10 +86,17 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
   });
   renderSound();
 
-  const keypad = createKeypad({
-    onDigit(digit) {
-      if (state !== 'asking' || typed.length >= MAX_DIGITS) return;
-      typed = typed === '0' ? String(digit) : typed + digit;
+  const handlers = {
+    onChar(char: string) {
+      if (state !== 'asking') return;
+      if (letters) {
+        // Pas d'espace au début ni deux de suite : il ne se verrait pas.
+        if (typed.length >= MAX_LETTERS || (char === ' ' && (typed === '' || typed.endsWith(' ')))) return;
+        typed += char;
+      } else {
+        if (typed.length >= MAX_DIGITS) return;
+        typed = typed === '0' ? char : typed + char;
+      }
       renderAnswer();
     },
     onBackspace() {
@@ -95,7 +110,7 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
       const question = session.current();
       if (!question) return;
       chrono?.pause();
-      const correct = session.answer(Number(typed), performance.now() - shownAt);
+      const correct = session.answer(typed, performance.now() - shownAt);
       if (correct) {
         state = 'correct';
         answerBox.classList.add('is-correct');
@@ -113,15 +128,26 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
         sounds.wrong();
         renderStreak(false);
         answerBox.classList.add('is-wrong');
-        answerBox.textContent = String(question.answer);
-        feedback.textContent = `C’était ${question.answer}. ${wrongHint}`;
+        if (letters) {
+          // La bonne forme, avec ce qui diffère de ce qu'elle a tapé surligné (« commen[ç]ons »).
+          const shown = closestAnswer(normalizeAnswer(typed), acceptedAnswers(question));
+          const [start, diff, end] = diffParts(normalizeAnswer(typed), shown);
+          answerBox.replaceChildren(start, diff ? h('mark', {}, diff) : '', end);
+          feedback.textContent = `C’était « ${shown} ». ${wrongHint}`;
+        } else {
+          answerBox.textContent = String(question.answer);
+          feedback.textContent = `C’était ${question.answer}. ${wrongHint}`;
+        }
         keypad.setSubmitLabel('→');
         if (chrono) chrono.addPenalty(options.chrono!.penaltyMs);
       }
       race?.pause();
       renderProgress();
     },
-  });
+  };
+  const keypad = letters
+    ? createKeyboard(handlers)
+    : createKeypad({ ...handlers, onDigit: (digit) => handlers.onChar(String(digit)) });
 
   function renderAnswer() {
     answerBox.textContent = typed || '?';
@@ -159,7 +185,9 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
     renderProgress();
     typed = '';
     // Nombre caché : la case est au milieu (« 7 × ? = 56 »), l'opération plus longue s'affiche plus petit.
-    prompt.textContent = question.suffix === undefined ? `${question.prompt} =` : question.prompt;
+    // En mots, pas de « = » : « nous [ mangerons ] ».
+    prompt.textContent = question.suffix === undefined && !letters ? `${question.prompt} =` : question.prompt;
+    context.textContent = question.context ?? '';
     suffix.textContent = question.suffix ?? '';
     equation.classList.toggle('long', question.suffix !== undefined);
     answerBox.className = 'answer-box';
@@ -174,7 +202,7 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
   root.append(
     h(
       'section',
-      { class: 'play' },
+      { class: `play${letters ? ' letters' : ''}` },
       h(
         'header',
         { class: 'play-bar' },
@@ -189,6 +217,7 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
         { class: 'question' },
         chrono?.el,
         race?.el,
+        context,
         equation,
         feedback,
         streakEl,

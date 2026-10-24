@@ -1,4 +1,4 @@
-import type { QuizQuestion, QuizSession } from './quiz';
+import { isCorrect, type QuizQuestion, type QuizSession } from './quiz';
 
 /** Une question ratée revient après ce nombre d'autres questions. */
 const RETRY_GAP = 3;
@@ -42,10 +42,11 @@ export class Series<Q extends QuizQuestion> implements QuizSession<Q> {
     return this.queue[0];
   }
 
-  answer(value: number, elapsedMs: number): boolean {
+  /** `value` : ce qui a été tapé (un nombre est accepté pour les tests). */
+  answer(value: string | number, elapsedMs: number): boolean {
     const question = this.queue.shift();
     if (!question) throw new Error('La série est finie');
-    const correct = value === question.answer;
+    const correct = isCorrect(question, String(value));
     if (!this.firstAttempts.has(question)) {
       const attempt = { question, correct, elapsedMs };
       this.firstAttempts.set(question, attempt);

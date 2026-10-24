@@ -11,6 +11,7 @@ export const FAST_MS = 5000;
 export interface Multiplication extends QuizQuestion {
   a: number;
   b: number;
+  answer: number;
 }
 
 export function multiplication(a: number, b: number): Multiplication {
