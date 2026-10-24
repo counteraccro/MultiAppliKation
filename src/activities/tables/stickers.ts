@@ -1,7 +1,7 @@
-import { countStickers, toSticker, unlockRules, type Sticker, type StickerRule } from '../../core/stickers';
+import { KNOWN_BOX } from '../../core/mastery';
+import { toSticker, unlockRules, type Sticker, type StickerRule } from '../../core/stickers';
 import { starsOf, type TablesData } from './data';
 import { ALL_PAIRS, pairKey, TABLES } from './questions';
-import { KNOWN_BOX } from './review-session';
 
 export type { Sticker } from '../../core/stickers';
 
@@ -135,10 +135,6 @@ const RULES: Rule[] = [
 ];
 
 export const STICKERS: readonly Sticker[] = RULES.map(toSticker);
-
-export function stickerCount(data: TablesData): number {
-  return countStickers(data, STICKERS);
-}
 
 /**
  * À la fin d'une série (étoiles, boîtes et record déjà enregistrés) :

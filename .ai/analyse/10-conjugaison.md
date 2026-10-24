@@ -172,6 +172,9 @@ Identifiants sans accent : `etre`, `esperer`… ; temps `present`, `imparfait`, 
      Les jours de jeu sont comptés à chaque réponse, comme aux Tables.
    - **Classe** : le contenu étant celui du CM1, seule une phrase change pour CP, CE1 et CE2.
      Ce qui est proposé d'abord en CE1 / CE2 attend la lecture du programme du cycle 2.
+   Revue de code (0.16.1) : une seule définition de « connu » (`KNOWN_BOX` dans `core/mastery.ts`),
+   jours de jeu et autocollants abîmés écartés à la lecture, jour compté avant de ranger la réponse,
+   série « d'affilée » au premier coup seulement (Tables comprises).
 
 ## Questions ouvertes
 

@@ -1,5 +1,6 @@
 import { applyOutcome, type LeitnerState } from '../../core/leitner';
-import { recordDay } from '../../core/play-days';
+import { cleanPlayDays, recordDay } from '../../core/play-days';
+import { readStickers } from '../../core/stickers';
 import type { Attempt } from '../../core/series';
 import type { Stars } from './learn-session';
 import { FAST_MS, pairKey, type Multiplication } from './questions';
@@ -21,13 +22,15 @@ export interface TablesData {
   lastPlayedDay?: string;
 }
 
-export { dayOf, recordDay } from '../../core/play-days';
 
 /** Lit la progression enregistrée, en complétant ce qui manque (premier lancement, ancien format). */
 export function readTablesData(raw: unknown): TablesData {
   const data = (typeof raw === 'object' && raw !== null ? raw : {}) as Partial<TablesData>;
   const copy: TablesData = { ...data, stars: { ...data.stars }, leitner: { ...data.leitner } };
-  if (data.stickers) copy.stickers = { ...data.stickers };
+  const stickers = readStickers(data.stickers);
+  if (stickers) copy.stickers = stickers;
+  else delete copy.stickers;
+  cleanPlayDays(copy);
   return copy;
 }
 
@@ -58,6 +61,7 @@ export function recordMixTables(data: TablesData, tables: readonly number[]): vo
 export function recordAttempt(data: TablesData, attempt: Attempt<Multiplication>, now = Date.now()): void {
   const { question, correct, elapsedMs } = attempt;
   const outcome = !correct ? 'wrong' : elapsedMs < FAST_MS ? 'fast' : 'slow';
-  applyOutcome(data.leitner, pairKey(question.a, question.b), outcome, now);
+  // D'abord le jour : un ancien profil retrouve ses jours dans les boîtes, avant que celle-ci change de date.
   recordDay(data, now);
+  applyOutcome(data.leitner, pairKey(question.a, question.b), outcome, now);
 }

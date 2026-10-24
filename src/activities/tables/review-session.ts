@@ -1,4 +1,5 @@
 import { countAtLeast, pickReview, type LeitnerState } from '../../core/leitner';
+import { KNOWN_BOX } from '../../core/mastery';
 import { shuffle } from '../../core/quiz';
 import { Series, type Attempt } from '../../core/series';
 import { ALL_PAIRS, FAST_MS, questionFromKey, type Multiplication } from './questions';
@@ -7,8 +8,6 @@ import { ALL_PAIRS, FAST_MS, questionFromKey, type Multiplication } from './ques
 export const REVIEW_SIZE = 15;
 const STALE_SLOTS = 3;
 const STALE_AFTER_MS = 3 * 24 * 60 * 60 * 1000;
-/** À partir de cette boîte, une multiplication compte comme « sue ». */
-export const KNOWN_BOX = 4;
 
 export interface ReviewResult {
   correct: number;

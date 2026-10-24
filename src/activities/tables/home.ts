@@ -2,13 +2,14 @@ import { albumCard, progressCard } from '../../components/home-cards';
 import { stars } from '../../components/stars';
 import { topbar } from '../../components/topbar';
 import { h } from '../../core/dom';
+import { countStickers } from '../../core/stickers';
 import { formatDuration } from '../../core/time';
 import type { ActivityContext } from '../types';
 import { starsOf, type TablesData } from './data';
 import { DEFI_SIZE } from './defi-session';
 import { MASTERY_LABELS, masteryCounts } from './mastery';
 import { ALL_PAIRS, SUGGESTED_ORDER, TABLES } from './questions';
-import { stickerCount, STICKERS } from './stickers';
+import { STICKERS } from './stickers';
 import { knownCount } from './review-session';
 
 /** Table conseillée : la première, dans l'ordre conseillé, sans étoile (sinon pas encore à 3). */
@@ -97,7 +98,7 @@ export function renderTablesHome(
         'div',
         { class: 'home-cards' },
         progressCard(masteryCounts(data.leitner), MASTERY_LABELS, onProgress),
-        albumCard(stickerCount(data), STICKERS.length, onAlbum),
+        albumCard(countStickers(data, STICKERS), STICKERS.length, onAlbum),
       ),
     ),
   );

@@ -4,10 +4,11 @@ import { renderResult } from '../../components/result';
 import { stars } from '../../components/stars';
 import { h } from '../../core/dom';
 import { boxOf, type LeitnerState } from '../../core/leitner';
+import { recordDay } from '../../core/play-days';
 import type { Attempt } from '../../core/series';
 import { formatDuration } from '../../core/time';
 import type { Activity } from '../types';
-import { readTablesData, recordAttempt, recordDay, recordDefi, recordMixTables, recordStars } from './data';
+import { readTablesData, recordAttempt, recordDefi, recordMixTables, recordStars } from './data';
 import { DefiSession, PENALTY_MS, type DefiResult } from './defi-session';
 import { HiddenSession, type HiddenResult } from './hidden-session';
 import { renderTablesHome } from './home';
@@ -60,8 +61,7 @@ export const tables: Activity = {
     };
 
     /** Fin de série (le reste déjà enregistré) : colle les autocollants gagnés. */
-    const unlock = (event: SeriesEvent): Sticker[] => {
-      const data = load();
+    const unlock = (event: SeriesEvent, data = load()): Sticker[] => {
       const fresh = unlockStickers(data, event);
       if (fresh.length > 0) ctx.save(data);
       return fresh;
@@ -153,7 +153,7 @@ export const tables: Activity = {
       const data = load();
       const record = result.stars > 0 && recordStars(data, table, result.stars);
       if (record) ctx.save(data);
-      const rewards = unlock({ mode: 'learn', bestStreak, correct: result.correct, total: result.total });
+      const rewards = unlock({ mode: 'learn', bestStreak, correct: result.correct, total: result.total }, data);
       show(() =>
         renderResult(root, {
           title: `Table de ${table}`,
@@ -214,7 +214,7 @@ export const tables: Activity = {
         correct: result.total - result.errors,
         total: result.total,
         defiScoreMs: result.scoreMs,
-      });
+      }, data);
 
       const penalties = result.errors * PENALTY_MS;
       const detail =

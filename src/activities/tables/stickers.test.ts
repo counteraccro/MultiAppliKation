@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { dayOf, readTablesData, recordDay } from './data';
+import { countStickers } from '../../core/stickers';
+import { dayOf, recordDay } from '../../core/play-days';
+import { readTablesData } from './data';
 import { pairKey, TABLES } from './questions';
-import { STICKERS, stickerCount, unlockStickers, type SeriesEvent } from './stickers';
+import { STICKERS, unlockStickers, type SeriesEvent } from './stickers';
 
 const event = (overrides: Partial<SeriesEvent> = {}): SeriesEvent => ({
   mode: 'learn',
@@ -17,7 +19,7 @@ describe('unlockStickers', () => {
     data.stars['3'] = 1;
     expect(unlockStickers(data, event()).map((s) => s.id)).toEqual(['first-star']);
     expect(unlockStickers(data, event())).toEqual([]);
-    expect(stickerCount(data)).toBe(1);
+    expect(countStickers(data, STICKERS)).toBe(1);
   });
 
   it('gagne l’animal d’une table quand ses 10 multiplications sont connues', () => {

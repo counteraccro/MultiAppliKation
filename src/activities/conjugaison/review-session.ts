@@ -2,15 +2,14 @@ import { boxOf, pickReview, type LeitnerState } from '../../core/leitner';
 import { shuffle } from '../../core/quiz';
 import { Series, type Attempt } from '../../core/series';
 import { isFast } from './learn-session';
+import { isKnownConjugation } from './mastery';
 import { conjugationQuestion, type ConjugationQuestion } from './questions';
+import { REVIEW_SIZE } from './sizes';
 import { CONJUGATIONS, conjugationKey, PERSONS, type Conjugation, type Person } from './verbs';
 
-/** Questions par révision. À régler en la regardant jouer. */
-export const REVIEW_SIZE = 15;
+export { REVIEW_SIZE } from './sizes';
 const STALE_SLOTS = 3;
 const STALE_AFTER_MS = 3 * 24 * 60 * 60 * 1000;
-/** À partir de cette boîte, une forme compte comme « sue ». */
-export const KNOWN_BOX = 4;
 
 /** Les 480 clés de boîte : « aller.futur.4 ». */
 const FORMS = CONJUGATIONS.flatMap((conjugation) =>
@@ -66,9 +65,7 @@ export class ReviewSession extends Series<ConjugationQuestion> {
 
 /** Combien des 80 verbe-temps sont connus : leurs 6 formes en boîte 4 ou plus. */
 export function knownCount(state: LeitnerState): number {
-  return CONJUGATIONS.filter((c) =>
-    PERSONS.every((p) => (state[`${conjugationKey(c)}.${p}`]?.box ?? 0) >= KNOWN_BOX),
-  ).length;
+  return CONJUGATIONS.filter((c) => isKnownConjugation(state, c)).length;
 }
 
 /** Combien de formes sont montées d'une boîte entre deux états. */

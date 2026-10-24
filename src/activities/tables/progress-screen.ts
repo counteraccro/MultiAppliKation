@@ -19,6 +19,7 @@ export function renderProgress(root: HTMLElement, ctx: ActivityContext, data: Ta
     for (const cell of cells) {
       const twin = (cell.a === a && cell.b === b) || (cell.a === b && cell.b === a);
       cell.el.classList.toggle('selected', twin);
+      cell.el.setAttribute('aria-pressed', String(twin));
     }
     detail.textContent = `${a} × ${b} = ${a * b} · ${MASTERY_LABELS[masteryOf(data.leitner, a, b)]}`;
   }
@@ -42,6 +43,7 @@ export function renderProgress(root: HTMLElement, ctx: ActivityContext, data: Ta
           {
             class: `progress-cell m-${level}`,
             type: 'button',
+            'aria-pressed': 'false',
             'aria-label': `${a} × ${b} : ${MASTERY_LABELS[level]}`,
             onclick: () => select(a, b),
           },

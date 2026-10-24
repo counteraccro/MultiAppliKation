@@ -18,6 +18,13 @@ export interface WithStickers {
   stickers?: Record<string, number>;
 }
 
+/** Relit les autocollants enregistrés : seulement { id: date }, le reste est ignoré. */
+export function readStickers(raw: unknown): Record<string, number> | undefined {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return undefined;
+  const entries = Object.entries(raw).filter(([, date]) => typeof date === 'number' && Number.isFinite(date));
+  return Object.fromEntries(entries);
+}
+
 export const toSticker = ({ id, emoji, name, hint }: Sticker): Sticker => ({ id, emoji, name, hint });
 
 export function hasSticker(data: WithStickers, id: string): boolean {

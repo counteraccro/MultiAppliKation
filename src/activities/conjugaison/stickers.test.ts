@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { countStickers } from '../../core/stickers';
 import { readConjugaisonData, recordAttempt } from './data';
 import { conjugationQuestion } from './questions';
-import { STICKERS, stickerCount, unlockStickers, type SeriesEvent } from './stickers';
+import { STICKERS, unlockStickers, type SeriesEvent } from './stickers';
 import { CONJUGATIONS, conjugationKey, conjugationsOf, PERSONS } from './verbs';
 
 const event = (overrides: Partial<SeriesEvent> = {}): SeriesEvent => ({
@@ -18,7 +19,7 @@ describe('unlockStickers', () => {
     data.stars['aller.futur'] = 1;
     expect(unlockStickers(data, event()).map((s) => s.id)).toEqual(['first-star']);
     expect(unlockStickers(data, event())).toEqual([]);
-    expect(stickerCount(data)).toBe(1);
+    expect(countStickers(data, STICKERS)).toBe(1);
   });
 
   it('fait le tour d’un temps avec une étoile à chacun des 20 verbes', () => {
@@ -59,5 +60,23 @@ describe('unlockStickers', () => {
 
   it('a des identifiants uniques', () => {
     expect(new Set(STICKERS.map((s) => s.id)).size).toBe(STICKERS.length);
+  });
+});
+
+describe('readConjugaisonData', () => {
+  it('écarte des jours et des autocollants abîmés', () => {
+    const data = readConjugaisonData({ daysPlayed: '4', lastPlayedDay: '2026-10-20', stickers: ['first-star'] });
+    expect(data.daysPlayed).toBeUndefined();
+    expect(data.lastPlayedDay).toBeUndefined();
+    expect(data.stickers).toBeUndefined();
+    expect(readConjugaisonData({ stickers: { 'first-star': 5, crown: 'oui' } }).stickers).toEqual({ 'first-star': 5 });
+  });
+
+  it('retrouve aussi le jour de la forme qu’elle rejoue', () => {
+    const day = new Date(2026, 9, 18, 10).getTime();
+    const data = readConjugaisonData({ stars: {}, leitner: { 'etre.present.1': { box: 2, lastSeen: day } } });
+    const question = conjugationQuestion(CONJUGATIONS[0]!, 1);
+    recordAttempt(data, { question, correct: true, elapsedMs: 1000 }, day + 7 * 86_400_000);
+    expect(data.daysPlayed).toBe(2);
   });
 });

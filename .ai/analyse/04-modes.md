@@ -52,6 +52,8 @@
 - **Sons** synthétisés (pas de fichier) : bonne réponse, erreur douce, palier de série.
   Bouton 🔊 / 🔇 dans la barre de jeu, retenu par l'appareil.
 - **Série** : « 🔥 5 d'affilée ! » à partir de 3 bonnes réponses de suite, fête à chaque multiple de 5.
+  Seules les réponses justes **du premier coup** comptent : une question ratée qui revient ne fait
+  ni monter ni retomber la série (revue du 24/10/2026).
 - **Course contre le record** (défi) : 👻 avance au rythme du record, 🏃 d'une case par question.
 - **Album d'autocollants** (24) : étoiles, une table toute verte (un animal par table),
   10 et 20 d'affilée, défi (premier, sans erreur, moins d'une minute), mélange parfait,

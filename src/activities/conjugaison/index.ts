@@ -52,8 +52,7 @@ export const conjugaison: Activity = {
     };
 
     /** Fin de série (le reste déjà enregistré) : colle les autocollants gagnés. */
-    const unlock = (event: SeriesEvent): Sticker[] => {
-      const data = load();
+    const unlock = (event: SeriesEvent, data = load()): Sticker[] => {
       const fresh = unlockStickers(data, event);
       if (fresh.length > 0) ctx.save(data);
       return fresh;
@@ -189,7 +188,7 @@ export const conjugaison: Activity = {
       const data = load();
       const record = result.stars > 0 && recordStars(data, conjugation, result.stars);
       if (record) ctx.save(data);
-      const rewards = unlock({ mode: 'learn', bestStreak, correct: result.correct, total: result.total });
+      const rewards = unlock({ mode: 'learn', bestStreak, correct: result.correct, total: result.total }, data);
       show(() =>
         renderResult(root, {
           title: `${conjugation.verb.infinitive} · ${conjugation.tense.label}`,

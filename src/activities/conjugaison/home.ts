@@ -2,12 +2,13 @@ import { albumCard, progressCard } from '../../components/home-cards';
 import { stars } from '../../components/stars';
 import { topbar } from '../../components/topbar';
 import { h } from '../../core/dom';
+import { countStickers } from '../../core/stickers';
 import type { ActivityContext } from '../types';
 import { starsOf, type ConjugaisonData } from './data';
 import { gradeNote } from './grade';
 import { MASTERY_LABELS, masteryCounts } from './mastery';
 import { knownCount, seenForms } from './review-session';
-import { stickerCount, STICKERS } from './stickers';
+import { STICKERS } from './stickers';
 import { CONJUGATIONS, conjugationsOf, TENSES, type Conjugation, type TenseId } from './verbs';
 
 /** Verbe conseillé dans un temps : le premier sans étoile (sinon pas encore à 3). */
@@ -90,7 +91,7 @@ export function renderConjugaisonHome(
         'div',
         { class: 'home-cards' },
         progressCard(masteryCounts(data.leitner), MASTERY_LABELS, onProgress),
-        albumCard(stickerCount(data), STICKERS.length, onAlbum),
+        albumCard(countStickers(data, STICKERS), STICKERS.length, onAlbum),
       ),
     ),
   );

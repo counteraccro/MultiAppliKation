@@ -6,8 +6,8 @@ export type Mastery = 'unseen' | 'learning' | 'progress' | 'known' | 'mastered';
 /** Du moins su au mieux su : l'ordre de la légende. */
 export const MASTERY_LEVELS: readonly Mastery[] = ['unseen', 'learning', 'progress', 'known', 'mastered'];
 
-/** À partir de cette boîte, c'est « connu » (comme « N / 55 connues »). */
-const KNOWN_BOX = 4;
+/** À partir de cette boîte, c'est « connu » : grille, compteurs « N connus » et autocollants. */
+export const KNOWN_BOX = 4;
 
 /** Niveau d'une boîte ; undefined = jamais vu. */
 export function masteryOfBox(box: number | undefined): Mastery {

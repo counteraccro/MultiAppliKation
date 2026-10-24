@@ -13,6 +13,14 @@ export interface PlayDays {
   lastPlayedDay?: string;
 }
 
+/** Garde des jours de jeu lisibles ; sinon ils sont retrouvés dans les boîtes au prochain jeu. */
+export function cleanPlayDays(data: PlayDays): void {
+  const { daysPlayed, lastPlayedDay } = data;
+  if (daysPlayed !== undefined && !(Number.isInteger(daysPlayed) && daysPlayed >= 0)) delete data.daysPlayed;
+  if (lastPlayedDay !== undefined && typeof lastPlayedDay !== 'string') delete data.lastPlayedDay;
+  if (data.daysPlayed === undefined) delete data.lastPlayedDay;
+}
+
 /** Compte un jour de jeu de plus, une seule fois par jour. */
 export function recordDay(data: PlayDays, now = Date.now()): void {
   const day = dayOf(now);

@@ -51,8 +51,11 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
   let shownAt = 0;
   let state: 'asking' | 'correct' | 'wrong' = 'asking';
   let timer: number | undefined;
+  // « D'affilée » : seulement les bonnes réponses du premier coup ; une question ratée
+  // qui revient ne fait ni monter ni retomber la série.
   let streak = 0;
   let bestStreak = 0;
+  const missed = new Set<unknown>();
 
   const prompt = h('span', { class: 'prompt' });
   const suffix = h('span', { class: 'prompt' });
@@ -115,15 +118,17 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
         state = 'correct';
         answerBox.classList.add('is-correct');
         feedback.textContent = 'Bravo !';
-        streak++;
+        const firstTry = !missed.has(question);
+        if (firstTry) streak++;
         bestStreak = Math.max(bestStreak, streak);
-        const milestone = streak % STREAK_MILESTONE === 0;
+        const milestone = firstTry && streak % STREAK_MILESTONE === 0;
         if (milestone) sounds.streak();
         else sounds.correct();
         renderStreak(milestone);
         timer = window.setTimeout(next, CORRECT_PAUSE_MS);
       } else {
         state = 'wrong';
+        missed.add(question);
         streak = 0;
         sounds.wrong();
         renderStreak(false);

@@ -1,5 +1,6 @@
 import { applyOutcome, type LeitnerState } from '../../core/leitner';
-import { recordDay } from '../../core/play-days';
+import { cleanPlayDays, recordDay } from '../../core/play-days';
+import { readStickers } from '../../core/stickers';
 import type { Attempt } from '../../core/series';
 import { isFast, type Stars } from './learn-session';
 import { cleanMixChoice, type MixChoice } from './mix-session';
@@ -30,7 +31,10 @@ export function readConjugaisonData(raw: unknown): ConjugaisonData {
   // Un temps disparu (ou une donnée abîmée) ne doit pas laisser l'accueil sans onglet.
   if (!TENSES.some((t) => t.id === copy.tense)) delete copy.tense;
   if (data.mix) copy.mix = cleanMixChoice(data.mix);
-  if (data.stickers) copy.stickers = { ...data.stickers };
+  const stickers = readStickers(data.stickers);
+  if (stickers) copy.stickers = stickers;
+  else delete copy.stickers;
+  cleanPlayDays(copy);
   return copy;
 }
 
@@ -51,6 +55,7 @@ export const formKey = ({ verb, tense, person }: ConjugationQuestion) => `${verb
 /** Range une réponse dans les boîtes, quel que soit le mode, et compte le jour de jeu. */
 export function recordAttempt(data: ConjugaisonData, attempt: Attempt<ConjugationQuestion>, now = Date.now()): void {
   const outcome = !attempt.correct ? 'wrong' : isFast(attempt) ? 'fast' : 'slow';
-  applyOutcome(data.leitner, formKey(attempt.question), outcome, now);
+  // D'abord le jour : un ancien profil retrouve ses jours dans les boîtes, avant que celle-ci change de date.
   recordDay(data, now);
+  applyOutcome(data.leitner, formKey(attempt.question), outcome, now);
 }

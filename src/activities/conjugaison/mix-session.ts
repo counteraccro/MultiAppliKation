@@ -1,10 +1,10 @@
 import { shuffle } from '../../core/quiz';
 import { Series, type Attempt } from '../../core/series';
 import { conjugationQuestion, type ConjugationQuestion } from './questions';
+import { MIX_SIZE } from './sizes';
 import { CONJUGATIONS, PERSONS, TENSES, VERBS, type TenseId } from './verbs';
 
-/** Au plus 15 questions : de quoi réviser une leçon, sans lasser. */
-export const MIX_SIZE = 15;
+export { MIX_SIZE } from './sizes';
 
 /** Ce qu'elle a coché : des temps et des verbes (identifiants). */
 export interface MixChoice {

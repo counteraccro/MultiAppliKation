@@ -1,9 +1,9 @@
 import { topbar } from '../../components/topbar';
 import { h } from '../../core/dom';
-import { MASTERY_LEVELS } from '../../core/mastery';
 import type { ActivityContext } from '../types';
 import type { ConjugaisonData } from './data';
-import { conjugationMastery, formMastery, MASTERY_LABELS, masteryCounts } from './mastery';
+import { emptyCounts, MASTERY_LEVELS, type Mastery } from '../../core/mastery';
+import { conjugationMastery, formMastery, MASTERY_LABELS } from './mastery';
 import { conjugationQuestion, sentence } from './questions';
 import { CONJUGATIONS, PERSONS, TENSES, VERBS, type Conjugation } from './verbs';
 
@@ -15,13 +15,20 @@ const SHORT_LABELS = { present: 'présent', imparfait: 'imparfait', futur: 'futu
  * selon la forme la moins sue. Toucher une case montre ses 6 formes.
  */
 export function renderProgress(root: HTMLElement, ctx: ActivityContext, data: ConjugaisonData, onBack: () => void): void {
-  const counts = masteryCounts(data.leitner);
+  // Un seul calcul par case : il sert à la légende, aux cases et au détail.
+  const levels = new Map<Conjugation, Mastery>(CONJUGATIONS.map((c) => [c, conjugationMastery(data.leitner, c)]));
+  const counts = emptyCounts();
+  for (const level of levels.values()) counts[level]++;
   const detail = h('div', { class: 'conj-detail', 'aria-live': 'polite' }, h('p', {}, 'Touche une case pour voir ses 6 formes.'));
   const cells: { conjugation: Conjugation; el: HTMLElement }[] = [];
 
   function select(conjugation: Conjugation) {
-    for (const cell of cells) cell.el.classList.toggle('selected', cell.conjugation === conjugation);
-    const level = conjugationMastery(data.leitner, conjugation);
+    for (const cell of cells) {
+      const selected = cell.conjugation === conjugation;
+      cell.el.classList.toggle('selected', selected);
+      cell.el.setAttribute('aria-pressed', String(selected));
+    }
+    const level = levels.get(conjugation)!;
     detail.replaceChildren(
       h('p', {}, `${conjugation.verb.infinitive} · ${conjugation.tense.label} : ${MASTERY_LABELS[level]}`),
       h(
@@ -52,10 +59,11 @@ export function renderProgress(root: HTMLElement, ctx: ActivityContext, data: Co
       { class: 'conj-progress-row' },
       h('span', { class: 'conj-verb' }, verb.infinitive),
       ...CONJUGATIONS.filter((c) => c.verb === verb).map((conjugation) => {
-        const level = conjugationMastery(data.leitner, conjugation);
+        const level = levels.get(conjugation)!;
         const el = h('button', {
           class: `progress-cell m-${level}`,
           type: 'button',
+          'aria-pressed': 'false',
           'aria-label': `${verb.infinitive}, ${conjugation.tense.label} : ${MASTERY_LABELS[level]}`,
           onclick: () => select(conjugation),
         });

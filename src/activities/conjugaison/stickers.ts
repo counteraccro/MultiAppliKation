@@ -1,9 +1,8 @@
-import { countStickers, toSticker, unlockRules, type Sticker, type StickerRule } from '../../core/stickers';
+import { toSticker, unlockRules, type Sticker, type StickerRule } from '../../core/stickers';
 import { starsOf, type ConjugaisonData } from './data';
-import { conjugationMastery } from './mastery';
-import { MIX_SIZE } from './mix-session';
-import { REVIEW_SIZE } from './review-session';
-import { CONJUGATIONS, conjugationsOf, TENSES, type Conjugation } from './verbs';
+import { isKnownConjugation } from './mastery';
+import { MIX_SIZE, REVIEW_SIZE } from './sizes';
+import { CONJUGATIONS, conjugationsOf, TENSES } from './verbs';
 
 /** Ce qui vient de se passer : une série finie, dans un mode. */
 export interface SeriesEvent {
@@ -21,9 +20,6 @@ const TENSE_EMOJIS = { present: '🌱', imparfait: '🕰️', futur: '🔭', 'pa
 const OF_TENSE = { present: 'du présent', imparfait: 'de l’imparfait', futur: 'du futur', 'passe-compose': 'du passé composé' } as const;
 const IRREGULARS = ['faire', 'aller', 'dire', 'venir', 'pouvoir', 'voir', 'vouloir', 'prendre'];
 
-/** En vert dans les progrès : les 6 formes en boîte 4 ou plus. */
-const isGreen = (data: ConjugaisonData, c: Conjugation) =>
-  ['known', 'mastered'].includes(conjugationMastery(data.leitner, c));
 
 // L'ordre est celui de l'album. Ne jamais changer un `id` : c'est lui qui est enregistré.
 const RULES: Rule[] = [
@@ -70,7 +66,8 @@ const RULES: Rule[] = [
     emoji: '🧱',
     name: 'Être et avoir',
     hint: 'Être et avoir en vert aux 4 temps dans tes progrès.',
-    won: (data) => CONJUGATIONS.filter((c) => ['etre', 'avoir'].includes(c.verb.id)).every((c) => isGreen(data, c)),
+    won: (data) =>
+      CONJUGATIONS.filter((c) => ['etre', 'avoir'].includes(c.verb.id)).every((c) => isKnownConjugation(data.leitner, c)),
   },
   {
     id: 'streak-10',
@@ -118,16 +115,12 @@ const RULES: Rule[] = [
     id: 'all-green',
     emoji: '🏆',
     name: 'Tout en vert',
-    hint: 'Les 80 verbes, à tous les temps, en vert dans tes progrès.',
-    won: (data) => CONJUGATIONS.every((c) => isGreen(data, c)),
+    hint: 'Les 20 verbes, aux 4 temps, en vert dans tes progrès.',
+    won: (data) => CONJUGATIONS.every((c) => isKnownConjugation(data.leitner, c)),
   },
 ];
 
 export const STICKERS: readonly Sticker[] = RULES.map(toSticker);
-
-export function stickerCount(data: ConjugaisonData): number {
-  return countStickers(data, STICKERS);
-}
 
 /**
  * À la fin d'une série (étoiles et boîtes déjà enregistrées) :
