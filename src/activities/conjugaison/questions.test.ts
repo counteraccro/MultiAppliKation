@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { isCorrect } from '../../core/quiz';
 import { conjugationQuestion } from './questions';
-import { TRIAL_SIZE, TrialSession } from './trial';
 import { CONJUGATIONS } from './verbs';
 
 const find = (verb: string, tense: string) => CONJUGATIONS.find((c) => c.verb.id === verb && c.tense.id === tense)!;
@@ -40,11 +39,5 @@ describe('conjugationQuestion', () => {
   it('n’accepte qu’un genre quand le pronom le dit', () => {
     const elle = conjugationQuestion(aller, 3, feminine);
     expect(isCorrect(elle, 'est allé')).toBe(false);
-  });
-});
-
-describe('TrialSession', () => {
-  it('pose 12 formes', () => {
-    expect(new TrialSession().total).toBe(TRIAL_SIZE);
   });
 });

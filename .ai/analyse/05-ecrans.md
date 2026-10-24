@@ -8,13 +8,16 @@
 3. **Accueil des Tables** : grille des 10 tables avec leurs étoiles,
    quatre gros boutons « Révision », « Mélange » (choix des tables), « Nombre caché »
    et « Défi » (deux lignes de deux sur téléphone).
+   **Accueil de la Conjugaison** : quatre onglets (présent, imparfait, futur, passé composé),
+   le dernier ouvert est retenu ; dans chacun, une tuile par verbe avec ses étoiles
+   (5 par rangée, 4 sur téléphone), badge « À toi ! » sur le verbe conseillé.
 4. **Question** : la multiplication en très grand, un pavé numérique dessiné
    dans l'app (pas le clavier iOS, qui cache la moitié de l'écran),
    le chrono en défi. Au nombre caché, la case réponse est au milieu : « 7 × ? = 56 ».
    En conjugaison : le verbe et le temps en petit au-dessus, « nous [ mangerons ] »,
    et un **clavier de lettres** AZERTY avec une rangée d'accents, toujours sous la question.
    Après une erreur, la partie de la bonne forme qui diffère est surlignée.
-5. **Résultat** : étoiles gagnées ou nouveau record, multiplications à retravailler.
+5. **Résultat** : étoiles gagnées ou nouveau record, multiplications (ou formes : « nous sommes ») à retravailler.
 6. **Mes progrès** (carte sous les boutons, avec une barre aux couleurs de la grille, à côté de la carte « Mes autocollants ») : grille 10×10
    colorée selon la boîte de chaque multiplication — pas encore vue (gris),
    à travailler (rouge, boîte 1), en progrès (jaune, 2–3), connu (vert clair, 4),

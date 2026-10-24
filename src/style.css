@@ -508,6 +508,85 @@ button {
   font-size: 4.5rem;
 }
 
+/* Accueil de la Conjugaison : un onglet par temps, une tuile par verbe */
+
+.tense-tabs {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--border);
+}
+
+.tense-tab {
+  min-height: 44px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font: inherit;
+  color: var(--text-soft);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.tense-tab.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+
+.verb-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.verb-tile {
+  min-height: 100px;
+  gap: 8px;
+  padding: 18px 6px 12px;
+}
+
+.verb-tile.suggested {
+  border-color: var(--primary);
+}
+
+.verb-name {
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+/* Téléphone : 4 verbes par rangée, « commencer » tient encore sur une ligne. */
+@media (max-width: 560px) {
+  .tense-tab {
+    font-size: 0.85rem;
+    padding: 4px;
+  }
+
+  .verb-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .verb-tile {
+    min-height: 76px;
+    padding: 18px 2px 8px;
+    border-radius: 16px;
+  }
+
+  .verb-name {
+    font-size: 0.8rem;
+  }
+
+  .verb-tile .stars-small {
+    font-size: 0.8rem;
+  }
+}
+
 /* Accueil des Tables */
 
 .table-grid {

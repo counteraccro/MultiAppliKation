@@ -144,7 +144,8 @@ Autocollants : **un album par activité** (décision du 24/10/2026), avec la mê
 ## Données du profil
 
 Sous `conjugaison` : étoiles par verbe-temps (`"aller.futur": 3`), boîtes par forme
-(`"aller.futur.4"`, personnes de 1 à 6), dernier choix du mélange, autocollants.
+(`"aller.futur.4"`, personnes de 1 à 6), dernier onglet de temps ouvert (`tense`),
+dernier choix du mélange, autocollants.
 Les clés ne changent jamais : ajouter un verbe ou un temps ne perd rien.
 Identifiants sans accent : `etre`, `esperer`… ; temps `present`, `imparfait`, `futur`, `passe-compose`.
 
@@ -154,7 +155,9 @@ Identifiants sans accent : `etre`, `esperer`… ; temps `present`, `imparfait`, 
    Essai sur iPhone avant d'aller plus loin : c'est le plus risqué.
 2. **Verbes du CM1** et leurs tests (les 480 formes). Fait le 24/10/2026 : `src/activities/conjugaison/verbs.ts`,
    références dans `verbs.test.ts` (la nôtre, Mysticlolly, Scribd) ; la série d'essai pioche déjà dans les 480 formes.
-3. Accueil (onglets des temps, tuiles des verbes) + mode **Apprendre**.
+3. Accueil (onglets des temps, tuiles des verbes) + mode **Apprendre**. Fait le 24/10/2026 (0.13.0) :
+   la série d'essai est retirée ; l'onglet ouvert est retenu ; chaque réponse est déjà rangée
+   dans sa boîte, pour que la Révision (étape 4) parte de ce qui a été vu.
 4. **Révision**.
 5. **Mélange**.
 6. Autocollants, classe (ce qui est proposé d'abord selon la classe).

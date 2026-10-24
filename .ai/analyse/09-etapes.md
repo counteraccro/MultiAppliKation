@@ -17,3 +17,4 @@ Mode « Nombre caché » (7 × ? = 56, sans effet sur les boîtes) ajouté le 24
 Classe du profil et écran « Mon profil » (changement de classe protégé par un adulte) ajoutés le 24/10/2026.
 Conjugaison, étape 1 : clavier de lettres, réponses en mots, surlignage de l'erreur, série d'essai (24/10/2026). À essayer sur iPhone.
 Conjugaison, étape 2 : les 20 verbes du CM1 aux 4 temps, chaque forme vérifiée par un test (24/10/2026).
+Conjugaison, étape 3 : accueil par temps (onglets, une tuile par verbe) et mode « Apprendre » (24/10/2026).
