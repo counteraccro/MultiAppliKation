@@ -1,7 +1,7 @@
 {
   "name": "multiapplikation",
   "version": "0.16.1",
-  "description": "Apprendre en jouant : les tables de multiplication, et d'autres activités ensuite.",
+  "description": "Apprendre en jouant : tables de multiplication, conjugaison, et d'autres activités ensuite.",
   "private": true,
   "type": "module",
   "scripts": {

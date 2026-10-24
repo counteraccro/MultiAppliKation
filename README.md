@@ -1,8 +1,43 @@
 # MultiAppliKation
 
-Application pour apprendre en jouant. Première activité : les tables de multiplication de 1 à 10.
+Application pour apprendre en jouant, du CP à la 6ᵉ, sur iPhone, iPad et ordinateur.
 
 **👉 [Ouvrir l'application](https://counteraccro.github.io/MultiAppliKation/)**
+
+## Les activités
+
+### Les Tables (multiplications de 1 à 10)
+
+- **Apprendre** : une table à la fois, jusqu'à 3 étoiles (tout juste et rapide).
+- **Révision** : les multiplications à retravailler reviennent plus souvent (boîtes de Leitner).
+- **Mélange** : les tables au choix.
+- **Nombre caché** : « 7 × ? = 56 ».
+- **Défi** : 20 questions chronométrées, contre son propre record.
+
+### Conjugaison (CM1)
+
+20 verbes (être, avoir, 1ᵉʳ et 2ᵉ groupes, 8 irréguliers) au présent, à l'imparfait,
+au futur et au passé composé, soit 480 formes, chacune vérifiée par un test.
+
+- **Apprendre** : un verbe à un temps, les 6 personnes, jusqu'à 3 étoiles.
+- **Révision** : seulement les formes déjà vues, par boîtes de Leitner.
+- **Mélange** : temps et verbes au choix (une leçon de la semaine, par exemple).
+- La réponse se tape sur un clavier de lettres dessiné dans l'app, avec les accents ;
+  une faute d'accent compte faux, et la partie fausse est surlignée.
+
+### Dans chaque activité
+
+- **Mes progrès** : une grille colorée, du gris (pas encore vu) au vert (bravo).
+- **Mes autocollants** : un album par activité, avec ce qu'il faut faire pour gagner chacun.
+- Fête, sons, série « d'affilée » (bonnes réponses du premier coup), et une erreur
+  qui revient plus tard dans la série, sans jamais gronder.
+
+## Profils
+
+- Un profil par enfant (prénom, couleur, classe), sans compte ni mot de passe.
+- La classe guide ce qui est proposé sans rien bloquer ; la changer demande un adulte,
+  comme supprimer un profil.
+- Tout reste sur l'appareil (aucun serveur) ; la progression est enregistrée à chaque réponse.
 
 ## L'installer sur iPhone ou iPad
 
@@ -27,6 +62,15 @@ npm run icons    # régénère les icônes depuis public/icon.svg
 ```
 
 Chaque push sur `main` lance les tests et publie le site sur GitHub Pages.
+
+Organisation du code (`src/`) :
+
+- `core/` : profils et sauvegarde, séries de questions, boîtes de Leitner, autocollants, niveaux de progrès ;
+- `components/` : écrans et pièces communs (question, résultat, pavé et clavier, album…) ;
+- `screens/` : « Qui joue ? », profils, choix de l'activité ;
+- `activities/` : une activité par dossier (`tables/`, `conjugaison/`). Pour en ajouter une,
+  créer son dossier puis l'ajouter à `activities/index.ts` ; son identifiant est la clé
+  de ses données dans le profil et ne change jamais.
 
 ## Versions
 
