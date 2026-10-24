@@ -3,11 +3,18 @@
 ## Profils
 
 - Plusieurs profils sur un même appareil.
-- Création : un prénom + une couleur (ou un avatar).
+- Création : un prénom + une couleur (ou un avatar) + la **classe** (CP à 6ᵉ).
+- **Classe** : commune à toutes les activités, chacune s'en sert pour régler la difficulté
+  (ex. les temps et les verbes en conjugaison). Elle guide sans rien bloquer.
+  Un profil créé avant la classe la demande une fois, à sa prochaine ouverture.
+- **Modifier le profil** : en touchant son prénom en haut de « À quoi on joue ? ».
+  Prénom et couleur librement ; **changer de classe demande un adulte**
+  (multiplication d'adulte), pour ne pas descendre d'une classe pour avoir plus facile.
+  Rien n'est perdu : étoiles, boîtes et records restent.
 - Profils **communs à toutes les activités** ; chaque activité range sa
   progression dans le profil (étoiles, boîtes, records…).
 - Suppression protégée, pour qu'un enfant n'efface pas la progression d'un autre :
-  appui long, ou une multiplication « d'adulte » à résoudre.
+  appui long sur le prénom ou bouton dans « Mon profil », puis une multiplication « d'adulte » à résoudre.
 
 ## Où sont les données
 

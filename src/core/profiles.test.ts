@@ -72,4 +72,25 @@ describe('ProfileStore', () => {
     expect(reloaded.list().map((p) => p.name)).toEqual(['Tom']);
     expect(reloaded.getActivityData(tom.id, 'tables')).toEqual({ record: 42 });
   });
+
+  it('modifie prénom, couleur et classe sans toucher à la progression', () => {
+    const storage = createMemoryStorage();
+    const store = new ProfileStore(storage);
+    const lea = store.create('Léa', '#4d96ff', 'CE2');
+    store.setActivityData(lea.id, 'tables', { record: 42 });
+
+    store.update(lea.id, { name: ' Léane ', color: '#ff6b6b', grade: 'CM1' });
+
+    const reloaded = new ProfileStore(storage).get(lea.id);
+    expect(reloaded).toMatchObject({ name: 'Léane', color: '#ff6b6b', grade: 'CM1' });
+    expect(reloaded?.activities.tables).toEqual({ record: 42 });
+  });
+
+  it('garde son propre prénom mais refuse celui d’un autre', () => {
+    const store = new ProfileStore(createMemoryStorage());
+    const lea = store.create('Léa', '#4d96ff');
+    store.create('Tom', '#ff6b6b');
+    expect(store.validateName('LÉA', lea.id)).toBeNull();
+    expect(() => store.update(lea.id, { name: 'tom' })).toThrow();
+  });
 });

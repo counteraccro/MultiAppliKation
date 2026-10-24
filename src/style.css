@@ -91,6 +91,23 @@ button {
   font-weight: 700;
 }
 
+/* Choix de l'activité : on touche son prénom pour modifier son profil. */
+.player-button {
+  min-height: 44px;
+  padding: 4px 12px 4px 4px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+}
+
+.player-edit {
+  font-size: 0.85em;
+}
+
 .title {
   margin: 16px 0 0;
   font-size: clamp(2rem, 7vw, 3rem);
@@ -306,6 +323,69 @@ button {
 .swatch:focus-visible {
   outline: 3px solid var(--primary);
   outline-offset: 4px;
+}
+
+/* Choix de la classe */
+
+.grades {
+  /* Les six classes sur une ligne, même sur téléphone. */
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.grades legend {
+  width: 100%;
+  margin-bottom: 12px;
+  color: var(--text-soft);
+  text-align: center;
+}
+
+.grade-pill {
+  position: relative;
+}
+
+.grade-radio {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.grade-pill span {
+  display: grid;
+  place-items: center;
+  min-height: 48px;
+  border: 3px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  font-size: 1.05rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.grade-radio:checked + span {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+
+.grade-radio:focus-visible + span {
+  outline: 3px solid var(--primary);
+  outline-offset: 3px;
+}
+
+.link-danger {
+  margin-top: 32px;
+  padding: 10px;
+  border: 0;
+  background: none;
+  color: var(--danger);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
 }
 
 /* Boutons */
@@ -1026,7 +1106,8 @@ button {
   color: var(--text-soft);
 }
 
-.swatch {
+/* Pas `.swatch` : ce nom est celui du choix de couleur du profil. */
+.legend-swatch {
   width: 18px;
   height: 18px;
   border-radius: 5px;

@@ -3,7 +3,7 @@
 ## Écrans
 
 1. **Qui joue ?** : grosses tuiles des profils (prénom + couleur ou avatar),
-   « + » pour en créer un.
+   « + » pour en créer un (prénom, couleur, classe).
 2. **Choix de l'activité** : une seule tuile au début, « Les Tables ».
 3. **Accueil des Tables** : grille des 10 tables avec leurs étoiles,
    quatre gros boutons « Révision », « Mélange » (choix des tables), « Nombre caché »
@@ -30,3 +30,5 @@ Une seule application, une seule adresse : rien en double.
 - Marges de l'encoche et de la barre d'accueil (safe areas) respectées.
 - Zoom au double appui bloqué sur le pavé.
 7. **Mes autocollants** : l'album, gagnés en couleur, les autres en ombre avec leur consigne.
+8. **Mon profil** (en touchant son prénom sur « À quoi on joue ? ») : prénom, couleur, classe
+   (changement de classe avec un adulte), et « Supprimer ce profil (adulte) ».

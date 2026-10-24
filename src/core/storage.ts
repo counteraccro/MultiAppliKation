@@ -1,5 +1,7 @@
 // Sauvegarde versionnée dans localStorage, sur l'appareil (voir .ai/analyse/06-profils-donnees.md).
 
+import type { Grade } from './grades';
+
 export const STORAGE_KEY = 'multiapplikation';
 export const CURRENT_VERSION = 1;
 
@@ -7,6 +9,8 @@ export interface Profile {
   id: string;
   name: string;
   color: string;
+  /** Classe : absente pour un profil d'avant la 0.10, demandée à sa prochaine ouverture. */
+  grade?: Grade;
   createdAt: number;
   // Chaque activité range sa progression sous son identifiant (ex. `tables`).
   activities: Record<string, unknown>;

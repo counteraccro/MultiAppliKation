@@ -60,7 +60,7 @@ export function renderProgress(root: HTMLElement, ctx: ActivityContext, data: Ta
       h(
         'li',
         {},
-        h('span', { class: `swatch m-${level}`, 'aria-hidden': 'true' }),
+        h('span', { class: `legend-swatch m-${level}`, 'aria-hidden': 'true' }),
         MASTERY_LABELS[level],
         h('strong', {}, String(counts[level])),
       ),

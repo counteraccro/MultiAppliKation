@@ -1,3 +1,4 @@
+import type { Grade } from './grades';
 import { loadSave, writeSave, type Profile, type SaveData } from './storage';
 
 export const PROFILE_COLORS = [
@@ -34,29 +35,45 @@ export class ProfileStore {
     return this.data.profiles.find((p) => p.id === id);
   }
 
-  /** Message d'erreur à afficher, ou null si le prénom convient. */
-  validateName(name: string): string | null {
+  /** Message d'erreur à afficher, ou null si le prénom convient (`exceptId` : le profil qu'on modifie). */
+  validateName(name: string, exceptId?: string): string | null {
     const trimmed = name.trim();
     if (trimmed.length === 0) return 'Écris ton prénom.';
     if (trimmed.length > NAME_MAX_LENGTH) return `${NAME_MAX_LENGTH} lettres au maximum.`;
     const taken = this.data.profiles.some(
-      (p) => p.name.toLocaleLowerCase('fr') === trimmed.toLocaleLowerCase('fr'),
+      (p) => p.id !== exceptId && p.name.toLocaleLowerCase('fr') === trimmed.toLocaleLowerCase('fr'),
     );
     if (taken) return 'Ce prénom existe déjà.';
     return null;
   }
 
-  create(name: string, color: string): Profile {
+  create(name: string, color: string, grade?: Grade): Profile {
     const error = this.validateName(name);
     if (error) throw new Error(error);
     const profile: Profile = {
       id: newId(),
       name: name.trim(),
       color,
+      grade,
       createdAt: Date.now(),
       activities: {},
     };
     this.data.profiles.push(profile);
+    this.save();
+    return profile;
+  }
+
+  /** Prénom, couleur, classe : la progression ne bouge pas. */
+  update(id: string, changes: Partial<Pick<Profile, 'name' | 'color' | 'grade'>>): Profile {
+    const profile = this.get(id);
+    if (!profile) throw new Error(`Profil inconnu : ${id}`);
+    if (changes.name !== undefined) {
+      const error = this.validateName(changes.name, id);
+      if (error) throw new Error(error);
+      profile.name = changes.name.trim();
+    }
+    if (changes.color !== undefined) profile.color = changes.color;
+    if (changes.grade !== undefined) profile.grade = changes.grade;
     this.save();
     return profile;
   }

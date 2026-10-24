@@ -24,7 +24,12 @@ export function renderActivityChoice(root: HTMLElement, app: App, profile: Profi
     h(
       'section',
       { class: 'screen' },
-      topbar('Changer de joueur', () => app.go({ name: 'who-plays' }), profile),
+      topbar(
+        'Changer de joueur',
+        () => app.go({ name: 'who-plays' }),
+        profile,
+        () => app.go({ name: 'edit-profile', profileId: profile.id }),
+      ),
       h('h1', { class: 'title' }, `Bonjour ${profile.name} !`),
       h('p', { class: 'subtitle' }, 'À quoi on joue ?'),
       h('div', { class: 'tile-grid' }, ...tiles),

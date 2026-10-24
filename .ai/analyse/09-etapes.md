@@ -14,3 +14,4 @@ Mode « Mélange » (tables au choix) ajouté le 24/10/2026.
 Grille des progrès (étape 6) faite le 24/10/2026.
 Fête, sons, séries, course contre le record et album d'autocollants (étape 6) faits le 24/10/2026.
 Mode « Nombre caché » (7 × ? = 56, sans effet sur les boîtes) ajouté le 24/10/2026.
+Classe du profil et écran « Mon profil » (changement de classe protégé par un adulte) ajoutés le 24/10/2026.

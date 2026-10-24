@@ -2,6 +2,8 @@ import { createActivityContext } from './activities/types';
 import { findActivity } from './activities';
 import type { ProfileStore } from './core/profiles';
 import { renderActivityChoice } from './screens/activity-choice';
+import { renderChooseGrade } from './screens/choose-grade';
+import { renderEditProfile } from './screens/edit-profile';
 import { renderNewProfile } from './screens/new-profile';
 import { renderWhoPlays } from './screens/who-plays';
 
@@ -10,6 +12,7 @@ export type Route =
   | { name: 'who-plays' }
   | { name: 'new-profile' }
   | { name: 'activity-choice'; profileId: string }
+  | { name: 'edit-profile'; profileId: string }
   | { name: 'activity'; profileId: string; activityId: string };
 
 export interface App {
@@ -40,7 +43,14 @@ export function startApp(root: HTMLElement, store: ProfileStore): App {
       case 'activity-choice': {
         const profile = store.get(route.profileId);
         if (!profile) return render({ name: 'who-plays' });
+        // Profil d'avant la classe : on la demande une fois avant de jouer.
+        if (!profile.grade) return renderChooseGrade(root, app, profile);
         return renderActivityChoice(root, app, profile);
+      }
+      case 'edit-profile': {
+        const profile = store.get(route.profileId);
+        if (!profile) return render({ name: 'who-plays' });
+        return renderEditProfile(root, app, profile);
       }
       case 'activity': {
         const profile = store.get(route.profileId);
