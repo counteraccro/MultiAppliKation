@@ -9,6 +9,8 @@ export interface TablesData {
   stars: Record<string, Stars>;
   /** Boîte de chaque multiplication : { "3x7": { box, lastSeen } }. */
   leitner: LeitnerState;
+  /** Meilleur score au défi (ms, pénalités comprises) ; absent avant le premier défi. */
+  defiRecordMs?: number;
 }
 
 /** Lit la progression enregistrée, en complétant ce qui manque (premier lancement, ancien format). */
@@ -25,6 +27,13 @@ export function starsOf(data: TablesData, table: number): Stars {
 export function recordStars(data: TablesData, table: number, stars: Stars): boolean {
   if (stars <= starsOf(data, table)) return false;
   data.stars[String(table)] = stars;
+  return true;
+}
+
+/** Garde le meilleur (plus petit) score au défi ; renvoie true si c'est un nouveau record. */
+export function recordDefi(data: TablesData, scoreMs: number): boolean {
+  if (data.defiRecordMs !== undefined && scoreMs >= data.defiRecordMs) return false;
+  data.defiRecordMs = scoreMs;
   return true;
 }
 

@@ -4,8 +4,10 @@ import { stars } from '../../components/stars';
 import { h } from '../../core/dom';
 import { boxOf, type LeitnerState } from '../../core/leitner';
 import type { Attempt } from '../../core/series';
+import { formatDuration } from '../../core/time';
 import type { Activity } from '../types';
-import { readTablesData, recordAttempt, recordStars } from './data';
+import { readTablesData, recordAttempt, recordDefi, recordStars } from './data';
+import { DefiSession, PENALTY_MS, type DefiResult } from './defi-session';
 import { renderTablesHome } from './home';
 import { LearnSession, type LearnResult } from './learn-session';
 import { ALL_PAIRS, type Multiplication } from './questions';
@@ -44,7 +46,7 @@ export const tables: Activity = {
       ctx.save(data);
     };
 
-    const home = () => show(() => renderTablesHome(root, ctx, load(), { onLearn: learn, onReview: review }));
+    const home = () => show(() => renderTablesHome(root, ctx, load(), { onLearn: learn, onReview: review, onDefi: defi }));
 
     const learn = (table: number) =>
       show(() => {
@@ -66,6 +68,19 @@ export const tables: Activity = {
           label: 'Révision',
           onQuit: home,
           onDone: () => showReviewResult(session.result(), before),
+        });
+      });
+
+    const defi = () =>
+      show(() => {
+        const session = new DefiSession({ onFirstAttempt });
+        return renderQuestionScreen(root, {
+          session,
+          label: 'Défi',
+          chrono: { penaltyMs: PENALTY_MS },
+          wrongHint: `+${PENALTY_MS / 1000} s.`,
+          onQuit: home,
+          onDone: () => showDefiResult(session.result()),
         });
       });
 
@@ -109,6 +124,39 @@ export const tables: Activity = {
           toPractice: result.toPractice.map((q) => `${q.prompt} = ${q.answer}`),
           actions: [
             { label: 'Encore une révision', primary: true, onClick: review },
+            { label: 'Les tables', onClick: home },
+          ],
+        }),
+      );
+    }
+
+    function showDefiResult(result: DefiResult) {
+      const data = load();
+      const previous = data.defiRecordMs;
+      const record = recordDefi(data, result.scoreMs);
+      if (record) ctx.save(data);
+
+      const penalties = result.errors * PENALTY_MS;
+      const detail =
+        result.errors === 0
+          ? 'Aucune erreur !'
+          : `${formatDuration(result.timeMs)} + ${result.errors} erreur${result.errors > 1 ? 's' : ''} (${formatDuration(penalties)})`;
+      const message =
+        previous === undefined
+          ? 'Ton premier défi : c’est ton record à battre !'
+          : record
+            ? `Tu as battu ton record de ${formatDuration(previous - result.scoreMs)} !`
+            : `Ton record : ${formatDuration(previous)}. Encore ${formatDuration(result.scoreMs - previous)} à gagner !`;
+
+      show(() =>
+        renderResult(root, {
+          title: 'Défi',
+          highlight: h('p', { class: 'big-count' }, h('strong', {}, formatDuration(result.scoreMs)), h('small', {}, detail)),
+          record,
+          message,
+          toPractice: result.toPractice.map((q) => `${q.prompt} = ${q.answer}`),
+          actions: [
+            { label: 'Rejouer', primary: true, onClick: defi },
             { label: 'Les tables', onClick: home },
           ],
         }),

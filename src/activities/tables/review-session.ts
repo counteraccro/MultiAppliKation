@@ -35,7 +35,7 @@ export class ReviewSession extends Series<Multiplication> {
     // Les anciennes ne viennent pas toutes en tête : on mélange l'ordre de passage.
     super(
       shuffle(keys, random).map((key) => questionFromKey(key, random)),
-      onFirstAttempt,
+      { onFirstAttempt },
     );
   }
 

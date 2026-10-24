@@ -1,15 +1,22 @@
 import { h } from '../core/dom';
 import type { QuizSession } from '../core/quiz';
+import { createChrono } from './chrono';
 import { createKeypad } from './keypad';
 
 const MAX_DIGITS = 3;
 /** Temps pendant lequel une bonne réponse reste affichée avant la suivante. */
 const CORRECT_PAUSE_MS = 450;
+/** Au-delà, des points de progression ne tiendraient pas sur un téléphone : on affiche « 5 / 20 ». */
+const MAX_DOTS = 12;
 
 export interface QuestionScreenOptions {
   session: QuizSession;
   /** Ex. « Table de 7 ». */
   label: string;
+  /** Chrono visible (défi) ; une erreur ajoute `penaltyMs`. */
+  chrono?: { penaltyMs: number };
+  /** Phrase sous la bonne réponse après une erreur. */
+  wrongHint?: string;
   onDone(): void;
   onQuit(): void;
 }
@@ -31,6 +38,8 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
   const feedback = h('p', { class: 'feedback', 'aria-live': 'polite' });
   const progress = h('div', { class: 'progress', 'aria-hidden': 'true' });
   const progressText = h('span', { class: 'visually-hidden' });
+  const chrono = options.chrono && createChrono();
+  const wrongHint = options.wrongHint ?? 'Elle reviendra un peu plus tard.';
 
   const keypad = createKeypad({
     onDigit(digit) {
@@ -48,8 +57,8 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
       if (state !== 'asking' || typed === '') return;
       const question = session.current();
       if (!question) return;
+      chrono?.pause();
       const correct = session.answer(Number(typed), performance.now() - shownAt);
-      renderProgress();
       if (correct) {
         state = 'correct';
         answerBox.classList.add('is-correct');
@@ -59,9 +68,11 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
         state = 'wrong';
         answerBox.classList.add('is-wrong');
         answerBox.textContent = String(question.answer);
-        feedback.textContent = `C’était ${question.answer}. Elle reviendra un peu plus tard.`;
+        feedback.textContent = `C’était ${question.answer}. ${wrongHint}`;
         keypad.setSubmitLabel('→');
+        if (chrono) chrono.addPenalty(options.chrono!.penaltyMs);
       }
+      renderProgress();
     },
   });
 
@@ -71,12 +82,18 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
   }
 
   function renderProgress() {
-    progress.replaceChildren(
-      ...Array.from({ length: session.total }, (_, i) =>
-        h('span', { class: i < session.attempted ? 'dot done' : 'dot' }),
-      ),
-    );
-    progressText.textContent = `Question ${Math.min(session.attempted + 1, session.total)} sur ${session.total}`;
+    // Numéro de la question à l'écran : pendant la correction, c'est encore celle qui vient d'être posée.
+    const shown = Math.min(session.attempted + (state === 'asking' ? 1 : 0), session.total);
+    if (session.total > MAX_DOTS) {
+      progress.textContent = `${shown} / ${session.total}`;
+    } else {
+      progress.replaceChildren(
+        ...Array.from({ length: session.total }, (_, i) =>
+          h('span', { class: i < session.attempted ? 'dot done' : 'dot' }),
+        ),
+      );
+    }
+    progressText.textContent = `Question ${shown} sur ${session.total}`;
   }
 
   function next() {
@@ -84,6 +101,7 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
     const question = session.current();
     if (!question) return options.onDone();
     state = 'asking';
+    renderProgress();
     typed = '';
     prompt.textContent = `${question.prompt} =`;
     answerBox.className = 'answer-box';
@@ -91,6 +109,7 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
     keypad.setSubmitLabel('OK');
     renderAnswer();
     shownAt = performance.now();
+    chrono?.start();
   }
 
   root.append(
@@ -105,16 +124,16 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
         progress,
         progressText,
       ),
-      h('div', { class: 'question' }, h('div', { class: 'equation' }, prompt, answerBox), feedback),
+      h('div', { class: 'question' }, chrono?.el, h('div', { class: 'equation' }, prompt, answerBox), feedback),
       h('div', { class: 'keypad-area' }, keypad.el),
     ),
   );
 
-  renderProgress();
   next();
 
   return () => {
     window.clearTimeout(timer);
     keypad.destroy();
+    chrono?.destroy();
   };
 }

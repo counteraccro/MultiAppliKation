@@ -23,7 +23,7 @@ export class LearnSession extends Series<Multiplication> {
     readonly table: number,
     { random = Math.random, onFirstAttempt }: LearnOptions = {},
   ) {
-    super(shuffle(tableQuestions(table), random), onFirstAttempt);
+    super(shuffle(tableQuestions(table), random), { onFirstAttempt });
   }
 
   result(): LearnResult {

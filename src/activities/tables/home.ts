@@ -1,8 +1,10 @@
 import { stars } from '../../components/stars';
 import { topbar } from '../../components/topbar';
 import { h } from '../../core/dom';
+import { formatDuration } from '../../core/time';
 import type { ActivityContext } from '../types';
 import { starsOf, type TablesData } from './data';
+import { DEFI_SIZE } from './defi-session';
 import { ALL_PAIRS, SUGGESTED_ORDER, TABLES } from './questions';
 import { knownCount } from './review-session';
 
@@ -17,13 +19,14 @@ export function suggestedTable(data: TablesData): number | undefined {
 export interface TablesHomeActions {
   onLearn(table: number): void;
   onReview(): void;
+  onDefi(): void;
 }
 
 export function renderTablesHome(
   root: HTMLElement,
   ctx: ActivityContext,
   data: TablesData,
-  { onLearn, onReview }: TablesHomeActions,
+  { onLearn, onReview, onDefi }: TablesHomeActions,
 ): void {
   const suggested = suggestedTable(data);
 
@@ -60,7 +63,16 @@ export function renderTablesHome(
           'Révision',
           h('small', {}, `${knownCount(data.leitner)} / ${ALL_PAIRS.length} sues`),
         ),
-        h('button', { class: 'button mode', type: 'button', disabled: true }, 'Défi', h('small', {}, 'bientôt')),
+        h(
+          'button',
+          { class: 'button mode primary defi', type: 'button', onclick: onDefi },
+          'Défi',
+          h(
+            'small',
+            {},
+            data.defiRecordMs === undefined ? `${DEFI_SIZE} questions chrono` : `Record : ${formatDuration(data.defiRecordMs)}`,
+          ),
+        ),
       ),
     ),
   );
