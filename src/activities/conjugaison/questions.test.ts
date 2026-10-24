@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { isCorrect } from '../../core/quiz';
-import { conjugationQuestion, TRIAL, TRIAL_SIZE, TrialSession } from './trial';
+import { conjugationQuestion } from './questions';
+import { TRIAL_SIZE, TrialSession } from './trial';
+import { CONJUGATIONS } from './verbs';
 
-const etre = TRIAL.find((c) => c.verb === 'être')!;
-const avoir = TRIAL.find((c) => c.verb === 'avoir')!;
-const aller = TRIAL.find((c) => c.verb === 'aller')!;
+const find = (verb: string, tense: string) => CONJUGATIONS.find((c) => c.verb.id === verb && c.tense.id === tense)!;
+const etre = find('etre', 'present');
+const avoir = find('avoir', 'present');
+const aller = find('aller', 'passe-compose');
 const masculine = () => 0.9;
 const feminine = () => 0.1;
 
@@ -12,6 +15,15 @@ describe('conjugationQuestion', () => {
   it('élide « je » devant une voyelle', () => {
     expect(conjugationQuestion(avoir, 1).prompt).toBe('j’');
     expect(conjugationQuestion(etre, 1).prompt).toBe('je');
+  });
+
+  it('montre l’infinitif et le temps, garde les identifiants', () => {
+    expect(conjugationQuestion(find('esperer', 'futur'), 4)).toMatchObject({
+      verb: 'esperer',
+      tense: 'futur',
+      person: 4,
+      context: 'espérer · futur',
+    });
   });
 
   it('accorde le participe avec « elle » au passé composé', () => {

@@ -5,8 +5,8 @@ import { h } from '../../core/dom';
 import type { Activity } from '../types';
 import { TrialSession, type TrialResult } from './trial';
 
-// Étape 1 (voir .ai/analyse/10-conjugaison.md) : le clavier de lettres, à essayer
-// sur l'appareil avant d'écrire les 20 verbes. Rien n'est encore enregistré.
+// Étapes 1 et 2 (voir .ai/analyse/10-conjugaison.md) : le clavier de lettres et les 20 verbes,
+// en attendant l'accueil et le mode « Apprendre ». Rien n'est encore enregistré.
 export const conjugaison: Activity = {
   id: 'conjugaison',
   title: 'Conjugaison',
@@ -30,7 +30,7 @@ export const conjugaison: Activity = {
             { class: 'screen' },
             topbar('Activités', ctx.exit, ctx.profile),
             h('h1', { class: 'title' }, 'Conjugaison'),
-            h('p', { class: 'subtitle' }, 'Bientôt : les verbes du CM1. Pour l’instant, un essai du clavier.'),
+            h('p', { class: 'subtitle' }, 'Les 20 verbes du CM1 sont prêts. Pour l’instant, un essai au hasard.'),
             h('button', { class: 'button primary', type: 'button', onclick: trial }, 'Essayer'),
           ),
         ),

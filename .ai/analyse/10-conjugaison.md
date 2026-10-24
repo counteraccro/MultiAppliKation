@@ -146,17 +146,27 @@ Autocollants : **un album par activité** (décision du 24/10/2026), avec la mê
 Sous `conjugaison` : étoiles par verbe-temps (`"aller.futur": 3`), boîtes par forme
 (`"aller.futur.4"`, personnes de 1 à 6), dernier choix du mélange, autocollants.
 Les clés ne changent jamais : ajouter un verbe ou un temps ne perd rien.
+Identifiants sans accent : `etre`, `esperer`… ; temps `present`, `imparfait`, `futur`, `passe-compose`.
 
 ## Étapes proposées
 
 1. **Clavier de lettres** + question « pronom + case » + comparaison avec surlignage.
    Essai sur iPhone avant d'aller plus loin : c'est le plus risqué.
-2. **Verbes du CM1** et leurs tests (les 480 formes).
+2. **Verbes du CM1** et leurs tests (les 480 formes). Fait le 24/10/2026 : `src/activities/conjugaison/verbs.ts`,
+   références dans `verbs.test.ts` (la nôtre, Mysticlolly, Scribd) ; la série d'essai pioche déjà dans les 480 formes.
 3. Accueil (onglets des temps, tuiles des verbes) + mode **Apprendre**.
 4. **Révision**.
 5. **Mélange**.
 6. Autocollants, classe (ce qui est proposé d'abord selon la classe).
 
 ## Questions ouvertes
+
+- La table de référence de `verbs.test.ts` a été écrite de mémoire. Une deuxième référence, extraite
+  automatiquement des [tableaux de conjugaison cycle 3 de Mysticlolly](https://www.mysticlolly.fr/wp-content/uploads/2017/04/Tableaux-de-conjugaison-Cycle-3.pdf),
+  couvre 12 verbes sur 20 aux 4 temps (288 formes), sans aucune différence. Une troisième, les
+  [tableaux CM1 de Scribd](https://fr.scribd.com/document/818397919/tableau-conjug-cm1), ajoute jouer et
+  avancer (modèle de commencer), sans différence non plus. Les leçons de SOS Cartables concordent aussi.
+  **Pas encore vérifiés par une source complète** : chanter (même règle que jouer), appeler, jeter, acheter,
+  espérer, nettoyer — surtout leur futur.
 
 - Les 20 verbes suivent le programme ; sa maîtresse en ajoute-t-elle d'autres ?
