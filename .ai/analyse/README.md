@@ -4,7 +4,9 @@ Application pour apprendre en jouant, d'abord pour une enfant de 9 ans.
 Première activité : les tables de multiplication de 1 à 10.
 Pas de publication sur l'App Store : une PWA installée sur l'écran d'accueil.
 
-Analyse faite le 24/10/2026. Aucun code écrit pour l'instant.
+Analyse faite le 24/10/2026.
+
+Application en ligne : https://counteraccro.github.io/MultiAppliKation/
 
 ## Sommaire
 
