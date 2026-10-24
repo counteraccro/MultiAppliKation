@@ -1,0 +1,19 @@
+{
+  "name": "multiapplikation",
+  "version": "0.1.0",
+  "description": "Apprendre en jouant : les tables de multiplication, et d'autres activités ensuite.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
+  }
+}
