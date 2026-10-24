@@ -11,7 +11,9 @@
    **Accueil de la Conjugaison** : quatre onglets (présent, imparfait, futur, passé composé),
    le dernier ouvert est retenu ; dans chacun, une tuile par verbe avec ses étoiles
    (5 par rangée, 4 sur téléphone), badge « À toi ! » sur le verbe conseillé ;
-   dessous, « Révision » (« N / 80 connus ») et « Mélange » côte à côte.
+   dessous, « Révision » (« N / 80 connus ») et « Mélange » côte à côte,
+   puis les cartes « Mes progrès » et « Mes autocollants » comme aux Tables.
+   En CP, CE1 et CE2, une phrase sous le titre prévient que ce sont les verbes du CM1 (rien n'est bloqué).
    **Mélange de la Conjugaison** : temps à cocher (en bleu), les 20 tuiles de verbes à cocher,
    « Tous les verbes », puis « C'est parti ! (N questions) ».
 4. **Question** : la multiplication en très grand, un pavé numérique dessiné
@@ -26,6 +28,9 @@
    à travailler (rouge, boîte 1), en progrès (jaune, 2–3), connu (vert clair, 4),
    bravo (vert, 5). Toucher une case l'affiche avec sa jumelle (3 × 7 et 7 × 3) ;
    la légende compte les 55 multiplications par niveau.
+   **En conjugaison** : une ligne par verbe (20), une colonne par temps (4), mêmes couleurs ;
+   une case prend le niveau de sa forme la moins sue (une forme jamais vue compte « à travailler »).
+   Toucher une case affiche, en haut et sans quitter la grille des yeux, ses 6 formes colorées une à une.
 
 ## Appareils
 
@@ -39,5 +44,6 @@ Une seule application, une seule adresse : rien en double.
 - Marges de l'encoche et de la barre d'accueil (safe areas) respectées.
 - Zoom au double appui bloqué sur le pavé.
 7. **Mes autocollants** : l'album, gagnés en couleur, les autres en ombre avec leur consigne.
+   Un album par activité (24 aux Tables, 16 en Conjugaison).
 8. **Mon profil** (en touchant son prénom sur « À quoi on joue ? ») : prénom, couleur, classe
    (changement de classe avec un adulte), et « Supprimer ce profil (adulte) ».

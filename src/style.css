@@ -127,6 +127,15 @@ button {
   text-align: center;
 }
 
+/* La classe du profil : une phrase douce sous le titre, rien n'est bloqué. */
+.grade-note {
+  margin: -8px 0 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-align: center;
+}
+
 .hint {
   margin: 24px 0 0;
   font-size: 0.85rem;
@@ -1207,6 +1216,75 @@ button {
   height: 18px;
   border-radius: 5px;
   background: var(--cell);
+}
+
+/* Progrès de la Conjugaison : une ligne par verbe, une colonne par temps. */
+
+.conj-progress {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.conj-progress-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) repeat(4, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.conj-progress-row .progress-head {
+  aspect-ratio: auto;
+  font-size: clamp(0.7rem, 2.6vw, 0.95rem);
+}
+
+.conj-verb {
+  display: flex;
+  align-items: center;
+  font-weight: 800;
+  font-size: clamp(0.8rem, 3vw, 1rem);
+}
+
+.conj-progress-row .progress-cell {
+  aspect-ratio: auto;
+  height: 32px;
+}
+
+/* Reste en vue en haut de l'écran pendant qu'on descend dans les 20 verbes. */
+.conj-detail {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  width: 100%;
+  max-width: 560px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.conj-detail p {
+  margin: 0;
+  font-weight: 800;
+}
+
+.conj-forms {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.conj-forms li {
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: var(--cell);
+  color: var(--cell-text);
+  font-weight: 700;
 }
 
 /* Série de questions : portrait = question en haut, pavé en bas sous le pouce. */

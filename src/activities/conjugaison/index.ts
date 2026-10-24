@@ -1,17 +1,21 @@
-import { renderQuestionScreen } from '../../components/question-screen';
+import { renderAlbum } from '../../components/album';
+import { renderQuestionScreen, type SeriesSummary } from '../../components/question-screen';
 import { renderResult } from '../../components/result';
 import { stars } from '../../components/stars';
 import { h } from '../../core/dom';
 import type { LeitnerState } from '../../core/leitner';
 import type { Attempt } from '../../core/series';
+import type { Sticker } from '../../core/stickers';
 import type { Activity } from '../types';
 import { readConjugaisonData, recordAttempt, recordStars } from './data';
 import { renderMixChoice } from './mix-choice';
 import { MixSession, type MixChoice, type MixResult } from './mix-session';
 import { renderConjugaisonHome } from './home';
 import { LearnSession, type LearnResult } from './learn-session';
-import type { ConjugationQuestion } from './questions';
+import { renderProgress } from './progress-screen';
+import { sentence, type ConjugationQuestion } from './questions';
 import { knownCount, promotedCount, ReviewSession, type ReviewResult } from './review-session';
+import { STICKERS, unlockStickers, type SeriesEvent } from './stickers';
 import { CONJUGATIONS, type Conjugation, type TenseId } from './verbs';
 
 const MESSAGES: Record<LearnResult['stars'], string> = {
@@ -21,10 +25,8 @@ const MESSAGES: Record<LearnResult['stars'], string> = {
   3: 'Parfait : tout juste et rapide !',
 };
 
-/** « j’ai chanté », « nous chantons » : pas d'espace après « j’ ». */
-const sentence = (q: ConjugationQuestion) => `${q.prompt}${q.prompt.endsWith('’') ? '' : ' '}${q.answer}`;
-
-// Étapes 3 et 4 (voir .ai/analyse/10-conjugaison.md) : accueil par temps, « Apprendre », « Révision » et « Mélange ».
+// Voir .ai/analyse/10-conjugaison.md : accueil par temps, « Apprendre », « Révision », « Mélange »,
+// progrès et autocollants.
 export const conjugaison: Activity = {
   id: 'conjugaison',
   title: 'Conjugaison',
@@ -49,7 +51,29 @@ export const conjugaison: Activity = {
       ctx.save(data);
     };
 
-    const home = () => show(() => renderConjugaisonHome(root, ctx, load(), { onLearn: learn, onTense: chooseTense, onReview: review, onMix: mixChoice }));
+    /** Fin de série (le reste déjà enregistré) : colle les autocollants gagnés. */
+    const unlock = (event: SeriesEvent): Sticker[] => {
+      const data = load();
+      const fresh = unlockStickers(data, event);
+      if (fresh.length > 0) ctx.save(data);
+      return fresh;
+    };
+
+    const home = () =>
+      show(() =>
+        renderConjugaisonHome(root, ctx, load(), {
+          onLearn: learn,
+          onTense: chooseTense,
+          onReview: review,
+          onMix: mixChoice,
+          onProgress: progress,
+          onAlbum: album,
+        }),
+      );
+
+    const progress = () => show(() => renderProgress(root, ctx, load(), home));
+    const album = () =>
+      show(() => renderAlbum(root, { backLabel: 'Conjugaison', profile: ctx.profile, stickers: STICKERS, data: load(), onBack: home }));
 
     const chooseTense = (tense: TenseId) => {
       const data = load();
@@ -66,7 +90,7 @@ export const conjugaison: Activity = {
           label: `${conjugation.verb.infinitive} · ${conjugation.tense.label}`,
           input: 'letters',
           onQuit: home,
-          onDone: () => showResult(conjugation, session.result()),
+          onDone: (summary) => showResult(conjugation, session.result(), summary),
         });
       });
 
@@ -79,7 +103,7 @@ export const conjugaison: Activity = {
           label: 'Révision',
           input: 'letters',
           onQuit: home,
-          onDone: () => showReviewResult(session.result(), before),
+          onDone: (summary) => showReviewResult(session.result(), before, summary),
         });
       });
 
@@ -102,16 +126,18 @@ export const conjugaison: Activity = {
           label: 'Mélange',
           input: 'letters',
           onQuit: home,
-          onDone: () => showMixResult(choice, session.result()),
+          onDone: (summary) => showMixResult(choice, session.result(), summary),
         });
       });
 
-    function showMixResult(choice: MixChoice, result: MixResult) {
+    function showMixResult(choice: MixChoice, result: MixResult, { bestStreak }: SeriesSummary) {
       const all = result.correct === result.total;
+      const rewards = unlock({ mode: 'mix', bestStreak, correct: result.correct, total: result.total });
       show(() =>
         renderResult(root, {
           title: 'Mélange',
           celebrate: all,
+          rewards,
           highlight: h(
             'p',
             { class: 'big-count' },
@@ -129,7 +155,8 @@ export const conjugaison: Activity = {
       );
     }
 
-    function showReviewResult(result: ReviewResult, before: LeitnerState) {
+    function showReviewResult(result: ReviewResult, before: LeitnerState, { bestStreak }: SeriesSummary) {
+      const rewards = unlock({ mode: 'review', bestStreak, correct: result.correct, total: result.total });
       const after = load().leitner;
       // Ce qui a bougé pendant cette révision : visible dès la première fois,
       // alors qu'un verbe-temps n'est « connu » qu'après plusieurs révisions.
@@ -139,6 +166,7 @@ export const conjugaison: Activity = {
         renderResult(root, {
           title: 'Révision',
           celebrate: result.correct === result.total,
+          rewards,
           highlight: h(
             'p',
             { class: 'big-count' },
@@ -157,16 +185,18 @@ export const conjugaison: Activity = {
       );
     }
 
-    function showResult(conjugation: Conjugation, result: LearnResult) {
+    function showResult(conjugation: Conjugation, result: LearnResult, { bestStreak }: SeriesSummary) {
       const data = load();
       const record = result.stars > 0 && recordStars(data, conjugation, result.stars);
       if (record) ctx.save(data);
+      const rewards = unlock({ mode: 'learn', bestStreak, correct: result.correct, total: result.total });
       show(() =>
         renderResult(root, {
           title: `${conjugation.verb.infinitive} · ${conjugation.tense.label}`,
           highlight: stars(result.stars, 3, 'large'),
           record,
           celebrate: record || result.stars === 3,
+          rewards,
           message: `${result.correct} sur ${result.total} du premier coup. ${MESSAGES[result.stars]}`,
           toPractice: result.toPractice.map(sentence),
           actions: [

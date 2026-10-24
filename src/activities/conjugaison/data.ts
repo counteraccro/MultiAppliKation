@@ -1,4 +1,5 @@
 import { applyOutcome, type LeitnerState } from '../../core/leitner';
+import { recordDay } from '../../core/play-days';
 import type { Attempt } from '../../core/series';
 import { isFast, type Stars } from './learn-session';
 import { cleanMixChoice, type MixChoice } from './mix-session';
@@ -15,6 +16,11 @@ export interface ConjugaisonData {
   tense?: TenseId;
   /** Temps et verbes du dernier mélange, cochés d'office la fois suivante. */
   mix?: MixChoice;
+  /** Autocollants gagnés : { "streak-10": date (ms) }. */
+  stickers?: Record<string, number>;
+  /** Nombre de jours différents où elle a joué, et le dernier (« 2026-10-24 »). */
+  daysPlayed?: number;
+  lastPlayedDay?: string;
 }
 
 /** Lit la progression enregistrée, en complétant ce qui manque (premier lancement). */
@@ -24,6 +30,7 @@ export function readConjugaisonData(raw: unknown): ConjugaisonData {
   // Un temps disparu (ou une donnée abîmée) ne doit pas laisser l'accueil sans onglet.
   if (!TENSES.some((t) => t.id === copy.tense)) delete copy.tense;
   if (data.mix) copy.mix = cleanMixChoice(data.mix);
+  if (data.stickers) copy.stickers = { ...data.stickers };
   return copy;
 }
 
@@ -41,8 +48,9 @@ export function recordStars(data: ConjugaisonData, conjugation: Conjugation, sta
 /** Clé de boîte d'une forme : « aller.futur.4 ». */
 export const formKey = ({ verb, tense, person }: ConjugationQuestion) => `${verb}.${tense}.${person}`;
 
-/** Range une réponse dans les boîtes (pour la future Révision). */
+/** Range une réponse dans les boîtes, quel que soit le mode, et compte le jour de jeu. */
 export function recordAttempt(data: ConjugaisonData, attempt: Attempt<ConjugationQuestion>, now = Date.now()): void {
   const outcome = !attempt.correct ? 'wrong' : isFast(attempt) ? 'fast' : 'slow';
   applyOutcome(data.leitner, formKey(attempt.question), outcome, now);
+  recordDay(data, now);
 }

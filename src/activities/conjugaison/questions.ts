@@ -49,3 +49,7 @@ export function conjugationQuestion(
     alsoAccepted: also,
   };
 }
+
+/** « j’ai chanté », « nous chantons » : pas d'espace après « j’ ». */
+export const sentence = (q: { prompt: string; answer: string }) =>
+  `${q.prompt}${q.prompt.endsWith('’') ? '' : ' '}${q.answer}`;

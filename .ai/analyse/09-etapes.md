@@ -20,3 +20,4 @@ Conjugaison, étape 2 : les 20 verbes du CM1 aux 4 temps, chaque forme vérifié
 Conjugaison, étape 3 : accueil par temps (onglets, une tuile par verbe) et mode « Apprendre » (24/10/2026).
 Conjugaison, étape 4 : Révision par boîtes de Leitner, seulement sur les formes déjà vues (24/10/2026).
 Conjugaison, étape 5 : Mélange (temps et verbes au choix, 15 questions au plus, dernier choix gardé) (24/10/2026).
+Conjugaison, étape 6 : Mes progrès (20 verbes × 4 temps), album de 16 autocollants, phrase selon la classe (24/10/2026).

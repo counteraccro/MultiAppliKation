@@ -1,3 +1,4 @@
+import { renderAlbum } from '../../components/album';
 import { renderQuestionScreen, type SeriesSummary } from '../../components/question-screen';
 import { renderResult } from '../../components/result';
 import { stars } from '../../components/stars';
@@ -6,7 +7,6 @@ import { boxOf, type LeitnerState } from '../../core/leitner';
 import type { Attempt } from '../../core/series';
 import { formatDuration } from '../../core/time';
 import type { Activity } from '../types';
-import { renderAlbum } from './album';
 import { readTablesData, recordAttempt, recordDay, recordDefi, recordMixTables, recordStars } from './data';
 import { DefiSession, PENALTY_MS, type DefiResult } from './defi-session';
 import { HiddenSession, type HiddenResult } from './hidden-session';
@@ -17,7 +17,7 @@ import { MixSession, type MixResult } from './mix-session';
 import { renderProgress } from './progress-screen';
 import { ALL_PAIRS, type Multiplication } from './questions';
 import { knownCount, ReviewSession, type ReviewResult } from './review-session';
-import { unlockStickers, type SeriesEvent, type Sticker } from './stickers';
+import { STICKERS, unlockStickers, type SeriesEvent, type Sticker } from './stickers';
 
 const MESSAGES: Record<LearnResult['stars'], string> = {
   0: 'Continue, chaque essai te fait progresser !',
@@ -118,7 +118,8 @@ export const tables: Activity = {
       });
 
     const progress = () => show(() => renderProgress(root, ctx, load(), home));
-    const album = () => show(() => renderAlbum(root, ctx, load(), home));
+    const album = () =>
+      show(() => renderAlbum(root, { backLabel: 'Les tables', profile: ctx.profile, stickers: STICKERS, data: load(), onBack: home }));
 
     const mixChoice = () =>
       show(() => renderMixChoice(root, ctx, load().mixTables ?? [], { onStart: mix, onBack: home }));

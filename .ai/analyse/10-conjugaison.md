@@ -118,11 +118,13 @@ pour la même raison.
 ### Plus tard
 
 - **Défi chronométré** : en conjugaison, la vitesse compte moins que l'orthographe.
-- **Grille des progrès** : 20 verbes × 4 temps, mêmes couleurs que celle des Tables.
 - **Mode à part plus difficile**, comme le Nombre caché : retrouver l'infinitif et le temps
   d'une forme (« nous allions → aller, imparfait ») ; au programme du CM1.
 - **Passé composé à la forme négative** (« nous n'avons pas mangé ») : au programme du CM1.
 - Temps de CM2.
+- **Fiches de révision selon la classe** (idée du 24/10/2026) : pour chaque temps, une fiche à lire
+  avant de jouer (terminaisons, pièges du radical, un verbe modèle conjugué). À préciser :
+  contenu par classe, où l'ouvrir (onglet du temps ? tuile du verbe ?), à lire seule ou avec un adulte.
 
 ## Ce qui se réutilise
 
@@ -162,7 +164,14 @@ Identifiants sans accent : `etre`, `esperer`… ; temps `present`, `imparfait`, 
    tant qu'aucune forme n'a été vue ; moins de 15 questions s'il y a moins de formes vues.
 5. **Mélange**. Fait le 24/10/2026 (0.15.0) : la première fois, le temps de l'onglet ouvert est
    coché ; bouton « Tous les verbes » ; les réponses rangent aussi les formes dans les boîtes.
-6. Autocollants, classe (ce qui est proposé d'abord selon la classe).
+6. Autocollants, classe (ce qui est proposé d'abord selon la classe). Faite le 24/10/2026 (0.16.0) :
+   - **Mes progrès** : grille 20 verbes × 4 temps, case = forme la moins sue, détail des 6 formes.
+   - **Album** (16) : première étoile, 3 étoiles, tour de chaque temps (une étoile aux 20 verbes),
+     les irréguliers, couronne (3 étoiles aux 20 verbes d'un temps), être et avoir en vert,
+     10 et 20 d'affilée, révision de 15 sans erreur, mélange de 15 sans erreur, 5 et 15 jours, tout en vert.
+     Les jours de jeu sont comptés à chaque réponse, comme aux Tables.
+   - **Classe** : le contenu étant celui du CM1, seule une phrase change pour CP, CE1 et CE2.
+     Ce qui est proposé d'abord en CE1 / CE2 attend la lecture du programme du cycle 2.
 
 ## Questions ouvertes
 

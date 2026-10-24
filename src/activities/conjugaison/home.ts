@@ -1,13 +1,14 @@
+import { albumCard, progressCard } from '../../components/home-cards';
 import { stars } from '../../components/stars';
 import { topbar } from '../../components/topbar';
 import { h } from '../../core/dom';
 import type { ActivityContext } from '../types';
 import { starsOf, type ConjugaisonData } from './data';
+import { gradeNote } from './grade';
+import { MASTERY_LABELS, masteryCounts } from './mastery';
 import { knownCount, seenForms } from './review-session';
-import { CONJUGATIONS, TENSES, type Conjugation, type TenseId } from './verbs';
-
-/** Les 20 verbes d'un temps, dans l'ordre conseillé. */
-export const conjugationsOf = (tense: TenseId) => CONJUGATIONS.filter((c) => c.tense.id === tense);
+import { stickerCount, STICKERS } from './stickers';
+import { CONJUGATIONS, conjugationsOf, TENSES, type Conjugation, type TenseId } from './verbs';
 
 /** Verbe conseillé dans un temps : le premier sans étoile (sinon pas encore à 3). */
 export function suggestedConjugation(data: ConjugaisonData, tense: TenseId): Conjugation | undefined {
@@ -20,16 +21,19 @@ export interface ConjugaisonHomeActions {
   onTense(tense: TenseId): void;
   onReview(): void;
   onMix(): void;
+  onProgress(): void;
+  onAlbum(): void;
 }
 
 export function renderConjugaisonHome(
   root: HTMLElement,
   ctx: ActivityContext,
   data: ConjugaisonData,
-  { onLearn, onTense, onReview, onMix }: ConjugaisonHomeActions,
+  { onLearn, onTense, onReview, onMix, onProgress, onAlbum }: ConjugaisonHomeActions,
 ): void {
   const tense = data.tense ?? 'present';
   const suggested = suggestedConjugation(data, tense);
+  const note = gradeNote(ctx.profile.grade);
 
   const tabs = TENSES.map((t) =>
     h(
@@ -68,6 +72,7 @@ export function renderConjugaisonHome(
       topbar('Activités', ctx.exit, ctx.profile),
       h('h1', { class: 'title' }, 'Conjugaison'),
       h('p', { class: 'subtitle' }, 'Choisis un temps, puis un verbe pour gagner des étoiles.'),
+      note && h('p', { class: 'grade-note' }, note),
       h('div', { class: 'tense-tabs', role: 'tablist', 'aria-label': 'Temps' }, ...tabs),
       h('div', { class: 'verb-grid', role: 'tabpanel' }, ...tiles),
       h(
@@ -80,6 +85,12 @@ export function renderConjugaisonHome(
           'Mélange',
           h('small', {}, 'Temps et verbes au choix'),
         ),
+      ),
+      h(
+        'div',
+        { class: 'home-cards' },
+        progressCard(masteryCounts(data.leitner), MASTERY_LABELS, onProgress),
+        albumCard(stickerCount(data), STICKERS.length, onAlbum),
       ),
     ),
   );

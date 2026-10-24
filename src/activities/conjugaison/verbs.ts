@@ -156,5 +156,8 @@ export const CONJUGATIONS: readonly Conjugation[] = VERBS.flatMap((verb) =>
   TENSES.map((tense) => ({ verb, tense, forms: verb.tenses[tense.id] })),
 );
 
+/** Les 20 verbes d'un temps, dans l'ordre conseillé. */
+export const conjugationsOf = (tense: TenseId) => CONJUGATIONS.filter((c) => c.tense.id === tense);
+
 /** Clé dans le profil : « aller.futur ». */
 export const conjugationKey = ({ verb, tense }: Conjugation) => `${verb.id}.${tense.id}`;

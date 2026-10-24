@@ -1,14 +1,9 @@
+import { countStickers, toSticker, unlockRules, type Sticker, type StickerRule } from '../../core/stickers';
 import { starsOf, type TablesData } from './data';
 import { ALL_PAIRS, pairKey, TABLES } from './questions';
 import { KNOWN_BOX } from './review-session';
 
-export interface Sticker {
-  id: string;
-  emoji: string;
-  name: string;
-  /** Comment le gagner : affiché aussi tant qu'il est caché. */
-  hint: string;
-}
+export type { Sticker } from '../../core/stickers';
 
 /** Ce qui vient de se passer : une série finie, dans un mode. */
 export interface SeriesEvent {
@@ -26,9 +21,7 @@ const ANIMALS = ['🐣', '🐰', '🐱', '🐶', '🦊', '🐼', '🐨', '🐯',
 /** Une multiplication est connue à partir de la boîte 4 (comme « N / 55 connues »). */
 const isKnown = (data: TablesData, key: string) => (data.leitner[key]?.box ?? 0) >= KNOWN_BOX;
 
-interface Rule extends Sticker {
-  won(data: TablesData, event: SeriesEvent): boolean;
-}
+type Rule = StickerRule<TablesData, SeriesEvent>;
 
 // L'ordre est celui de l'album. Ne jamais changer un `id` : c'est lui qui est enregistré.
 const RULES: Rule[] = [
@@ -141,16 +134,10 @@ const RULES: Rule[] = [
   },
 ];
 
-const toSticker = ({ id, emoji, name, hint }: Rule): Sticker => ({ id, emoji, name, hint });
-
 export const STICKERS: readonly Sticker[] = RULES.map(toSticker);
 
-export function hasSticker(data: TablesData, id: string): boolean {
-  return data.stickers?.[id] !== undefined;
-}
-
 export function stickerCount(data: TablesData): number {
-  return STICKERS.filter((s) => hasSticker(data, s.id)).length;
+  return countStickers(data, STICKERS);
 }
 
 /**
@@ -158,8 +145,5 @@ export function stickerCount(data: TablesData): number {
  * colle les autocollants gagnés et renvoie les nouveaux, à fêter.
  */
 export function unlockStickers(data: TablesData, event: SeriesEvent, now = Date.now()): Sticker[] {
-  const fresh = RULES.filter((rule) => !hasSticker(data, rule.id) && rule.won(data, event));
-  data.stickers = { ...data.stickers };
-  for (const rule of fresh) data.stickers[rule.id] = now;
-  return fresh.map(toSticker);
+  return unlockRules(RULES, data, event, now);
 }
