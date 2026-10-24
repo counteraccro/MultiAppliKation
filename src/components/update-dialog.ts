@@ -1,20 +1,22 @@
 import { h } from '../core/dom';
-import { APP_VERSION, reloadToVersion, type RemoteVersion } from '../core/version';
+import { APP_VERSION, type RemoteVersion } from '../core/version';
 
 /**
  * Nouvelle version en ligne : fenêtre sans bouton « fermer », pour que tout le monde
  * passe à la nouvelle version. La progression est enregistrée à chaque réponse :
  * recharger ne fait perdre que la série en cours.
  */
-export function showUpdateDialog(remote: RemoteVersion): void {
+export function showUpdateDialog(apply: () => void, remote: RemoteVersion | null): void {
+  if (document.querySelector('.update-overlay')) return;
+
   const button = h('button', { class: 'button primary', type: 'button' }, 'Mettre à jour');
   button.addEventListener('click', () => {
     button.setAttribute('disabled', '');
-    reloadToVersion(remote);
+    apply();
   });
 
   const versions =
-    remote.version !== APP_VERSION ? `Version ${APP_VERSION} → ${remote.version}` : `Version ${APP_VERSION}, nouvelle édition`;
+    remote && remote.version !== APP_VERSION ? `Version ${APP_VERSION} → ${remote.version}` : `Version ${APP_VERSION}`;
 
   document.body.append(
     h(

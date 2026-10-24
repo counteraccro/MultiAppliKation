@@ -1,3 +1,5 @@
+import { registerSW } from 'virtual:pwa-register';
+
 export const APP_VERSION = __APP_VERSION__;
 export const APP_BUILD = __APP_BUILD__;
 
@@ -8,44 +10,39 @@ export interface RemoteVersion {
   build: string;
 }
 
-/** Version en ligne si elle diffère de celle qui tourne, sinon null (ou hors ligne). */
-export async function fetchNewerVersion(): Promise<RemoteVersion | null> {
+/** Version publiée en ligne (null hors ligne). */
+export async function fetchRemoteVersion(): Promise<RemoteVersion | null> {
   try {
     const response = await fetch(`${import.meta.env.BASE_URL}version.json?t=${Date.now()}`, { cache: 'no-store' });
-    if (!response.ok) return null;
-    const remote = (await response.json()) as RemoteVersion;
-    return remote.build && remote.build !== APP_BUILD ? remote : null;
+    return response.ok ? ((await response.json()) as RemoteVersion) : null;
   } catch {
     return null;
   }
 }
 
 /**
- * Cherche une nouvelle version au démarrage, quand l'app revient au premier plan
- * (rouverte depuis l'écran d'accueil) et toutes les 30 minutes.
+ * Le service worker garde l'app pour le hors ligne ; c'est donc lui qui détecte
+ * une nouvelle publication. Il vérifie au démarrage, quand l'app revient au premier
+ * plan (rouverte depuis l'écran d'accueil) et toutes les 30 minutes.
+ * `onUpdate` reçoit de quoi passer à la nouvelle version (recharge la page).
  */
-export function watchForUpdates(onUpdate: (remote: RemoteVersion) => void): void {
+export function watchForUpdates(onUpdate: (apply: () => void, remote: RemoteVersion | null) => void): void {
   // En développement, Vite recharge déjà la page tout seul.
-  if (!import.meta.env.PROD) return;
+  if (!import.meta.env.PROD || !('serviceWorker' in navigator)) return;
 
-  let notified = false;
-  const check = async () => {
-    if (notified) return;
-    const remote = await fetchNewerVersion();
-    if (remote && !notified) {
-      notified = true;
-      onUpdate(remote);
-    }
-  };
-
-  void check();
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') void check();
+  const updateSW = registerSW({
+    async onNeedRefresh() {
+      onUpdate(() => void updateSW(true), await fetchRemoteVersion());
+    },
+    onRegisteredSW(_url, registration) {
+      if (!registration) return;
+      const check = () => {
+        if (navigator.onLine) registration.update().catch(() => {});
+      };
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') check();
+      });
+      window.setInterval(check, CHECK_EVERY_MS);
+    },
   });
-  window.setInterval(check, CHECK_EVERY_MS);
-}
-
-/** Recharge la nouvelle version, en contournant le cache de la page (GitHub Pages garde 10 min). */
-export function reloadToVersion(remote: RemoteVersion): void {
-  window.location.replace(`${import.meta.env.BASE_URL}?v=${encodeURIComponent(remote.build)}`);
 }

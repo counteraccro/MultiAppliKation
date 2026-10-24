@@ -1,1 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" viewBox="0 0 192 192"><path fill="#e08524" d="M75.3 73.4H18.4l45.3 34.3L48.3 163l46.1-32.3 48.2 34.6-16.9-58.3 44.9-33.6H115l-20.5-55-19.2 55z"/><path d="m96.7 18.8 18.2 8.2 16.5 44.3h-15.1L96.7 18.8zm-47 146 18.7 9.9 42.6-29.9-16.5-11.4-44.8 31.4zm79.1-56.8 17.4 9.4 18.6 60.1-19.7-11.3-16.3-58.2z"/><path d="m173.1 74.3 17.8 9.2-44.7 34-17.4-9.4 44.3-33.8z"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6aaeff"/>
+      <stop offset="1" stop-color="#2f74d6"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <g stroke="#fff" stroke-width="66" stroke-linecap="round">
+    <line x1="170" y1="200" x2="312" y2="342"/>
+    <line x1="312" y1="200" x2="170" y2="342"/>
+  </g>
+  <polygon points="352.0,100.0 366.7,137.8 407.2,140.1 375.8,165.7 386.1,204.9 352.0,183.0 317.9,204.9 328.2,165.7 296.8,140.1 337.3,137.8" fill="#f7c948" stroke="#fff" stroke-width="10" stroke-linejoin="round"/>
+</svg>

@@ -13,6 +13,8 @@ Application pour apprendre en jouant. Première activité : les tables de multip
 Toujours lancer l'app depuis son icône : sur iOS, l'app installée et Safari
 ont chacun leur stockage (les profils de l'un ne se voient pas dans l'autre).
 
+Une fois ouverte une première fois, l'app fonctionne **hors ligne**.
+
 ## Développement
 
 ```sh
@@ -20,6 +22,8 @@ npm install
 npm run dev      # serveur local
 npm test         # tests
 npm run build    # version de production dans dist/
+npm run preview  # sert dist/ comme sur GitHub Pages (service worker compris)
+npm run icons    # régénère les icônes depuis public/icon.svg
 ```
 
 Chaque push sur `main` lance les tests et publie le site sur GitHub Pages.
@@ -29,8 +33,9 @@ Chaque push sur `main` lance les tests et publie le site sur GitHub Pages.
 - Le numéro de version est celui de `package.json` (`npm version minor --no-git-tag-version`
   avant de publier une nouveauté). Il s'affiche en bas de l'écran « Qui joue ? ».
 - Chaque publication porte aussi un identifiant unique (le commit), écrit dans `version.json`.
-- L'app relit `version.json` au démarrage, quand elle revient au premier plan et toutes
-  les 30 minutes : si une nouvelle publication est en ligne, une fenêtre oblige à mettre à jour.
+- Le service worker garde l'app pour le hors ligne et cherche une nouvelle publication
+  au démarrage, quand l'app revient au premier plan et toutes les 30 minutes.
+  S'il en trouve une, une fenêtre oblige à mettre à jour (« 0.4.0 → 0.5.0 »).
   La progression est gardée (elle est enregistrée à chaque réponse).
 
 L'analyse du projet (décisions, pédagogie, étapes) est dans [`.ai/analyse`](.ai/analyse/README.md).

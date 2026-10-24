@@ -7,9 +7,11 @@
 
 ## PWA
 
-- Manifeste (nom « MultiAppliKation », nom court « MultiAppli », plein écran).
-- Icône `apple-touch-icon` pour iOS.
-- Service worker pour le hors ligne (vite-plugin-pwa).
+- Manifeste (nom « MultiAppliKation », nom court « MultiAppli », `standalone` :
+  iOS ne connaît pas le vrai plein écran, `standalone` enlève déjà la barre de Safari).
+- Icônes générées depuis `public/icon.svg` (`npm run icons`), dont `apple-touch-icon` pour iOS.
+- Service worker pour le hors ligne (vite-plugin-pwa, mode `prompt`) :
+  une nouvelle version attend le bouton « Mettre à jour » de la fenêtre obligatoire.
 - Installation : Safari → Partager → « Sur l'écran d'accueil ».
 
 ## Hébergement
