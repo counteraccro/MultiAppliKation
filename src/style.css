@@ -528,6 +528,11 @@ button {
   color: rgba(255, 255, 255, 0.85);
 }
 
+.button.mode.defi {
+  background: #ff9f43;
+  box-shadow: 0 4px 0 #d97a1c;
+}
+
 .button:disabled {
   opacity: 0.5;
   cursor: default;
@@ -780,4 +785,71 @@ button {
 
 .big-count small {
   font-size: 1rem;
+}
+
+/* Chrono du défi */
+
+.chrono {
+  position: relative;
+  padding: 6px 18px;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  font-size: 1.6rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.chrono-penalty {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  margin-left: 8px;
+  color: #b86e00;
+  font-size: 1.2rem;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(-50%);
+}
+
+.chrono-penalty.show {
+  animation: penalty 1.6s ease-out;
+}
+
+@keyframes penalty {
+  0% { opacity: 0; transform: translateY(-50%) scale(0.8); }
+  15% { opacity: 1; transform: translateY(-50%) scale(1.15); }
+  70% { opacity: 1; transform: translateY(-50%) scale(1); }
+  100% { opacity: 0; transform: translateY(-90%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chrono-penalty.show {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+.progress {
+  font-weight: 800;
+  color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Version et mise à jour */
+
+.app-version {
+  margin: 8px 0 0;
+  font-size: 0.75rem;
+  color: var(--text-soft);
+  opacity: 0.7;
+}
+
+.update-overlay {
+  z-index: 100;
+}
+
+.version-note {
+  font-size: 0.85rem;
+  color: var(--text-soft);
 }

@@ -1,6 +1,7 @@
 import type { App } from '../app';
 import { h } from '../core/dom';
 import { onLongPress } from '../core/long-press';
+import { APP_VERSION } from '../core/version';
 import { avatar } from '../components/avatar';
 import { openDeleteProfile } from './delete-profile';
 
@@ -44,6 +45,7 @@ export function renderWhoPlays(root: HTMLElement, app: App): void {
       h('div', { class: 'tile-grid' }, ...tiles, addTile),
       profiles.length > 0 &&
         h('p', { class: 'hint' }, 'Pour supprimer un profil : appui long sur son prénom (adulte).'),
+      h('p', { class: 'app-version' }, `Version ${APP_VERSION}`),
     ),
   );
 }

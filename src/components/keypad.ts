@@ -35,6 +35,8 @@ export function createKeypad(handlers: KeypadHandlers): Keypad {
 
   const onKeydown = (event: KeyboardEvent) => {
     if (event.metaKey || event.ctrlKey || event.altKey) return;
+    // Une fenêtre est ouverte par-dessus (mise à jour…) : le clavier est pour elle.
+    if (document.querySelector('.overlay')) return;
     if (/^[0-9]$/.test(event.key)) handlers.onDigit(Number(event.key));
     else if (event.key === 'Backspace') handlers.onBackspace();
     else if (event.key === 'Enter') handlers.onSubmit();
