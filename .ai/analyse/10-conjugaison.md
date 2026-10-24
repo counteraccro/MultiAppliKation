@@ -160,7 +160,8 @@ Identifiants sans accent : `etre`, `esperer`… ; temps `present`, `imparfait`, 
    dans sa boîte, pour que la Révision (étape 4) parte de ce qui a été vu.
 4. **Révision**. Faite le 24/10/2026 (0.14.0) : bouton désactivé (« Joue d'abord un verbe »)
    tant qu'aucune forme n'a été vue ; moins de 15 questions s'il y a moins de formes vues.
-5. **Mélange**.
+5. **Mélange**. Fait le 24/10/2026 (0.15.0) : la première fois, le temps de l'onglet ouvert est
+   coché ; bouton « Tous les verbes » ; les réponses rangent aussi les formes dans les boîtes.
 6. Autocollants, classe (ce qui est proposé d'abord selon la classe).
 
 ## Questions ouvertes

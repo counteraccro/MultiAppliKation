@@ -19,13 +19,14 @@ export interface ConjugaisonHomeActions {
   onLearn(conjugation: Conjugation): void;
   onTense(tense: TenseId): void;
   onReview(): void;
+  onMix(): void;
 }
 
 export function renderConjugaisonHome(
   root: HTMLElement,
   ctx: ActivityContext,
   data: ConjugaisonData,
-  { onLearn, onTense, onReview }: ConjugaisonHomeActions,
+  { onLearn, onTense, onReview, onMix }: ConjugaisonHomeActions,
 ): void {
   const tense = data.tense ?? 'present';
   const suggested = suggestedConjugation(data, tense);
@@ -69,7 +70,17 @@ export function renderConjugaisonHome(
       h('p', { class: 'subtitle' }, 'Choisis un temps, puis un verbe pour gagner des étoiles.'),
       h('div', { class: 'tense-tabs', role: 'tablist', 'aria-label': 'Temps' }, ...tabs),
       h('div', { class: 'verb-grid', role: 'tabpanel' }, ...tiles),
-      h('div', { class: 'mode-buttons verb-modes' }, reviewButton(data, onReview)),
+      h(
+        'div',
+        { class: 'mode-buttons verb-modes' },
+        reviewButton(data, onReview),
+        h(
+          'button',
+          { class: 'button mode primary mix', type: 'button', onclick: onMix },
+          'Mélange',
+          h('small', {}, 'Temps et verbes au choix'),
+        ),
+      ),
     ),
   );
 }

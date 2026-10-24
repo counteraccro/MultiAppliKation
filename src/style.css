@@ -538,6 +538,12 @@ button {
   box-shadow: var(--shadow);
 }
 
+/* Au mélange, plusieurs temps se cochent : même bleu que les verbes cochés. */
+.mix-tenses .tense-tab.active {
+  background: var(--primary);
+  color: #fff;
+}
+
 .verb-grid {
   width: 100%;
   display: grid;
@@ -727,9 +733,10 @@ button {
   box-shadow: 0 4px 0 #7338b8;
 }
 
-/* Choix des tables du mélange */
+/* Choix des tables (ou des verbes) du mélange */
 
-.table-tile .check {
+.table-tile .check,
+.verb-tile .check {
   position: absolute;
   top: 6px;
   right: 8px;
@@ -739,13 +746,15 @@ button {
   visibility: hidden;
 }
 
-.table-tile.chosen {
+.table-tile.chosen,
+.verb-tile.chosen {
   border-color: var(--primary);
   background: var(--primary);
   color: #fff;
 }
 
-.table-tile.chosen .check {
+.table-tile.chosen .check,
+.verb-tile.chosen .check {
   visibility: visible;
 }
 

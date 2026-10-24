@@ -1,6 +1,7 @@
 import { applyOutcome, type LeitnerState } from '../../core/leitner';
 import type { Attempt } from '../../core/series';
 import { isFast, type Stars } from './learn-session';
+import { cleanMixChoice, type MixChoice } from './mix-session';
 import type { ConjugationQuestion } from './questions';
 import { conjugationKey, TENSES, type Conjugation, type TenseId } from './verbs';
 
@@ -12,6 +13,8 @@ export interface ConjugaisonData {
   leitner: LeitnerState;
   /** Dernier onglet ouvert à l'accueil. */
   tense?: TenseId;
+  /** Temps et verbes du dernier mélange, cochés d'office la fois suivante. */
+  mix?: MixChoice;
 }
 
 /** Lit la progression enregistrée, en complétant ce qui manque (premier lancement). */
@@ -20,6 +23,7 @@ export function readConjugaisonData(raw: unknown): ConjugaisonData {
   const copy: ConjugaisonData = { ...data, stars: { ...data.stars }, leitner: { ...data.leitner } };
   // Un temps disparu (ou une donnée abîmée) ne doit pas laisser l'accueil sans onglet.
   if (!TENSES.some((t) => t.id === copy.tense)) delete copy.tense;
+  if (data.mix) copy.mix = cleanMixChoice(data.mix);
   return copy;
 }
 

@@ -11,7 +11,9 @@
    **Accueil de la Conjugaison** : quatre onglets (présent, imparfait, futur, passé composé),
    le dernier ouvert est retenu ; dans chacun, une tuile par verbe avec ses étoiles
    (5 par rangée, 4 sur téléphone), badge « À toi ! » sur le verbe conseillé ;
-   dessous, le bouton « Révision » (« N / 80 connus ») sur toute la largeur.
+   dessous, « Révision » (« N / 80 connus ») et « Mélange » côte à côte.
+   **Mélange de la Conjugaison** : temps à cocher (en bleu), les 20 tuiles de verbes à cocher,
+   « Tous les verbes », puis « C'est parti ! (N questions) ».
 4. **Question** : la multiplication en très grand, un pavé numérique dessiné
    dans l'app (pas le clavier iOS, qui cache la moitié de l'écran),
    le chrono en défi. Au nombre caché, la case réponse est au milieu : « 7 × ? = 56 ».

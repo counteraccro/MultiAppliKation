@@ -6,6 +6,8 @@ import type { LeitnerState } from '../../core/leitner';
 import type { Attempt } from '../../core/series';
 import type { Activity } from '../types';
 import { readConjugaisonData, recordAttempt, recordStars } from './data';
+import { renderMixChoice } from './mix-choice';
+import { MixSession, type MixChoice, type MixResult } from './mix-session';
 import { renderConjugaisonHome } from './home';
 import { LearnSession, type LearnResult } from './learn-session';
 import type { ConjugationQuestion } from './questions';
@@ -22,7 +24,7 @@ const MESSAGES: Record<LearnResult['stars'], string> = {
 /** « j’ai chanté », « nous chantons » : pas d'espace après « j’ ». */
 const sentence = (q: ConjugationQuestion) => `${q.prompt}${q.prompt.endsWith('’') ? '' : ' '}${q.answer}`;
 
-// Étapes 3 et 4 (voir .ai/analyse/10-conjugaison.md) : accueil par temps, « Apprendre » et « Révision ».
+// Étapes 3 et 4 (voir .ai/analyse/10-conjugaison.md) : accueil par temps, « Apprendre », « Révision » et « Mélange ».
 export const conjugaison: Activity = {
   id: 'conjugaison',
   title: 'Conjugaison',
@@ -47,7 +49,7 @@ export const conjugaison: Activity = {
       ctx.save(data);
     };
 
-    const home = () => show(() => renderConjugaisonHome(root, ctx, load(), { onLearn: learn, onTense: chooseTense, onReview: review }));
+    const home = () => show(() => renderConjugaisonHome(root, ctx, load(), { onLearn: learn, onTense: chooseTense, onReview: review, onMix: mixChoice }));
 
     const chooseTense = (tense: TenseId) => {
       const data = load();
@@ -80,6 +82,52 @@ export const conjugaison: Activity = {
           onDone: () => showReviewResult(session.result(), before),
         });
       });
+
+    // Première fois : le temps de l'onglet ouvert est déjà coché.
+    const mixChoice = () =>
+      show(() => {
+        const data = load();
+        const initial = data.mix ?? { tenses: [data.tense ?? 'present'], verbs: [] };
+        renderMixChoice(root, ctx, initial, { onStart: mix, onBack: home });
+      });
+
+    const mix = (choice: MixChoice) =>
+      show(() => {
+        const data = load();
+        data.mix = choice;
+        ctx.save(data);
+        const session = new MixSession(choice, { onFirstAttempt });
+        return renderQuestionScreen(root, {
+          session,
+          label: 'Mélange',
+          input: 'letters',
+          onQuit: home,
+          onDone: () => showMixResult(choice, session.result()),
+        });
+      });
+
+    function showMixResult(choice: MixChoice, result: MixResult) {
+      const all = result.correct === result.total;
+      show(() =>
+        renderResult(root, {
+          title: 'Mélange',
+          celebrate: all,
+          highlight: h(
+            'p',
+            { class: 'big-count' },
+            h('strong', {}, `${result.correct} / ${result.total}`),
+            h('small', {}, 'du premier coup'),
+          ),
+          message: all ? 'Tout juste, bravo !' : 'Continue, chaque essai te fait progresser !',
+          toPractice: result.toPractice.map((q) => `${sentence(q)} (${q.context})`),
+          actions: [
+            { label: 'Rejouer', primary: true, onClick: () => mix(choice) },
+            { label: 'Autres verbes', onClick: mixChoice },
+            { label: 'Conjugaison', onClick: home },
+          ],
+        }),
+      );
+    }
 
     function showReviewResult(result: ReviewResult, before: LeitnerState) {
       const after = load().leitner;
