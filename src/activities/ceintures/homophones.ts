@@ -517,7 +517,7 @@ export const HOMOPHONES: readonly HomophoneBelt[] = [
         choices: ['peu', 'peut', 'peux'],
         rules: ['veut dire « pas beaucoup » : il mange peu.', 'c’est le verbe pouvoir avec il, elle ou on : il peut.', 'c’est le verbe pouvoir avec je ou tu : je peux, tu peux.'],
         tip: 'Remplace par « pouvait » : si ça marche, écris « peut » (il, elle, on) ou « peux » (je, tu). Sinon, écris « peu » (pas beaucoup).',
-        examples: ['Il dort {peu}.', 'Il dort pas beaucoup.', 'Elle {peut} venir.', 'Elle pouvait venir.', 'Tu {peux} jouer.'],
+        examples: ['Il dort {peu}.', 'Il ne dort pas beaucoup.', 'Elle {peut} venir.', 'Elle pouvait venir.', 'Tu {peux} jouer.'],
         sentences: sentences('marron', [
           [1, 'Je {peux} rester au lit ce matin.', 55],
           [2, 'Comment {peux}-tu faire ça ?', 55],

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { blanksOf, fullSentence, parseSentence } from './sentence';
+import { blanksOf, fullSentence, parseSentence, withNbsp } from './sentence';
 
 describe('phrases à trous', () => {
   it('coupe la phrase en texte et en trous', () => {
@@ -22,5 +22,9 @@ describe('phrases à trous', () => {
     expect(fullSentence('C’{est} très bien.')).toBe('C’est très bien.');
     expect(fullSentence('Mang{er} équilibré, c’est important !')).toBe('Manger équilibré, c’est important !');
     expect(fullSentence('Dis-{leur} de venir.')).toBe('Dis-leur de venir.');
+  });
+
+  it('colle les signes doubles et les guillemets au mot', () => {
+    expect(withNbsp('Écris « est » : oui ?')).toBe('Écris «\u00a0est\u00a0»\u00a0: oui\u00a0?');
   });
 });

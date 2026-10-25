@@ -214,9 +214,24 @@ Ajouter des phrases ne casse rien ; en retirer une ne doit pas changer les ident
    Astuces reformulées avec « écris » (« écris « c’est » ») : « c’est « c’est » » se lisait mal.
    Le bouton de son est sorti dans `components/sound-toggle.ts`.
 3. **Accueil** (matières, échelle des ceintures), **leçon** et **entraînement**.
+   Faite le 25/10/2026 (0.19.0) : `home.ts` (une tuile par matière avec la ceinture portée ;
+   « Homophones » seule pour l'instant, la liste est dans `subjects.ts`), `ladder.ts` (l'échelle de bas
+   en haut du classeur, écrite de la blanche à la noire : obtenues avec la date, en cours « À toi ! » ouverte
+   d'office, fermées au cadenas ; toucher une ceinture ouverte montre Leçon et S'entraîner),
+   `lesson.ts` (règle de chaque mot, astuce, exemples avec le mot en couleur et l'astuce essayée en dessous ;
+   « -é », « -er », « -ait » pour les terminaisons), `data.ts` (`passed` par matière, lecture prudente,
+   `setClassLevel`), `class-belts.ts` (avancé ici, après la vérification adulte : la dernière ceinture
+   obtenue en classe et sa date ; celles d'en dessous sont notées, celles d'au-dessus retirées, les dates
+   déjà notées gardées).
+   **Ceintures de CM1** (remarque de l'utilisateur) : les repères du classeur sont affichés dès cette étape,
+   « Objectif de fin de CM1 » sous la bleu clair et « de CM2 » sous la noire, celui de la classe du profil
+   mis en avant ; en CP, CE1 et CE2, une phrase sous le titre prévient que ce sont les ceintures du CM1
+   (`grade.ts`, comme la Conjugaison). Rien n'est bloqué par la classe.
+   Typographie : espace insécable aussi dans les guillemets (« est ») et avant », dans les phrases,
+   la leçon et l'astuce. Exemple corrigé : « Il ne dort pas beaucoup. »
 4. **Test de passage** : sans correction pendant, résultat, date, ouverture de la suivante,
    correction en cas d'échec, entraînement obligatoire avant de repasser.
-5. **Autocollants** et repères de classe (objectifs de fin de CM1 / CM2).
+5. **Autocollants** (les repères de classe sont faits à l'étape 3).
 
 Ensuite, une matière à la fois ; ordre proposé : Conjugaison (clavier déjà fait),
 Tables puis Calcul mental (pavé déjà fait), Accords, Numération, Grammaire, Mesures, Calcul posé.

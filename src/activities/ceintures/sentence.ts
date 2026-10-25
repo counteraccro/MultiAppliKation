@@ -41,9 +41,9 @@ export function capitalize(word: string): string {
   return word.charAt(0).toUpperCase() + word.slice(1);
 }
 
-/** Espace insécable avant ! ? : ; pour que le signe ne parte pas seul à la ligne. */
+/** Espace insécable avant ! ? : ; » et après « , pour que le signe ne parte pas seul à la ligne. */
 export function withNbsp(text: string): string {
-  return text.replace(/ ([!?:;])/g, ' $1');
+  return text.replace(/ ([!?:;»])/g, ' $1').replace(/« /g, '« ');
 }
 
 /** La phrase complète, chaque trou rempli par sa réponse : pour la correction. */

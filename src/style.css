@@ -1741,17 +1741,49 @@ button {
   color: var(--text-soft);
 }
 
-/* Ceintures : la liste des ceintures (accueil provisoire) */
+/* Ceintures : accueil (une tuile par matière) */
+
+.subject-tile {
+  color: var(--text);
+  font: inherit;
+}
+
+.subject-emoji {
+  font-size: 2.6rem;
+  line-height: 1;
+}
+
+.subject-start {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-soft);
+}
+
+/* Ceintures : l'échelle d'une matière */
 
 .belt-list {
   width: 100%;
   max-width: 520px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
+.belt-item {
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.belt-item.current {
+  outline: 3px solid var(--primary);
+}
+
 .belt-row {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -1759,19 +1791,19 @@ button {
   padding: 8px 16px 8px 8px;
   border: 0;
   border-radius: 18px;
-  background: var(--surface);
-  box-shadow: var(--shadow);
+  background: none;
   color: var(--text);
   font: inherit;
   text-align: left;
 }
 
-.belt-row:active {
+button.belt-row:active {
   transform: scale(0.98);
 }
 
 .belt-chip {
   flex: none;
+  display: inline-block;
   width: 8.6em;
   padding: 8px 4px;
   border: 2px solid rgba(45, 42, 50, 0.15);
@@ -1785,9 +1817,225 @@ button {
   letter-spacing: 0.03em;
 }
 
+.belt-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
 .belt-skill {
   font-size: 1.15rem;
   font-weight: 700;
+}
+
+.belt-state {
+  margin-left: auto;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-soft);
+}
+
+.belt-state.passed {
+  margin-left: 0;
+  color: #1f8a4c;
+}
+
+.belt-badge {
+  position: static;
+}
+
+/* Fermée : grisée, mais on lit ce qu'elle demande. */
+.belt-item.locked {
+  background: transparent;
+  box-shadow: none;
+  border: 2px dashed var(--border);
+}
+
+.belt-item.locked .belt-chip {
+  opacity: 0.4;
+}
+
+.belt-item.locked .belt-skill {
+  color: var(--text-soft);
+}
+
+.belt-actions {
+  display: none;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 12px 12px;
+}
+
+.belt-item.open .belt-actions {
+  display: grid;
+}
+
+.belt-actions .button {
+  min-height: 52px;
+  font-size: 1.15rem;
+}
+
+/* Repère du classeur : objectif de fin de CM1 / CM2. */
+.belt-goal {
+  padding: 2px 12px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text-soft);
+  text-align: center;
+}
+
+.belt-goal.mine {
+  color: var(--primary-dark);
+  font-size: 1rem;
+}
+
+.link-button {
+  margin-top: 16px;
+  padding: 10px;
+  border: 0;
+  background: none;
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+/* Ceintures : ceintures obtenues en classe (pour l'adulte) */
+
+.class-belts {
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.class-belts fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.class-belts legend {
+  margin-bottom: 8px;
+  font-weight: 800;
+}
+
+.class-belt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.class-belt input {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--primary);
+}
+
+.class-belt-none {
+  font-weight: 700;
+}
+
+.date-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 800;
+}
+
+.date-input {
+  min-height: 48px;
+  padding: 6px 12px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+/* Ceintures : la leçon */
+
+.lesson .title .belt-chip {
+  width: auto;
+  padding: 8px 24px;
+  font-size: 1.6rem;
+}
+
+.lesson-card {
+  width: 100%;
+  max-width: 560px;
+  padding: 20px;
+  border-top: 8px solid var(--belt);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.lesson-card h2 {
+  margin: 0 0 12px;
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.lesson-rules,
+.lesson-examples {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 1.15rem;
+  line-height: 1.4;
+}
+
+.lesson-word {
+  padding: 0 0.2em;
+  border-radius: 0.25em;
+  background: #e8f1ff;
+  color: var(--primary-dark);
+}
+
+/* Une terminaison reste collée au mot : « marché ». */
+.lesson-examples .lesson-word {
+  padding: 0;
+}
+
+.lesson-tip {
+  margin: 16px 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: #fff6dd;
+  font-size: 1.05rem;
+  line-height: 1.4;
+}
+
+.lesson-examples {
+  font-weight: 700;
+}
+
+.lesson-swap {
+  padding-left: 1em;
+  color: var(--text-soft);
+  font-style: italic;
+  font-weight: 600;
+}
+
+.lesson-practice {
+  margin-top: 8px;
+  min-width: 240px;
 }
 
 /* Ceintures : phrase à trous, boutons sous le pouce */

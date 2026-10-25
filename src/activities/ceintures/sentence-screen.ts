@@ -68,7 +68,7 @@ export function renderSentenceScreen(root: HTMLElement, options: SentenceScreenO
       streak = 0;
       sounds.wrong();
       renderStreak(false);
-      feedback.textContent = `C’était « ${answer} ». ${item.group.tip}`;
+      feedback.textContent = withNbsp(`C’était « ${answer} ». ${item.group.tip}`);
       renderSentence();
       buttons.replaceChildren(
         h('button', { class: 'button primary continue', type: 'button', onclick: () => cont(sentenceDone) }, 'Continuer →'),
