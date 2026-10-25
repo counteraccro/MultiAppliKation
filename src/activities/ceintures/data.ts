@@ -7,8 +7,10 @@ import type { Subject } from './subjects';
 import { isPassing } from './test-session';
 
 export interface SubjectProgress {
-  /** Ceintures obtenues, avec le jour : { "blanche": "2026-10-25" }. */
+  /** Ceintures obtenues en classe (cochées par un adulte), avec le jour : { "blanche": "2026-10-25" }. */
   passed: Partial<Record<BeltId, string>>;
+  /** Examen blanc réussi, avec le jour : l'enfant peut passer la ceinture en classe. */
+  passedTest?: Partial<Record<BeltId, string>>;
   /** Phrases du dernier entraînement fini, par ceinture : le test en choisit d'autres. */
   lastPractice?: Partial<Record<BeltId, string[]>>;
   /** Test raté, avec le jour : il faut un entraînement avant de le repasser. */
@@ -78,6 +80,9 @@ function renameOldStickers(stickers: Record<string, number>): Record<string, num
 
 function readProgress(raw: Partial<SubjectProgress>): SubjectProgress {
   const progress: SubjectProgress = { ...(typeof raw === 'object' && raw !== null ? raw : {}), passed: readDays(raw?.passed) };
+  const passedTest = readDays(raw?.passedTest);
+  if (Object.keys(passedTest).length > 0) progress.passedTest = passedTest;
+  else delete progress.passedTest;
   const failedTest = readDays(raw?.failedTest);
   if (Object.keys(failedTest).length > 0) progress.failedTest = failedTest;
   else delete progress.failedTest;
@@ -138,14 +143,18 @@ export function progressOf(data: CeinturesData, subject: Subject): SubjectProgre
   return data[subject.id] ?? { passed: {} };
 }
 
-export type BeltStatus = 'passed' | 'current' | 'locked';
+/**
+ * Obtenue (notée par un adulte), réussie à l'examen blanc (à passer en classe : la suivante s'ouvre),
+ * en cours (la première ni obtenue ni réussie), ou fermée : on ne saute pas de ceinture.
+ */
+export type BeltStatus = 'passed' | 'tested' | 'current' | 'locked';
 
-/** Obtenue (avec sa date), en cours (la première pas encore obtenue), ou fermée : on ne saute pas de ceinture. */
 export function beltStatuses(subject: Subject, progress: SubjectProgress): BeltStatus[] {
   let currentFound = false;
   return subject.belts.map(({ belt }) => {
     if (progress.passed[belt]) return 'passed';
     if (currentFound) return 'locked';
+    if (progress.passedTest?.[belt]) return 'tested';
     currentFound = true;
     return 'current';
   });
@@ -196,13 +205,16 @@ export function recordPractice(data: CeinturesData, subject: Subject, belt: Belt
   });
 }
 
-/** Test fini : la ceinture est obtenue ce jour-là, ou il faudra s'entraîner avant de repasser. */
+/**
+ * Examen blanc fini : réussi, l'enfant peut passer la ceinture en classe
+ * (seul un adulte la note obtenue) ; raté, il faudra s'entraîner avant de le refaire.
+ */
 export function recordTest(data: CeinturesData, subject: Subject, belt: BeltId, score: Score, passed: boolean, day: string): void {
   update(data, subject, (progress) => {
     const stats = statsOf(progress, belt);
     progress.stats = { ...progress.stats, [belt]: { ...stats, tests: stats.tests + 1, bestTest: best(stats.bestTest, score) } };
     if (passed) {
-      progress.passed[belt] ??= day;
+      progress.passedTest = { ...progress.passedTest, [belt]: day };
       if (progress.failedTest) delete progress.failedTest[belt];
     } else {
       progress.failedTest = { ...progress.failedTest, [belt]: day };

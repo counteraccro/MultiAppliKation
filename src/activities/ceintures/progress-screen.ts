@@ -44,11 +44,12 @@ export function renderProgress(root: HTMLElement, ctx: ActivityContext, data: Ce
           const stats = statsOf(progress, belt);
           const day = progress.passed[belt];
           const facts = [
-            day && `obtenue le ${formatDay(day)}`,
+            day && `obtenue en classe le ${formatDay(day)}`,
+            !day && progress.passedTest?.[belt] && `examen blanc réussi le ${formatDay(progress.passedTest[belt]!)}`,
             stats.practices > 0 &&
               `${stats.practices} entraînement${stats.practices > 1 ? 's' : ''}` +
                 (stats.bestPractice ? ` (au mieux ${scoreText(stats.bestPractice)})` : ''),
-            stats.bestTest && `meilleur test ${scoreText(stats.bestTest)}`,
+            stats.bestTest && `examen blanc au mieux ${scoreText(stats.bestTest)}`,
           ].filter(Boolean);
           return h(
             'li',

@@ -27,6 +27,8 @@ describe('progrès des ceintures', () => {
     recordPractice(data, homophones, 'blanche', [], { correct: 9, total: 10 });
     expect(level()).toBe('progress');
     recordTest(data, homophones, 'blanche', { correct: 13, total: 14 }, true, '2026-10-25');
+    expect(level()).toBe('progress');
+    setClassLevel(data, homophones, 0, '2026-10-26');
     expect(level()).toBe('known');
     const stats = progressOf(data, homophones).stats?.blanche;
     expect(stats).toEqual({
@@ -41,6 +43,7 @@ describe('progrès des ceintures', () => {
   it('un test sans faute donne le vert foncé', () => {
     const data = readCeinturesData({});
     recordTest(data, homophones, 'blanche', { correct: 12, total: 12 }, true, '2026-10-25');
+    setClassLevel(data, homophones, 0, '2026-10-26');
     expect(beltMastery(progressOf(data, homophones), 'blanche')).toBe('mastered');
   });
 
@@ -62,8 +65,11 @@ describe('autocollants des ceintures', () => {
   it('colle la première ceinture une seule fois', () => {
     const data = readCeinturesData({});
     recordTest(data, homophones, 'blanche', { correct: 9, total: 10 }, true, '2026-10-25');
-    expect(ids(unlockStickers(data, event({ mode: 'test', correct: 9, total: 10 })))).toEqual(['first-belt']);
+    // Examen blanc réussi : pas encore la ceinture, elle se passe en classe.
     expect(unlockStickers(data, event({ mode: 'test', correct: 9, total: 10 }))).toEqual([]);
+    setClassLevel(data, homophones, 0, '2026-10-26');
+    expect(ids(unlockStickers(data, event({ mode: 'class', correct: 0, total: 0 })))).toEqual(['first-belt']);
+    expect(unlockStickers(data, event({ mode: 'class', correct: 0, total: 0 }))).toEqual([]);
     expect(countStickers(data, STICKERS)).toBe(1);
   });
 

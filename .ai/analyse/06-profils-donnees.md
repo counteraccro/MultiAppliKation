@@ -9,7 +9,7 @@
   Un profil créé avant la classe la demande une fois, à sa prochaine ouverture.
 - **Modifier le profil** : en touchant son prénom en haut de « À quoi on joue ? ».
   Prénom et couleur librement ; **changer de classe demande un adulte**
-  (multiplication d'adulte), pour ne pas descendre d'une classe pour avoir plus facile.
+  (un pourcentage simple, « 25 % de 160 », depuis la 0.23.0), pour ne pas descendre d'une classe pour avoir plus facile.
   Rien n'est perdu : étoiles, boîtes et records restent.
 - Profils **communs à toutes les activités** ; chaque activité range sa
   progression dans le profil (étoiles, boîtes, records…).

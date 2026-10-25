@@ -71,6 +71,7 @@ export const ceintures: Activity = {
           onLesson: (belt) => lesson(subject, belt),
           onPractice: (belt) => practice(subject, belt),
           onTest: (belt) => test(subject, belt),
+          onPassedInClass: (belt) => checkPassedInClass(subject, belt),
           onClassBelts: () => checkClassBelts(subject),
           onBack: home,
         }),
@@ -96,12 +97,52 @@ export const ceintures: Activity = {
         () => classBelts(subject),
       );
 
+    // La ceinture en cours, obtenue en classe aujourd'hui : un adulte la note, et c'est la fête.
+    const checkPassedInClass = (subject: Subject, belt: HomophoneBelt) =>
+      openAdultCheck(
+        root,
+        {
+          title: `Ceinture ${beltOf(belt.belt).label}`,
+          message: 'Pour noter cette ceinture obtenue en classe aujourd’hui.',
+          confirmLabel: 'Noter',
+        },
+        () => {
+          const data = load();
+          setClassLevel(data, subject, subject.belts.indexOf(belt), dayOf(Date.now()));
+          const rewards = unlockStickers(data, { subject: subject.id, mode: 'class', bestStreak: 0, correct: 0, total: 0 });
+          ctx.save(data);
+          showBeltWon(subject, belt, rewards);
+        },
+      );
+
+    function showBeltWon(subject: Subject, belt: HomophoneBelt, rewards: Sticker[]) {
+      const { label: name, color } = beltOf(belt.belt);
+      const next = subject.belts[subject.belts.indexOf(belt) + 1];
+      show(() =>
+        renderResult(root, {
+          title: 'Ceinture obtenue !',
+          celebrate: true,
+          rewards,
+          highlight: h(
+            'div',
+            { class: 'belt-won', style: `--belt: ${color}; --belt-text: ${beltTextColor(color)}` },
+            h('span', { class: 'belt-chip' }, name),
+          ),
+          message: next
+            ? `Bravo pour ta ceinture ${name} ! La ceinture ${beltOf(next.belt).label} s’ouvre.`
+            : `Bravo pour ta ceinture ${name} : tu as toutes les ceintures !`,
+          actions: [{ label: subject.label, primary: true, onClick: () => ladder(subject) }],
+        }),
+      );
+    }
+
     const classBelts = (subject: Subject) =>
       show(() =>
         renderClassBelts(root, ctx, subject, load(), {
           onSave: (highest, day) => {
             const data = load();
             setClassLevel(data, subject, highest, day);
+            unlockStickers(data, { subject: subject.id, mode: 'class', bestStreak: 0, correct: 0, total: 0 });
             ctx.save(data);
             ladder(subject);
           },
@@ -145,7 +186,7 @@ export const ceintures: Activity = {
         return renderSentenceScreen(root, {
           session,
           test: true,
-          label: `En conditions réelles · ${label(belt)}`,
+          label: `Examen blanc · ${label(belt)}`,
           onQuit: () => ladder(subject),
           onDone: () => {
             const result = session.result();
@@ -226,7 +267,7 @@ export const ceintures: Activity = {
           practiceAsSentences: true,
           actions: [
             ...(offerTest
-              ? [{ label: 'Entraînement en conditions réelles', primary: true, onClick: () => test(subject, belt) }]
+              ? [{ label: 'Examen blanc', primary: true, onClick: () => test(subject, belt) }]
               : []),
             { label: 'Encore', primary: !offerTest, onClick: () => practice(subject, belt) },
             { label: 'Leçon', onClick: () => lesson(subject, belt) },

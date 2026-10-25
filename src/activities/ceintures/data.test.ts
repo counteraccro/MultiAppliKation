@@ -51,11 +51,20 @@ describe('progression des ceintures', () => {
     expect(data.homophones?.passed).toEqual({});
   });
 
-  it('un test réussi note la ceinture et ouvre la suivante', () => {
+  it('réussi à l’examen blanc : la suivante s’ouvre, la ceinture reste à passer en classe', () => {
     const data = readCeinturesData({});
+    const statuses = () => beltStatuses(homophones, progressOf(data, homophones)).slice(0, 4);
     recordTest(data, homophones, 'blanche', { correct: 10, total: 10 }, true, '2026-10-25');
-    expect(data.homophones?.passed).toEqual({ blanche: '2026-10-25' });
-    expect(beltStatuses(homophones, progressOf(data, homophones)).slice(0, 2)).toEqual(['passed', 'current']);
+    expect(data.homophones?.passed).toEqual({});
+    expect(data.homophones?.passedTest).toEqual({ blanche: '2026-10-25' });
+    expect(statuses()).toEqual(['tested', 'current', 'locked', 'locked']);
+    recordTest(data, homophones, 'jaune', { correct: 9, total: 10 }, true, '2026-10-26');
+    expect(statuses()).toEqual(['tested', 'tested', 'current', 'locked']);
+    expect(highestPassed(homophones, progressOf(data, homophones))).toBe(-1);
+    // Seul un adulte la note obtenue (et celles d'en dessous).
+    setClassLevel(data, homophones, 1, '2026-10-27');
+    expect(statuses()).toEqual(['passed', 'passed', 'current', 'locked']);
+    expect(readCeinturesData(JSON.parse(JSON.stringify(data))).homophones?.passedTest).toEqual({ blanche: '2026-10-25', jaune: '2026-10-26' });
   });
 
   it('après un test raté, il faut s’entraîner avant de repasser', () => {
@@ -89,8 +98,8 @@ describe('progression des ceintures', () => {
     recordPractice(data, homophones, 'blanche', [], { correct: 8, total: 8 });
     expect(ready()).toBe(true);
     expect(progressOf(data, homophones).stats?.blanche?.goodPractices).toBe(3);
-    // Une fois obtenue, on ne le dit plus.
-    recordTest(data, homophones, 'blanche', { correct: 10, total: 10 }, true, '2026-10-25');
+    // Une fois obtenue en classe, on ne le dit plus.
+    setClassLevel(data, homophones, 0, '2026-10-25');
     expect(ready()).toBe(false);
   });
 

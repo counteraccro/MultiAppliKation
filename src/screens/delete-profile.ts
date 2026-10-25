@@ -3,7 +3,7 @@ import type { Profile } from '../core/storage';
 
 /**
  * Suppression protégée : pour qu'un enfant n'efface pas la progression d'un autre,
- * il faut résoudre une multiplication d'adulte.
+ * il faut répondre à une question d'adulte (un pourcentage simple).
  */
 export function openDeleteProfile(root: HTMLElement, profile: Profile, onConfirm: () => void): void {
   openAdultCheck(

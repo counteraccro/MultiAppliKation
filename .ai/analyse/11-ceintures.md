@@ -146,8 +146,8 @@ les autres apparaissent quand elles sont faites (pas de tuile « bientôt »).
 
 - **10 phrases** tirées de préférence parmi celles **pas vues** au dernier entraînement.
 - **Pas de correction pendant le test** (comme une évaluation) ; tout s'affiche à la fin.
-- Réussi (**au moins 90 % des trous**) : grande fête, la ceinture se colorie,
-  la date est notée, la suivante s'ouvre.
+- Réussi (**au moins 90 % des trous**) : « tu peux passer la ceinture en classe » ; la ceinture
+  n'est notée obtenue que par un adulte (voir les retours de la 0.23.0 plus bas).
 - Pas réussi : « Encore un peu d'entraînement ! », **la correction des erreurs**
   (comme « corriger avec lui une ceinture déjà échouée »), et le bouton Leçon.
   Pour repasser, il faut d'abord **un entraînement** (on ne relance pas le test en boucle).
@@ -257,7 +257,7 @@ Ajouter des phrases ne casse rien ; en retirer une ne doit pas changer les ident
    demande) ; les autocollants gagnés en 0.21.0 sont repris sous leur nouveau nom à la lecture.
 
 Retours du 25/10/2026 (0.22.1) :
-- le bouton du test s'appelle **« Entraînement en conditions réelles »** (« 10 phrases, sans aide ») ;
+- le bouton du test s'appelait « Entraînement en conditions réelles » (« 10 phrases, sans aide ») ; **« Examen blanc »** depuis la 0.23.0, le mot de l'utilisateur ;
   « test blanc » écarté (« le test blanc de la ceinture blanche » prête à confusion). Le fonctionnement
   ne change pas : réussi, la ceinture est notée et la suivante s'ouvre ;
 - après **3 entraînements réussis** (au moins 90 % du premier coup, `goodPractices`) sur la ceinture en
@@ -266,6 +266,19 @@ Retours du 25/10/2026 (0.22.1) :
   conditions réelles reste ouvert avant (seul un échec demande un entraînement avant de le refaire) ;
 - 0.22.2 : l'écran de réussite dit « Réussi ! » et « Bravo, tu peux passer la ceinture blanche en classe ! »
   (la vraie ceinture se passe en classe) ; textes sans « prêt / prête », pour tous les enfants.
+- **0.23.0 : seul un adulte note une ceinture obtenue**, mais **l'examen blanc réussi ouvre la suivante.**
+  Réussir l'entraînement en conditions réelles (l'« examen blanc ») garde sa date (`passedTest`) : la
+  ceinture passe à l'état `tested` (« ✓ réussie le 25/10 · à passer en classe », couleur « Prête à
+  passer »), reste ouverte (leçon, entraînement), et la suivante devient la ceinture en cours. Plusieurs
+  ceintures peuvent attendre la classe. Sur une ceinture en cours ou réussie, « ✓ Obtenue en classe ?
+  Un adulte la note ici » (vérification adulte) la note obtenue du jour (avec celles d'en dessous),
+  fête « Ceinture obtenue ! » avec les autocollants. Les autocollants de ceintures (première, trois,
+  objectif CM1, dernière) ne comptent que les ceintures notées par l'adulte. L'écran
+  « Ceintures obtenues en classe » reste pour noter plusieurs ceintures ou corriger. Les ceintures déjà
+  notées par un test avant la 0.23.0 restent obtenues (on ne peut pas les distinguer).
+- **Question d'adulte** (commune à l'app : profils, ceintures) : un pourcentage simple (« 25 % de 160 »,
+  10, 20, 25 ou 50 % d'un nombre de 30 à 200, résultat entier) au lieu de 13–19 × 6–9, à la portée d'un
+  élève de CM1 qui connaît ses tables.
 
 Ensuite, une matière à la fois ; ordre proposé : Conjugaison (clavier déjà fait),
 Tables puis Calcul mental (pavé déjà fait), Accords, Numération, Grammaire, Mesures, Calcul posé.

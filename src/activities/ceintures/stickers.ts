@@ -3,10 +3,13 @@ import { beltOf } from './belts';
 import { highestPassed, progressOf, type CeinturesData } from './data';
 import { SUBJECTS, type Subject, type SubjectId } from './subjects';
 
-/** Ce qui vient de se passer : un entraînement ou un test fini dans une matière (données déjà à jour). */
+/**
+ * Ce qui vient de se passer dans une matière (données déjà à jour) : un entraînement ou un test fini,
+ * ou une ceinture notée obtenue en classe par un adulte (`class`, sans score).
+ */
 export interface SeriesEvent {
   subject: SubjectId;
-  mode: 'practice' | 'test';
+  mode: 'practice' | 'test' | 'class';
   /** Plus longue suite de trous justes du premier coup (0 en test : rien n'y est corrigé). */
   bestStreak: number;
   correct: number;
@@ -62,7 +65,7 @@ function subjectRules(subject: Subject): Rule[] {
       id: `${subject.id}.perfect-test`,
       emoji: '💯',
       name: 'Sans faute',
-      hint: 'Un test de ceinture sans aucune erreur.',
+      hint: 'Un examen blanc sans aucune erreur.',
       won: (_, event) => inSubject(event) && event.mode === 'test' && event.total > 0 && event.correct === event.total,
     },
     {

@@ -10,14 +10,15 @@ import { isPassing } from './test-session';
 export const MASTERY_LABELS: Record<Mastery, string> = {
   unseen: 'Pas encore commencée',
   learning: 'À travailler',
-  progress: 'Prête pour le test',
+  progress: 'Prête à passer',
   known: 'Obtenue',
   mastered: 'Sans faute',
 };
 
 /**
- * Pas encore commencée, à travailler (entraînée, pas encore à 90 %), prête pour le test
- * (un entraînement à 90 %), obtenue, et obtenue avec un test sans faute.
+ * Pas encore commencée, à travailler (entraînée, pas encore à 90 %), prête à passer
+ * (un entraînement à 90 %, ou examen blanc réussi), obtenue en classe, et obtenue
+ * avec un examen blanc sans faute.
  */
 export function beltMastery(progress: SubjectProgress, belt: BeltId): Mastery {
   const stats = statsOf(progress, belt);
@@ -26,7 +27,9 @@ export function beltMastery(progress: SubjectProgress, belt: BeltId): Mastery {
     return perfect ? 'mastered' : 'known';
   }
   if (stats.practices === 0 && stats.tests === 0) return 'unseen';
-  const ready = stats.bestPractice !== undefined && isPassing(stats.bestPractice.correct, stats.bestPractice.total);
+  const ready =
+    progress.passedTest?.[belt] !== undefined ||
+    (stats.bestPractice !== undefined && isPassing(stats.bestPractice.correct, stats.bestPractice.total));
   return ready ? 'progress' : 'learning';
 }
 

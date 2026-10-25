@@ -11,6 +11,8 @@ export interface LadderActions {
   onLesson(belt: HomophoneBelt): void;
   onPractice(belt: HomophoneBelt): void;
   onTest(belt: HomophoneBelt): void;
+  /** Un adulte note la ceinture en cours obtenue en classe. */
+  onPassedInClass(belt: HomophoneBelt): void;
   onClassBelts(): void;
   onBack(): void;
 }
@@ -55,7 +57,7 @@ export function renderLadder(
     }
   });
 
-  const allPassed = !statuses.includes('current');
+  const allPassed = statuses.every((s) => s === 'passed');
 
   root.append(
     h(
@@ -104,9 +106,12 @@ function beltItem(
   const isCurrent = status === 'current';
   const day = progress.passed[belt.belt];
   const practiceFirst = mustPracticeFirst(progress, belt.belt);
+  const passedTest = progress.passedTest?.[belt.belt];
   const state = isCurrent
     ? h('span', { class: 'badge belt-badge' }, 'À toi !')
-    : h('span', { class: 'belt-state passed' }, `✓ obtenue le ${formatDay(day!)}`);
+    : status === 'tested'
+      ? h('span', { class: 'belt-state tested' }, `✓ réussie le ${formatDay(passedTest!)} · à passer en classe`)
+      : h('span', { class: 'belt-state passed' }, `✓ obtenue le ${formatDay(day!)}`);
   return h(
     'li',
     { class: `belt-item ${status}${isCurrent ? ' open' : ''}`, style },
@@ -119,6 +124,7 @@ function beltItem(
     h(
       'div',
       { class: 'belt-actions' },
+      status === 'tested' && h('p', { class: 'belt-ready' }, 'Examen blanc réussi : à toi de la passer en classe !'),
       isCurrent && isReady(progress, belt.belt) && h('p', { class: 'belt-ready' }, readyMessage(label)),
       h('button', { class: 'button secondary', type: 'button', onclick: () => actions.onLesson(belt) }, 'Leçon'),
       h('button', { class: 'button primary', type: 'button', onclick: () => actions.onPractice(belt) }, 'S’entraîner'),
@@ -127,8 +133,15 @@ function beltItem(
         h(
           'button',
           { class: 'button mode primary belt-test', type: 'button', disabled: practiceFirst, onclick: () => actions.onTest(belt) },
-          'Entraînement en conditions réelles',
+          'Examen blanc',
           h('small', {}, practiceFirst ? 'Entraîne-toi d’abord' : '10 phrases, sans aide'),
+        ),
+      // Seul un adulte note la ceinture : elle se passe en classe.
+      status !== 'passed' &&
+        h(
+          'button',
+          { class: 'link-button belt-class', type: 'button', onclick: () => actions.onPassedInClass(belt) },
+          '✓ Obtenue en classe ? Un adulte la note ici',
         ),
     ),
   );
