@@ -261,7 +261,11 @@ Retours du 25/10/2026 (0.22.1) :
   « test blanc » écarté (« le test blanc de la ceinture blanche » prête à confusion). Le fonctionnement
   ne change pas : réussi, la ceinture est notée et la suivante s'ouvre ;
 - après **3 entraînements réussis** (au moins 90 % du premier coup, `goodPractices`) sur la ceinture en
-  cours : « 🎉 Bravo, tu es prêt pour la ceinture jaune ! », sur l'échelle et à la fin de l'entraînement.
+  cours : « 🎉 Bravo, tu peux passer la ceinture jaune ! », sur l'échelle et à la fin de l'entraînement.
+  C'est un repère, pas une limite : l'enfant peut s'entraîner autant qu'il veut, et l'entraînement en
+  conditions réelles reste ouvert avant (seul un échec demande un entraînement avant de le refaire) ;
+- 0.22.2 : l'écran de réussite dit « Réussi ! » et « Bravo, tu peux passer la ceinture blanche en classe ! »
+  (la vraie ceinture se passe en classe) ; textes sans « prêt / prête », pour tous les enfants.
 
 Ensuite, une matière à la fois ; ordre proposé : Conjugaison (clavier déjà fait),
 Tables puis Calcul mental (pavé déjà fait), Accords, Numération, Grammaire, Mesures, Calcul posé.

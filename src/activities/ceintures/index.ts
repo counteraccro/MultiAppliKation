@@ -170,7 +170,8 @@ export const ceintures: Activity = {
       show(() =>
         result.passed
           ? renderResult(root, {
-              title: 'Ceinture obtenue !',
+              // La vraie ceinture se passe en classe : ici, l'enfant sait qu'il peut y aller.
+              title: 'Réussi !',
               celebrate: true,
               rewards,
               highlight: h(
@@ -179,9 +180,9 @@ export const ceintures: Activity = {
                 h('span', { class: 'belt-chip' }, name),
                 count,
               ),
-              message: next
-                ? `Bravo ! La ceinture ${beltOf(next.belt).label} s’ouvre.`
-                : `Bravo ! Tu as toutes les ceintures de ${subject.label.toLowerCase()}.`,
+              message:
+                `Bravo, tu peux passer la ceinture ${name} en classe !` +
+                (next ? ` La ceinture ${beltOf(next.belt).label} s’ouvre.` : ''),
               details: result.mistakes.length > 0 ? corrections(result.mistakes) : undefined,
               actions: [{ label: subject.label, primary: true, onClick: () => ladder(subject) }],
             })

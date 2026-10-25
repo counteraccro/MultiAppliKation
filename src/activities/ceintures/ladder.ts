@@ -134,7 +134,7 @@ function beltItem(
   );
 }
 
-/** Après 3 entraînements réussis sur la ceinture en cours. */
+/** Après 3 entraînements réussis sur la ceinture en cours. Sans « prêt / prête » : pour tous les enfants. */
 export function readyMessage(beltLabel: string): string {
-  return `🎉 Bravo, tu es prêt pour la ceinture ${beltLabel} !`;
+  return `🎉 Bravo, tu peux passer la ceinture ${beltLabel} !`;
 }
