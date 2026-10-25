@@ -1,7 +1,6 @@
 import { boxOf, pickReview, type LeitnerState } from '../../core/leitner';
 import { shuffle } from '../../core/quiz';
 import { Series, type Attempt } from '../../core/series';
-import { isFast } from './learn-session';
 import { isKnownConjugation } from './mastery';
 import { conjugationQuestion, type ConjugationQuestion } from './questions';
 import { REVIEW_SIZE } from './sizes';
@@ -58,7 +57,7 @@ export class ReviewSession extends Series<ConjugationQuestion> {
     return {
       correct: attempts.filter((a) => a.correct).length,
       total: this.total,
-      toPractice: attempts.filter((a) => !a.correct || !isFast(a)).map((a) => a.question),
+      toPractice: attempts.filter((a) => !a.correct).map((a) => a.question),
     };
   }
 }

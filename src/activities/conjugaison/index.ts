@@ -21,8 +21,8 @@ import { CONJUGATIONS, type Conjugation, type TenseId } from './verbs';
 const MESSAGES: Record<LearnResult['stars'], string> = {
   0: 'Continue, chaque essai te fait progresser !',
   1: 'Bien joué ! Encore un effort pour tout trouver.',
-  2: 'Tout juste ! Plus vite pour la 3ᵉ étoile.',
-  3: 'Parfait : tout juste et rapide !',
+  2: 'Presque ! Une seule erreur.',
+  3: 'Parfait : tout juste !',
 };
 
 // Voir .ai/analyse/10-conjugaison.md : accueil par temps, « Apprendre », « Révision », « Mélange »,

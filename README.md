@@ -19,7 +19,7 @@ Application pour apprendre en jouant, du CP à la 6ᵉ, sur iPhone, iPad et ordi
 20 verbes (être, avoir, 1ᵉʳ et 2ᵉ groupes, 8 irréguliers) au présent, à l'imparfait,
 au futur et au passé composé, soit 480 formes, chacune vérifiée par un test.
 
-- **Apprendre** : un verbe à un temps, les 6 personnes, jusqu'à 3 étoiles.
+- **Apprendre** : un verbe à un temps, les 6 personnes, jusqu'à 3 étoiles (sans chrono : seul le résultat compte).
 - **Révision** : seulement les formes déjà vues, par boîtes de Leitner.
 - **Mélange** : temps et verbes au choix (une leçon de la semaine, par exemple).
 - La réponse se tape sur un clavier de lettres dessiné dans l'app, avec les accents ;

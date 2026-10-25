@@ -55,7 +55,7 @@ describe('ReviewSession', () => {
     expect(data.leitner[formKey(second)]!.box).toBe(3);
   });
 
-  it('met à retravailler les erreurs et les réponses lentes', () => {
+  it('met à retravailler les erreurs, pas les réponses lentes', () => {
     const state: LeitnerState = {};
     fill(state, 'faire.present', 2);
     const session = new ReviewSession(state);
@@ -65,7 +65,7 @@ describe('ReviewSession', () => {
       session.answer(n === 1 ? 'faux' : q.answer, n === 2 ? 60_000 : 1000);
     }
     expect(session.result()).toMatchObject({ correct: 5, total: 6 });
-    expect(session.result().toPractice).toHaveLength(2);
+    expect(session.result().toPractice).toHaveLength(1);
   });
 });
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readConjugaisonData, recordAttempt, recordStars, starsOf } from './data';
 import { suggestedConjugation } from './home';
-import { fastMs, LearnSession, starsFor } from './learn-session';
+import { LearnSession, starsFor } from './learn-session';
 import type { ConjugationQuestion } from './questions';
 import { CONJUGATIONS } from './verbs';
 
@@ -29,43 +29,35 @@ describe('LearnSession', () => {
     expect(seen.sort()).toEqual([1, 2, 3, 4, 5, 6]);
   });
 
-  it('donne 3 étoiles si tout est juste et rapide', () => {
-    expect(play(new LearnSession(allerFutur), (q) => [q.answer, 1000]).stars).toBe(3);
+  it('donne 3 étoiles si tout est juste, même lentement', () => {
+    const result = play(new LearnSession(allerFutur), (q) => [q.answer, 60_000]);
+    expect(result.stars).toBe(3);
+    expect(result.toPractice).toEqual([]);
   });
 
-  it('donne 2 étoiles si une réponse est lente, et la met à retravailler', () => {
-    const result = play(new LearnSession(allerFutur), (q) => [q.answer, q.person === 4 ? fastMs(q.answer) : 1000]);
-    expect(result.stars).toBe(2);
-    expect(result.toPractice.map((q) => q.answer)).toEqual(['irons']);
-  });
-
-  it('donne 1 étoile avec une erreur, 0 avec deux ; l’erreur revient sans compter', () => {
+  it('donne 2 étoiles avec une erreur, 1 avec deux ; l’erreur revient sans compter', () => {
     const tries = new Map<number, number>();
     const one = play(new LearnSession(allerFutur), (q) => {
       tries.set(q.person, (tries.get(q.person) ?? 0) + 1);
       return [q.person === 2 && tries.get(2) === 1 ? 'iras!' : q.answer, 1000];
     });
     expect(tries.get(2)).toBe(2);
-    expect(one).toMatchObject({ stars: 1, correct: 5 });
+    expect(one).toMatchObject({ stars: 2, correct: 5 });
+    expect(one.toPractice.map((q) => q.person)).toEqual([2]);
     const missed = new Set<number>();
     const two = play(new LearnSession(allerFutur), (q) => {
       const wrong = q.person <= 2 && !missed.has(q.person);
       missed.add(q.person);
       return [wrong ? 'non' : q.answer, 1000];
     });
-    expect(two.stars).toBe(0);
+    expect(two.stars).toBe(1);
   });
 
-  it('accorde plus de temps aux formes longues', () => {
-    expect(fastMs('a')).toBe(3500);
-    expect(fastMs('sommes allées')).toBe(9000);
-  });
-
-  it('étoiles : au moins 5 sur 6 pour la première', () => {
-    expect(starsFor(4, 6, false)).toBe(0);
-    expect(starsFor(5, 6, false)).toBe(1);
-    expect(starsFor(6, 6, false)).toBe(2);
-    expect(starsFor(6, 6, true)).toBe(3);
+  it('étoiles : au moins 4 sur 6 pour la première', () => {
+    expect(starsFor(3, 6)).toBe(0);
+    expect(starsFor(4, 6)).toBe(1);
+    expect(starsFor(5, 6)).toBe(2);
+    expect(starsFor(6, 6)).toBe(3);
   });
 });
 
@@ -120,5 +112,15 @@ describe('verbe conseillé', () => {
     data.stars['avoir.present'] = 3;
     expect(suggestedConjugation(data, 'present')).toBeUndefined();
     expect(suggestedConjugation(data, 'futur')!.verb.id).toBe('etre');
+  });
+});
+
+describe('recordAttempt', () => {
+  it('fait monter une forme juste d’une boîte, même lente', () => {
+    const data = readConjugaisonData(undefined);
+    const question = new LearnSession(allerFutur).current()!;
+    recordAttempt(data, { question, correct: true, elapsedMs: 60_000 });
+    recordAttempt(data, { question, correct: true, elapsedMs: 60_000 });
+    expect(Object.values(data.leitner)[0]!.box).toBe(3);
   });
 });

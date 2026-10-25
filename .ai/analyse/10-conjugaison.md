@@ -88,9 +88,9 @@ pour la même raison.
 - **Accent faux = faux** (décision du 24/10/2026) : « mangeons » ≠ « mangéons ».
 - Erreur : la bonne forme s'affiche, **la partie qui diffère est surlignée**
   (« commen**ç**ons »), sans écran rouge. La question revient plus tard dans la série.
-- Juste mais lente : compte comme pour les tables (pas encore « sue »).
-  Le seuil « rapide » dépend de la longueur à taper : environ **3 s + 0,5 s par lettre**,
-  à régler en la regardant jouer.
+- **Le temps mis ne compte pas** (décision du 25/10/2026) : seul le résultat compte.
+  Une forme juste monte d'une boîte, même tapée lentement ; seules les erreurs sont « à retravailler ».
+  (Avant la 0.16.2 : seuil « rapide » de 3 s + 0,5 s par lettre, retiré.)
 
 ## Les modes
 
@@ -98,7 +98,7 @@ pour la même raison.
 
 - L'accueil montre les **4 temps** en onglets ; dans chacun, une tuile par verbe avec ses étoiles.
 - Une série : les 6 personnes dans le désordre.
-- ★ : au moins 5 justes. ★★ : 6 justes. ★★★ : 6 justes et rapides.
+- ★ : 4 justes sur 6 au premier essai. ★★ : 5 sur 6. ★★★ : 6 sur 6 (sans chrono, décision du 25/10/2026).
 - Ordre conseillé (badge « À toi ! ») : être, avoir, chanter, finir, aller, faire, puis les autres.
 
 ### 2. Révision — boîtes de Leitner
@@ -117,7 +117,6 @@ pour la même raison.
 
 ### Plus tard
 
-- **Défi chronométré** : en conjugaison, la vitesse compte moins que l'orthographe.
 - **Mode à part plus difficile**, comme le Nombre caché : retrouver l'infinitif et le temps
   d'une forme (« nous allions → aller, imparfait ») ; au programme du CM1.
 - **Passé composé à la forme négative** (« nous n'avons pas mangé ») : au programme du CM1.
