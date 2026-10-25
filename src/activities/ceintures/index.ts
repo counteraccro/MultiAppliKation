@@ -9,23 +9,23 @@ import { beltOf, beltTextColor } from './belts';
 import { renderClassBelts } from './class-belts';
 import {
   beltStatuses,
+  isReady,
   mustPracticeFirst,
   progressOf,
   readCeinturesData,
-  recordPlayDay,
   recordPractice,
   recordTest,
   setClassLevel,
 } from './data';
 import { renderCeinturesHome } from './home';
 import type { HomophoneBelt } from './homophones';
-import { renderLadder } from './ladder';
+import { readyMessage, renderLadder } from './ladder';
 import { renderLesson } from './lesson';
 import { renderProgress } from './progress-screen';
 import { pickSentences, PracticeSession, type PracticeResult } from './practice-session';
 import { capitalize, fullSentence, parseSentence, withNbsp } from './sentence';
 import { renderSentenceScreen } from './sentence-screen';
-import { STICKERS, unlockStickers } from './stickers';
+import { STICKER_SECTIONS, STICKERS, unlockStickers } from './stickers';
 import type { Subject } from './subjects';
 import { isPassing, pickTestSentences, TestSession, type TestMistake, type TestResult } from './test-session';
 
@@ -54,7 +54,16 @@ export const ceintures: Activity = {
 
     const progress = () => show(() => renderProgress(root, ctx, load(), home));
     const album = () =>
-      show(() => renderAlbum(root, { backLabel: 'Ceintures', profile: ctx.profile, stickers: STICKERS, data: load(), onBack: home }));
+      show(() =>
+        renderAlbum(root, {
+          backLabel: 'Ceintures',
+          profile: ctx.profile,
+          stickers: STICKERS,
+          sections: STICKER_SECTIONS,
+          data: load(),
+          onBack: home,
+        }),
+      );
 
     const ladder = (subject: Subject) =>
       show(() =>
@@ -122,8 +131,7 @@ export const ceintures: Activity = {
             const result = session.result();
             const data = load();
             recordPractice(data, subject, belt.belt, items.map((i) => i.sentence.id), result);
-            recordPlayDay(data);
-            const rewards = unlockStickers(data, { mode: 'practice', bestStreak, correct: result.correct, total: result.total });
+            const rewards = unlockStickers(data, { subject: subject.id, mode: 'practice', bestStreak, correct: result.correct, total: result.total });
             ctx.save(data);
             showResult(subject, belt, result, rewards);
           },
@@ -137,14 +145,13 @@ export const ceintures: Activity = {
         return renderSentenceScreen(root, {
           session,
           test: true,
-          label: `Test · ${label(belt)}`,
+          label: `En conditions réelles · ${label(belt)}`,
           onQuit: () => ladder(subject),
           onDone: () => {
             const result = session.result();
             const data = load();
             recordTest(data, subject, belt.belt, result, result.passed, dayOf(Date.now()));
-            recordPlayDay(data);
-            const rewards = unlockStickers(data, { mode: 'test', bestStreak: 0, correct: result.correct, total: result.total });
+            const rewards = unlockStickers(data, { subject: subject.id, mode: 'test', bestStreak: 0, correct: result.correct, total: result.total });
             ctx.save(data);
             showTestResult(subject, belt, result, rewards);
           },
@@ -197,6 +204,7 @@ export const ceintures: Activity = {
       const all = result.correct === result.total;
       // Entraînement réussi sur la ceinture en cours : on propose le test.
       const offerTest = isPassing(result.correct, result.total) && canTest(subject, belt);
+      const ready = canTest(subject, belt) && isReady(progressOf(load(), subject), belt.belt);
       show(() =>
         renderResult(root, {
           title: label(belt),
@@ -208,11 +216,17 @@ export const ceintures: Activity = {
             h('strong', {}, `${result.correct} / ${result.total}`),
             h('small', {}, 'du premier coup'),
           ),
-          message: all ? 'Tout juste, bravo !' : 'Continue, chaque essai te fait progresser !',
+          message: ready
+            ? readyMessage(beltOf(belt.belt).label)
+            : all
+              ? 'Tout juste, bravo !'
+              : 'Continue, chaque essai te fait progresser !',
           toPractice: result.toPractice.map((s) => withNbsp(fullSentence(s.text))),
           practiceAsSentences: true,
           actions: [
-            ...(offerTest ? [{ label: 'Passer la ceinture', primary: true, onClick: () => test(subject, belt) }] : []),
+            ...(offerTest
+              ? [{ label: 'Entraînement en conditions réelles', primary: true, onClick: () => test(subject, belt) }]
+              : []),
             { label: 'Encore', primary: !offerTest, onClick: () => practice(subject, belt) },
             { label: 'Leçon', onClick: () => lesson(subject, belt) },
             { label: subject.label, onClick: () => ladder(subject) },

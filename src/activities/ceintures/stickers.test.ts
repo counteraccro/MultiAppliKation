@@ -1,19 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { countStickers } from '../../core/stickers';
-import { progressOf, readCeinturesData, recordPlayDay, recordPractice, recordTest, setClassLevel } from './data';
+import { progressOf, readCeinturesData, recordPractice, recordTest, setClassLevel } from './data';
 import { beltMastery, masteryCounts } from './mastery';
-import { STICKERS, unlockStickers, type SeriesEvent } from './stickers';
+import { STICKER_SECTIONS, STICKERS, unlockStickers, type SeriesEvent } from './stickers';
 import { SUBJECTS } from './subjects';
 
 const homophones = SUBJECTS[0]!;
 const event = (overrides: Partial<SeriesEvent> = {}): SeriesEvent => ({
+  subject: 'homophones',
   mode: 'practice',
   bestStreak: 0,
   correct: 5,
   total: 7,
   ...overrides,
 });
-const ids = (stickers: { id: string }[]) => stickers.map((s) => s.id);
+// Sans le préfixe de la matière, pour lire les tests.
+const ids = (stickers: { id: string }[]) => stickers.map((s) => s.id.replace('homophones.', ''));
 
 describe('progrès des ceintures', () => {
   it('colore chaque ceinture d’après ses entraînements et son test', () => {
@@ -27,7 +29,13 @@ describe('progrès des ceintures', () => {
     recordTest(data, homophones, 'blanche', { correct: 13, total: 14 }, true, '2026-10-25');
     expect(level()).toBe('known');
     const stats = progressOf(data, homophones).stats?.blanche;
-    expect(stats).toEqual({ practices: 2, bestPractice: { correct: 9, total: 10 }, tests: 1, bestTest: { correct: 13, total: 14 } });
+    expect(stats).toEqual({
+      practices: 2,
+      goodPractices: 1,
+      bestPractice: { correct: 9, total: 10 },
+      tests: 1,
+      bestTest: { correct: 13, total: 14 },
+    });
   });
 
   it('un test sans faute donne le vert foncé', () => {
@@ -64,7 +72,7 @@ describe('autocollants des ceintures', () => {
     setClassLevel(data, homophones, 6, '2026-10-25');
     expect(ids(unlockStickers(data, event()))).toEqual(['first-belt', 'three-belts', 'goal-cm1']);
     setClassLevel(data, homophones, 10, '2026-10-25');
-    expect(ids(unlockStickers(data, event()))).toEqual(['black-belt']);
+    expect(unlockStickers(data, event())).toMatchObject([{ id: 'homophones.last-belt', name: 'Ceinture noire' }]);
   });
 
   it('récompense un test sans faute, un entraînement parfait et les séries', () => {
@@ -73,13 +81,21 @@ describe('autocollants des ceintures', () => {
     expect(ids(unlockStickers(data, event({ correct: 8, total: 8, bestStreak: 10 })))).toEqual(['perfect-practice', 'streak-10']);
   });
 
-  it('compte les jours de jeu', () => {
-    const data = readCeinturesData({});
-    const day = new Date(2026, 9, 1, 10).getTime();
-    for (let i = 0; i < 5; i++) recordPlayDay(data, day + i * 86_400_000);
-    recordPlayDay(data, day + 4 * 86_400_000 + 3_600_000);
-    expect(data.daysPlayed).toBe(5);
-    expect(ids(unlockStickers(data, event()))).toEqual(['days-5']);
-    expect(readCeinturesData(JSON.parse(JSON.stringify(data))).daysPlayed).toBe(5);
+  it('range l’album par matière', () => {
+    expect(STICKER_SECTIONS.map((s) => s.title)).toEqual(['Homophones']);
+    expect(STICKER_SECTIONS.flatMap((s) => s.stickers)).toEqual(STICKERS);
+    expect(STICKERS.every((s) => s.id.startsWith('homophones.'))).toBe(true);
   });
+
+  it('garde les autocollants de la 0.21.0 sous leur nouveau nom, sans les jours', () => {
+    const data = readCeinturesData({
+      daysPlayed: 6,
+      lastPlayedDay: '2026-10-25',
+      stickers: { 'first-belt': 1, 'black-belt': 2, 'days-5': 3, 'homophones.streak-10': 4 },
+    });
+    expect(data.stickers).toEqual({ 'homophones.first-belt': 1, 'homophones.last-belt': 2, 'homophones.streak-10': 4 });
+    expect(data).not.toHaveProperty('daysPlayed');
+    expect(countStickers(data, STICKERS)).toBe(3);
+  });
+
 });

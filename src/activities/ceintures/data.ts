@@ -1,10 +1,10 @@
 // Progression de l'activité « ceintures » dans un profil : par matière, les ceintures
 // obtenues et leur date (« obtenue le 25/10 »), comme dans le classeur.
 
-import { cleanPlayDays, recordDay } from '../../core/play-days';
 import { readStickers, type WithStickers } from '../../core/stickers';
 import { BELTS, type BeltId } from './belts';
 import type { Subject } from './subjects';
+import { isPassing } from './test-session';
 
 export interface SubjectProgress {
   /** Ceintures obtenues, avec le jour : { "blanche": "2026-10-25" }. */
@@ -27,6 +27,8 @@ export interface BeltStats {
   /** Entraînements finis, et le meilleur. */
   practices: number;
   bestPractice?: Score;
+  /** Entraînements réussis (au moins 90 % du premier coup) : à partir de 3, l'enfant est prêt. */
+  goodPractices?: number;
   /** Tests passés, et le meilleur. */
   tests: number;
   bestTest?: Score;
@@ -35,10 +37,18 @@ export interface BeltStats {
 export interface CeinturesData extends WithStickers {
   /** Une progression par matière, sous son identifiant. */
   homophones?: SubjectProgress;
-  /** Nombre de jours différents où l'enfant a joué, et le dernier (« 2026-10-24 »). */
-  daysPlayed?: number;
-  lastPlayedDay?: string;
 }
+
+/** Autocollants de la 0.21.0, d'avant le rangement par matière : tous étaient ceux des homophones. */
+const OLD_STICKERS: Record<string, string> = {
+  'first-belt': 'homophones.first-belt',
+  'three-belts': 'homophones.three-belts',
+  'goal-cm1': 'homophones.goal-cm1',
+  'black-belt': 'homophones.last-belt',
+  'perfect-test': 'homophones.perfect-test',
+  'perfect-practice': 'homophones.perfect-practice',
+  'streak-10': 'homophones.streak-10',
+};
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -49,10 +59,21 @@ export function readCeinturesData(raw: unknown): CeinturesData {
   const homophones = data.homophones as Partial<SubjectProgress> | undefined;
   if (homophones !== undefined) copy.homophones = readProgress(homophones);
   const stickers = readStickers(data.stickers);
-  if (stickers) copy.stickers = stickers;
+  if (stickers) copy.stickers = renameOldStickers(stickers);
   else delete copy.stickers;
-  cleanPlayDays(copy);
+  // Les jours de jeu (0.21.0) ne servent plus.
+  delete (copy as Record<string, unknown>).daysPlayed;
+  delete (copy as Record<string, unknown>).lastPlayedDay;
   return copy;
+}
+
+function renameOldStickers(stickers: Record<string, number>): Record<string, number> {
+  const renamed: Record<string, number> = {};
+  for (const [id, date] of Object.entries(stickers)) {
+    if (id === 'days-5' || id === 'days-15') continue;
+    renamed[OLD_STICKERS[id] ?? id] ??= date;
+  }
+  return renamed;
 }
 
 function readProgress(raw: Partial<SubjectProgress>): SubjectProgress {
@@ -88,6 +109,7 @@ function readStats(raw: unknown): BeltStats | undefined {
   if (typeof raw !== 'object' || raw === null) return undefined;
   const r = raw as Record<string, unknown>;
   const stats: BeltStats = { practices: isCount(r.practices) ? r.practices : 0, tests: isCount(r.tests) ? r.tests : 0 };
+  if (isCount(r.goodPractices) && r.goodPractices > 0) stats.goodPractices = r.goodPractices;
   const bestPractice = readScore(r.bestPractice);
   const bestTest = readScore(r.bestTest);
   if (bestPractice) stats.bestPractice = bestPractice;
@@ -155,18 +177,22 @@ function update(data: CeinturesData, subject: Subject, change: (progress: Subjec
   data[subject.id] = progress;
 }
 
-/** Compte le jour de jeu, une fois par jour, à la fin d'un entraînement ou d'un test. */
-export function recordPlayDay(data: CeinturesData, now = Date.now()): void {
-  recordDay(data, now);
-}
-
 /** Entraînement fini (jusqu'au bout) : le test peut être repassé, et choisira d'autres phrases. */
 export function recordPractice(data: CeinturesData, subject: Subject, belt: BeltId, sentenceIds: string[], score: Score): void {
   update(data, subject, (progress) => {
     progress.lastPractice = { ...progress.lastPractice, [belt]: sentenceIds };
     if (progress.failedTest) delete progress.failedTest[belt];
     const stats = statsOf(progress, belt);
-    progress.stats = { ...progress.stats, [belt]: { ...stats, practices: stats.practices + 1, bestPractice: best(stats.bestPractice, score) } };
+    const good = (stats.goodPractices ?? 0) + (isPassing(score.correct, score.total) ? 1 : 0);
+    progress.stats = {
+      ...progress.stats,
+      [belt]: {
+        ...stats,
+        practices: stats.practices + 1,
+        bestPractice: best(stats.bestPractice, score),
+        ...(good > 0 ? { goodPractices: good } : {}),
+      },
+    };
   });
 }
 
@@ -186,6 +212,14 @@ export function recordTest(data: CeinturesData, subject: Subject, belt: BeltId, 
 
 export function statsOf(progress: SubjectProgress, belt: BeltId): BeltStats {
   return progress.stats?.[belt] ?? { practices: 0, tests: 0 };
+}
+
+/** Entraînements réussis à partir desquels on dit à l'enfant qu'il est prêt. */
+export const READY_PRACTICES = 3;
+
+/** Prêt pour la ceinture : au moins 3 entraînements réussis, et pas encore obtenue. */
+export function isReady(progress: SubjectProgress, belt: BeltId): boolean {
+  return !progress.passed[belt] && (statsOf(progress, belt).goodPractices ?? 0) >= READY_PRACTICES;
 }
 
 /** Le test se passe sur la ceinture en cours, sauf s'il vient d'être raté sans entraînement depuis. */

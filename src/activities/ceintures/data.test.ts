@@ -3,6 +3,7 @@ import {
   beltStatuses,
   formatDay,
   highestPassed,
+  isReady,
   mustPracticeFirst,
   progressOf,
   readCeinturesData,
@@ -76,6 +77,21 @@ describe('progression des ceintures', () => {
     });
     expect(data.homophones?.lastPractice).toEqual({ blanche: ['blanche.1'] });
     expect(data.homophones?.failedTest).toEqual({ blanche: '2026-10-25' });
+  });
+
+  it('prêt pour la ceinture après 3 entraînements réussis', () => {
+    const data = readCeinturesData({});
+    const ready = () => isReady(progressOf(data, homophones), 'blanche');
+    recordPractice(data, homophones, 'blanche', [], { correct: 9, total: 10 });
+    recordPractice(data, homophones, 'blanche', [], { correct: 5, total: 10 });
+    recordPractice(data, homophones, 'blanche', [], { correct: 7, total: 7 });
+    expect(ready()).toBe(false);
+    recordPractice(data, homophones, 'blanche', [], { correct: 8, total: 8 });
+    expect(ready()).toBe(true);
+    expect(progressOf(data, homophones).stats?.blanche?.goodPractices).toBe(3);
+    // Une fois obtenue, on ne le dit plus.
+    recordTest(data, homophones, 'blanche', { correct: 10, total: 10 }, true, '2026-10-25');
+    expect(ready()).toBe(false);
   });
 
   it('écrit la date comme dans le classeur', () => {

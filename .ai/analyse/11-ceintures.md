@@ -248,10 +248,20 @@ Ajouter des phrases ne casse rien ; en retirer une ne doit pas changer les ident
    (entraînée, pas encore à 90 %), prête pour le test (un entraînement à 90 %), obtenue, sans faute
    (obtenue avec un test à 100 %). `progress-screen.ts` : une ligne par ceinture avec la date, le nombre
    d'entraînements, le meilleur entraînement et le meilleur test (`stats` par ceinture dans `data.ts`).
-   `stickers.ts` (9) : première ceinture, trois ceintures, objectif CM1 (bleu clair), ceinture noire,
-   test sans faute, entraînement parfait, 10 d'affilée, 5 et 15 jours de jeu ; gagnés à la fin d'un
-   entraînement ou d'un test (une ceinture cochée en classe compte au suivant). Jours de jeu sans boîtes :
-   `core/play-days.ts` accepte une activité sans Leitner.
+   `stickers.ts` : première ceinture, trois ceintures, objectif CM1 (bleu clair), dernière ceinture (noire),
+   test sans faute, entraînement parfait, 10 d'affilée ; gagnés à la fin d'un entraînement ou d'un test
+   (une ceinture cochée en classe compte au suivant).
+   **Rangés par matière** (retour de l'utilisateur, 0.22.0) : chaque matière a ses autocollants,
+   identifiants préfixés (`homophones.first-belt`), une partie par matière dans l'album (`sections` de
+   l'album commun) et dans « Mes progrès ». **Pas de jours de jeu** dans les Ceintures (retirés à sa
+   demande) ; les autocollants gagnés en 0.21.0 sont repris sous leur nouveau nom à la lecture.
+
+Retours du 25/10/2026 (0.22.1) :
+- le bouton du test s'appelle **« Entraînement en conditions réelles »** (« 10 phrases, sans aide ») ;
+  « test blanc » écarté (« le test blanc de la ceinture blanche » prête à confusion). Le fonctionnement
+  ne change pas : réussi, la ceinture est notée et la suivante s'ouvre ;
+- après **3 entraînements réussis** (au moins 90 % du premier coup, `goodPractices`) sur la ceinture en
+  cours : « 🎉 Bravo, tu es prêt pour la ceinture jaune ! », sur l'échelle et à la fin de l'entraînement.
 
 Ensuite, une matière à la fois ; ordre proposé : Conjugaison (clavier déjà fait),
 Tables puis Calcul mental (pavé déjà fait), Accords, Numération, Grammaire, Mesures, Calcul posé.

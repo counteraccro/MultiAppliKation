@@ -34,7 +34,7 @@ export function renderProgress(root: HTMLElement, ctx: ActivityContext, data: Ce
     return h(
       'section',
       { class: 'belt-progress' },
-      SUBJECTS.length > 1 && h('h2', {}, subject.label),
+      h('h2', {}, subject.label),
       h(
         'ul',
         { class: 'belt-list' },

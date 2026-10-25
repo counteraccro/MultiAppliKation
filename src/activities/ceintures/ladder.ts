@@ -3,7 +3,7 @@ import { h } from '../../core/dom';
 import type { ActivityContext } from '../types';
 import { beltOf, beltTextColor } from './belts';
 import { gradeGoal, gradeNote } from './grade';
-import { beltStatuses, formatDay, mustPracticeFirst, progressOf, type BeltStatus, type CeinturesData } from './data';
+import { beltStatuses, formatDay, isReady, mustPracticeFirst, progressOf, type BeltStatus, type CeinturesData, type SubjectProgress } from './data';
 import type { HomophoneBelt } from './homophones';
 import type { Subject } from './subjects';
 
@@ -44,7 +44,7 @@ export function renderLadder(
   const note = gradeNote(ctx.profile.grade);
   subject.belts.forEach((belt, index) => {
     const status = statuses[index]!;
-    const row = beltItem(belt, status, progress.passed[belt.belt], mustPracticeFirst(progress, belt.belt), actions, () => open(row));
+    const row = beltItem(belt, status, progress, actions, () => open(row));
     rows.push(row);
     items.push(row);
     // Repère du classeur, sous la ceinture à avoir en fin d'année ; celui de sa classe est mis en avant.
@@ -78,8 +78,7 @@ export function renderLadder(
 function beltItem(
   belt: HomophoneBelt,
   status: BeltStatus,
-  day: string | undefined,
-  practiceFirst: boolean,
+  progress: SubjectProgress,
   actions: LadderActions,
   onToggle: () => void,
 ): HTMLElement {
@@ -103,6 +102,8 @@ function beltItem(
   }
 
   const isCurrent = status === 'current';
+  const day = progress.passed[belt.belt];
+  const practiceFirst = mustPracticeFirst(progress, belt.belt);
   const state = isCurrent
     ? h('span', { class: 'badge belt-badge' }, 'À toi !')
     : h('span', { class: 'belt-state passed' }, `✓ obtenue le ${formatDay(day!)}`);
@@ -118,6 +119,7 @@ function beltItem(
     h(
       'div',
       { class: 'belt-actions' },
+      isCurrent && isReady(progress, belt.belt) && h('p', { class: 'belt-ready' }, readyMessage(label)),
       h('button', { class: 'button secondary', type: 'button', onclick: () => actions.onLesson(belt) }, 'Leçon'),
       h('button', { class: 'button primary', type: 'button', onclick: () => actions.onPractice(belt) }, 'S’entraîner'),
       // Le test, seulement sur la ceinture en cours ; après un échec, on s'entraîne d'abord.
@@ -125,9 +127,14 @@ function beltItem(
         h(
           'button',
           { class: 'button mode primary belt-test', type: 'button', disabled: practiceFirst, onclick: () => actions.onTest(belt) },
-          'Passer la ceinture',
+          'Entraînement en conditions réelles',
           h('small', {}, practiceFirst ? 'Entraîne-toi d’abord' : '10 phrases, sans aide'),
         ),
     ),
   );
+}
+
+/** Après 3 entraînements réussis sur la ceinture en cours. */
+export function readyMessage(beltLabel: string): string {
+  return `🎉 Bravo, tu es prêt pour la ceinture ${beltLabel} !`;
 }

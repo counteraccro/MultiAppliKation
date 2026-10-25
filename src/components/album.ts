@@ -9,21 +9,24 @@ export interface AlbumOptions {
   profile: Profile;
   stickers: readonly Sticker[];
   data: WithStickers;
+  /** Autocollants rangés en parties avec un titre (Ceintures : une par matière) ; sinon une seule grille. */
+  sections?: readonly { title: string; stickers: readonly Sticker[] }[];
   onBack(): void;
 }
 
 /** Album : les autocollants gagnés en couleur, les autres en ombre avec ce qu'il faut faire. */
-export function renderAlbum(root: HTMLElement, { backLabel, profile, stickers, data, onBack }: AlbumOptions): void {
-  const tiles = stickers.map((sticker) => {
-    const won = hasSticker(data, sticker.id);
-    return h(
-      'li',
-      { class: `sticker${won ? ' won' : ''}` },
-      h('span', { class: 'sticker-emoji', 'aria-hidden': 'true' }, sticker.emoji),
-      h('strong', {}, won ? sticker.name : '???'),
-      h('small', {}, sticker.hint),
-    );
-  });
+export function renderAlbum(root: HTMLElement, { backLabel, profile, stickers, data, sections, onBack }: AlbumOptions): void {
+  const tiles = (list: readonly Sticker[]) =>
+    list.map((sticker) => {
+      const won = hasSticker(data, sticker.id);
+      return h(
+        'li',
+        { class: `sticker${won ? ' won' : ''}` },
+        h('span', { class: 'sticker-emoji', 'aria-hidden': 'true' }, sticker.emoji),
+        h('strong', {}, won ? sticker.name : '???'),
+        h('small', {}, sticker.hint),
+      );
+    });
 
   root.append(
     h(
@@ -32,7 +35,16 @@ export function renderAlbum(root: HTMLElement, { backLabel, profile, stickers, d
       topbar(backLabel, onBack, profile),
       h('h1', { class: 'title' }, 'Mes autocollants'),
       h('p', { class: 'subtitle' }, `${countStickers(data, stickers)} sur ${stickers.length}. Lequel sera le prochain ?`),
-      h('ul', { class: 'album' }, ...tiles),
+      ...(sections
+        ? sections.map((section) =>
+            h(
+              'section',
+              { class: 'album-section' },
+              h('h2', {}, section.title),
+              h('ul', { class: 'album' }, ...tiles(section.stickers)),
+            ),
+          )
+        : [h('ul', { class: 'album' }, ...tiles(stickers))]),
     ),
   );
 }

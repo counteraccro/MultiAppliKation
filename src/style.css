@@ -854,6 +854,15 @@ button {
 
 /* Album d'autocollants */
 
+.album-section {
+  width: 100%;
+}
+
+.album-section h2 {
+  margin: 8px 0 12px;
+  font-size: 1.3rem;
+}
+
 .album {
   width: 100%;
   margin: 0;
@@ -1901,6 +1910,18 @@ button.belt-row:active {
   font-size: 0.95rem;
   font-weight: 700;
   text-decoration: underline;
+}
+
+/* Prêt pour la ceinture : après 3 entraînements réussis. */
+.belt-ready {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #e6f8ec;
+  color: #1f6b3a;
+  font-weight: 800;
+  text-align: center;
 }
 
 /* Le test, sur toute la largeur sous Leçon et S'entraîner. */
