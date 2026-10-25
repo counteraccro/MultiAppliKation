@@ -1903,6 +1903,46 @@ button.belt-row:active {
   text-decoration: underline;
 }
 
+/* Le test, sur toute la largeur sous Leçon et S'entraîner. */
+.belt-actions .belt-test {
+  grid-column: 1 / -1;
+  min-height: 64px;
+  background: #2ec4b6;
+  box-shadow: 0 4px 0 #1f9a8f;
+}
+
+/* Ceintures : résultat du test */
+
+.belt-won {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.belt-won .belt-chip {
+  width: auto;
+  padding: 12px 32px;
+  font-size: 1.6rem;
+  animation: pop 0.5s ease-out;
+}
+
+.test-corrections li {
+  line-height: 1.6;
+}
+
+.correction s {
+  margin-right: 0.25em;
+  color: var(--text-soft);
+}
+
+.correction mark {
+  padding: 0 0.15em;
+  border-radius: 0.2em;
+  background: #ffcf70;
+  color: inherit;
+}
+
 /* Ceintures : ceintures obtenues en classe (pour l'adulte) */
 
 .class-belts {
@@ -2089,6 +2129,13 @@ button.belt-row:active {
   border-radius: 0.1em;
   background: #ffcf70;
   color: inherit;
+}
+
+/* Test : le mot se place sans dire s'il est juste. */
+.blank.is-placed {
+  border-bottom: 3px solid var(--text-soft);
+  color: var(--text);
+  animation: pop 0.25s ease-out;
 }
 
 .choice-buttons {

@@ -231,6 +231,16 @@ Ajouter des phrases ne casse rien ; en retirer une ne doit pas changer les ident
    la leçon et l'astuce. Exemple corrigé : « Il ne dort pas beaucoup. »
 4. **Test de passage** : sans correction pendant, résultat, date, ouverture de la suivante,
    correction en cas d'échec, entraînement obligatoire avant de repasser.
+   Faite le 25/10/2026 (0.20.0) : `test-session.ts` (10 phrases, de préférence pas vues au dernier
+   entraînement, chaque famille de mots de la ceinture représentée ; réussi à 90 % des trous, calculé
+   en entiers), mode `test` de `sentence-screen.ts` (le mot choisi se place sans couleur ni astuce,
+   une note neutre), `recordTest` / `recordPractice` dans `data.ts` (`lastPractice` et `failedTest`
+   par ceinture). Bouton « Passer la ceinture » sous Leçon et S'entraîner, sur la ceinture en cours
+   seulement ; après un échec il est grisé (« Entraîne-toi d'abord ») jusqu'à un entraînement fini.
+   Un entraînement réussi (90 %) sur la ceinture en cours propose le test en premier bouton.
+   Réussi : « Ceinture obtenue ! », la ceinture, fête, la suivante s'ouvre, et la correction
+   des éventuelles erreurs. Raté : la correction (mot choisi barré, bon mot surligné), S'entraîner,
+   Leçon. Quitter un test en cours ne compte pas.
 5. **Autocollants** (les repères de classe sont faits à l'étape 3).
 
 Ensuite, une matière à la fois ; ordre proposé : Conjugaison (clavier déjà fait),

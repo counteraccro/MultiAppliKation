@@ -89,6 +89,8 @@ export const sounds = {
     ]),
   /** Erreur : une note grave et douce, qui ne gronde pas. */
   wrong: () => play([{ freq: 220, at: 0, duration: 0.25, type: 'sine', volume: 0.15 }]),
+  /** Mot placé pendant un test : une note neutre, ni juste ni faux. */
+  placed: () => play([{ freq: G5, at: 0, duration: 0.1, type: 'triangle', volume: 0.12 }]),
   /** Palier de série (5, 10…). */
   streak: () =>
     play([

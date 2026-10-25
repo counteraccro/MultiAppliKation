@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { beltStatuses, formatDay, highestPassed, progressOf, readCeinturesData, setClassLevel } from './data';
+import {
+  beltStatuses,
+  formatDay,
+  highestPassed,
+  mustPracticeFirst,
+  progressOf,
+  readCeinturesData,
+  recordPractice,
+  recordTest,
+  setClassLevel,
+} from './data';
 import { gradeGoal, gradeNote } from './grade';
 import { SUBJECTS } from './subjects';
 
@@ -38,6 +48,34 @@ describe('progression des ceintures', () => {
     expect(data.homophones?.passed).toEqual({ blanche: '2026-09-15' });
     setClassLevel(data, homophones, -1, '2026-10-25');
     expect(data.homophones?.passed).toEqual({});
+  });
+
+  it('un test réussi note la ceinture et ouvre la suivante', () => {
+    const data = readCeinturesData({});
+    recordTest(data, homophones, 'blanche', true, '2026-10-25');
+    expect(data.homophones?.passed).toEqual({ blanche: '2026-10-25' });
+    expect(beltStatuses(homophones, progressOf(data, homophones)).slice(0, 2)).toEqual(['passed', 'current']);
+  });
+
+  it('après un test raté, il faut s’entraîner avant de repasser', () => {
+    const data = readCeinturesData({});
+    recordTest(data, homophones, 'blanche', false, '2026-10-25');
+    expect(mustPracticeFirst(progressOf(data, homophones), 'blanche')).toBe(true);
+    recordPractice(data, homophones, 'blanche', ['blanche.1', 'blanche.2']);
+    expect(mustPracticeFirst(progressOf(data, homophones), 'blanche')).toBe(false);
+    expect(progressOf(data, homophones).lastPractice).toEqual({ blanche: ['blanche.1', 'blanche.2'] });
+  });
+
+  it('relit le dernier entraînement et le test raté sans garder ce qui est abîmé', () => {
+    const data = readCeinturesData({
+      homophones: {
+        passed: {},
+        lastPractice: { blanche: ['blanche.1', 3], mauve: ['x'], jaune: 'non' },
+        failedTest: { blanche: '2026-10-25', jaune: true },
+      },
+    });
+    expect(data.homophones?.lastPractice).toEqual({ blanche: ['blanche.1'] });
+    expect(data.homophones?.failedTest).toEqual({ blanche: '2026-10-25' });
   });
 
   it('écrit la date comme dans le classeur', () => {

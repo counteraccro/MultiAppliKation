@@ -7,6 +7,10 @@ import type { Subject, SubjectId } from './subjects';
 export interface SubjectProgress {
   /** Ceintures obtenues, avec le jour : { "blanche": "2026-10-25" }. */
   passed: Partial<Record<BeltId, string>>;
+  /** Phrases du dernier entraînement fini, par ceinture : le test en choisit d'autres. */
+  lastPractice?: Partial<Record<BeltId, string[]>>;
+  /** Test raté, avec le jour : il faut un entraînement avant de le repasser. */
+  failedTest?: Partial<Record<BeltId, string>>;
 }
 
 export type CeinturesData = Partial<Record<SubjectId, SubjectProgress>>;
@@ -23,12 +27,29 @@ export function readCeinturesData(raw: unknown): CeinturesData {
 }
 
 function readProgress(raw: Partial<SubjectProgress>): SubjectProgress {
-  const passed: SubjectProgress['passed'] = {};
-  const source = typeof raw === 'object' && raw !== null && typeof raw.passed === 'object' ? raw.passed : {};
-  for (const [belt, day] of Object.entries(source ?? {})) {
-    if (BELTS.some((b) => b.id === belt) && typeof day === 'string' && DAY.test(day)) passed[belt as BeltId] = day;
+  const progress: SubjectProgress = { ...(typeof raw === 'object' && raw !== null ? raw : {}), passed: readDays(raw?.passed) };
+  const failedTest = readDays(raw?.failedTest);
+  if (Object.keys(failedTest).length > 0) progress.failedTest = failedTest;
+  else delete progress.failedTest;
+  const lastPractice: SubjectProgress['lastPractice'] = {};
+  for (const [belt, ids] of entries(raw?.lastPractice)) {
+    if (Array.isArray(ids)) lastPractice[belt] = ids.filter((id): id is string => typeof id === 'string');
   }
-  return { ...raw, passed };
+  if (Object.keys(lastPractice).length > 0) progress.lastPractice = lastPractice;
+  else delete progress.lastPractice;
+  return progress;
+}
+
+/** Les ceintures connues d'un objet enregistré { ceinture: valeur }. */
+function entries(raw: unknown): [BeltId, unknown][] {
+  if (typeof raw !== 'object' || raw === null) return [];
+  return Object.entries(raw).filter((entry): entry is [BeltId, unknown] => BELTS.some((b) => b.id === entry[0]));
+}
+
+function readDays(raw: unknown): Partial<Record<BeltId, string>> {
+  const days: Partial<Record<BeltId, string>> = {};
+  for (const [belt, day] of entries(raw)) if (typeof day === 'string' && DAY.test(day)) days[belt] = day;
+  return days;
 }
 
 export function progressOf(data: CeinturesData, subject: Subject): SubjectProgress {
@@ -66,6 +87,37 @@ export function setClassLevel(data: CeinturesData, subject: Subject, highest: nu
     else passed[belt] ??= day;
   });
   data[subject.id] = { ...progressOf(data, subject), passed };
+}
+
+function update(data: CeinturesData, subject: Subject, change: (progress: SubjectProgress) => void): void {
+  const progress = readProgress(progressOf(data, subject));
+  change(progress);
+  data[subject.id] = progress;
+}
+
+/** Entraînement fini (jusqu'au bout) : le test peut être repassé, et choisira d'autres phrases. */
+export function recordPractice(data: CeinturesData, subject: Subject, belt: BeltId, sentenceIds: string[]): void {
+  update(data, subject, (progress) => {
+    progress.lastPractice = { ...progress.lastPractice, [belt]: sentenceIds };
+    if (progress.failedTest) delete progress.failedTest[belt];
+  });
+}
+
+/** Test fini : la ceinture est obtenue ce jour-là, ou il faudra s'entraîner avant de repasser. */
+export function recordTest(data: CeinturesData, subject: Subject, belt: BeltId, passed: boolean, day: string): void {
+  update(data, subject, (progress) => {
+    if (passed) {
+      progress.passed[belt] ??= day;
+      if (progress.failedTest) delete progress.failedTest[belt];
+    } else {
+      progress.failedTest = { ...progress.failedTest, [belt]: day };
+    }
+  });
+}
+
+/** Le test se passe sur la ceinture en cours, sauf s'il vient d'être raté sans entraînement depuis. */
+export function mustPracticeFirst(progress: SubjectProgress, belt: BeltId): boolean {
+  return progress.failedTest?.[belt] !== undefined;
 }
 
 /** « 25/10 » cette année, « 25/10/2025 » sinon. */

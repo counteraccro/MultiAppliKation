@@ -2,6 +2,7 @@ import { soundToggle } from '../../components/sound-toggle';
 import { h } from '../../core/dom';
 import { sounds } from '../../core/sound';
 import type { PracticeItem, PracticeSession } from './practice-session';
+import type { TestSession } from './test-session';
 import { capitalize, parseSentence, withNbsp } from './sentence';
 
 /** Une bonne réponse reste affichée un instant ; plus longtemps à la fin d'une phrase, pour la relire. */
@@ -12,7 +13,9 @@ const STREAK_SHOWN_FROM = 3;
 const STREAK_MILESTONE = 5;
 
 export interface SentenceScreenOptions {
-  session: PracticeSession;
+  session: PracticeSession | TestSession;
+  /** Test de passage : le mot se place sans dire s'il est juste, tout est corrigé à la fin. */
+  test?: boolean;
   /** Ex. « Ceinture blanche ». */
   label: string;
   onDone(summary: { bestStreak: number }): void;
@@ -20,6 +23,7 @@ export interface SentenceScreenOptions {
 }
 
 interface Filled {
+  /** Le mot choisi par l'enfant. */
   word: string;
   correct: boolean;
 }
@@ -27,7 +31,8 @@ interface Filled {
 /**
  * Phrases à trous : l'enfant touche le bon mot pour chaque trou, dans l'ordre.
  * Une erreur montre le bon mot surligné et l'astuce de la famille de mots, sans gronder ;
- * l'enfant continue avec « Continuer ». Renvoie la fonction de nettoyage.
+ * l'enfant continue avec « Continuer ». En test, rien n'est corrigé pendant.
+ * Renvoie la fonction de nettoyage.
  */
 export function renderSentenceScreen(root: HTMLElement, options: SentenceScreenOptions): () => void {
   const { session } = options;
@@ -50,9 +55,14 @@ export function renderSentenceScreen(root: HTMLElement, options: SentenceScreenO
     const firstTry = !session.isRetry();
     const correct = session.choose(word);
     const answer = parseBlanks(item)[filled.length]!.answer;
-    filled.push({ word: answer, correct });
+    filled.push({ word, correct });
     const sentenceDone = filled.length === parseBlanks(item).length;
-    if (correct) {
+    if (options.test) {
+      state = 'correct';
+      sounds.placed();
+      renderSentence();
+      timer = window.setTimeout(sentenceDone ? nextSentence : nextBlank, sentenceDone ? NEXT_SENTENCE_PAUSE_MS : NEXT_BLANK_PAUSE_MS);
+    } else if (correct) {
       state = 'correct';
       if (firstTry) streak++;
       bestStreak = Math.max(bestStreak, streak);
@@ -109,6 +119,9 @@ export function renderSentenceScreen(root: HTMLElement, options: SentenceScreenO
         const index = blank++;
         const done = filled[index];
         const word = segment.capital ? capitalize(segment.answer) : segment.answer;
+        if (done && options.test) {
+          return h('span', { class: 'blank is-placed' }, segment.capital ? capitalize(done.word) : done.word);
+        }
         if (done) {
           return h('span', { class: `blank ${done.correct ? 'is-correct' : 'is-wrong'}` }, done.correct ? word : h('mark', {}, word));
         }

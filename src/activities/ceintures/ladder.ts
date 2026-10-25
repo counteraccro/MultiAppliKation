@@ -3,13 +3,14 @@ import { h } from '../../core/dom';
 import type { ActivityContext } from '../types';
 import { beltOf, beltTextColor } from './belts';
 import { gradeGoal, gradeNote } from './grade';
-import { beltStatuses, formatDay, progressOf, type BeltStatus, type CeinturesData } from './data';
+import { beltStatuses, formatDay, mustPracticeFirst, progressOf, type BeltStatus, type CeinturesData } from './data';
 import type { HomophoneBelt } from './homophones';
 import type { Subject } from './subjects';
 
 export interface LadderActions {
   onLesson(belt: HomophoneBelt): void;
   onPractice(belt: HomophoneBelt): void;
+  onTest(belt: HomophoneBelt): void;
   onClassBelts(): void;
   onBack(): void;
 }
@@ -43,7 +44,7 @@ export function renderLadder(
   const note = gradeNote(ctx.profile.grade);
   subject.belts.forEach((belt, index) => {
     const status = statuses[index]!;
-    const row = beltItem(belt, status, progress.passed[belt.belt], actions, () => open(row));
+    const row = beltItem(belt, status, progress.passed[belt.belt], mustPracticeFirst(progress, belt.belt), actions, () => open(row));
     rows.push(row);
     items.push(row);
     // Repère du classeur, sous la ceinture à avoir en fin d'année ; celui de sa classe est mis en avant.
@@ -78,6 +79,7 @@ function beltItem(
   belt: HomophoneBelt,
   status: BeltStatus,
   day: string | undefined,
+  practiceFirst: boolean,
   actions: LadderActions,
   onToggle: () => void,
 ): HTMLElement {
@@ -118,6 +120,14 @@ function beltItem(
       { class: 'belt-actions' },
       h('button', { class: 'button secondary', type: 'button', onclick: () => actions.onLesson(belt) }, 'Leçon'),
       h('button', { class: 'button primary', type: 'button', onclick: () => actions.onPractice(belt) }, 'S’entraîner'),
+      // Le test, seulement sur la ceinture en cours ; après un échec, on s'entraîne d'abord.
+      isCurrent &&
+        h(
+          'button',
+          { class: 'button mode primary belt-test', type: 'button', disabled: practiceFirst, onclick: () => actions.onTest(belt) },
+          'Passer la ceinture',
+          h('small', {}, practiceFirst ? 'Entraîne-toi d’abord' : '10 phrases, sans aide'),
+        ),
     ),
   );
 }

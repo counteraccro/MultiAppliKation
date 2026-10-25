@@ -21,6 +21,8 @@ export interface ResultOptions {
   practiceAsSentences?: boolean;
   /** Belle réussite : confettis et musique. */
   celebrate?: boolean;
+  /** Bloc libre sous le message (la correction d'un test…). */
+  details?: HTMLElement;
   /** Autocollants gagnés pendant cette série. */
   rewards?: { emoji: string; name: string }[];
   actions: ResultAction[];
@@ -38,6 +40,7 @@ export function renderResult(root: HTMLElement, options: ResultOptions): void {
       options.highlight,
       options.record && h('p', { class: 'record' }, 'Nouveau record !'),
       h('p', { class: 'subtitle' }, options.message),
+      options.details,
       rewards.length > 0 &&
         h(
           'div',
