@@ -8,9 +8,8 @@ import type { Activity } from '../types';
 import { beltOf, beltTextColor } from './belts';
 import { renderClassBelts } from './class-belts';
 import {
-  beltStatuses,
+  canTakeTest,
   isReady,
-  mustPracticeFirst,
   progressOf,
   readCeinturesData,
   recordPractice,
@@ -129,7 +128,7 @@ export const ceintures: Activity = {
             h('span', { class: 'belt-chip' }, name),
           ),
           message: next
-            ? `Bravo pour ta ceinture ${name} ! La ceinture ${beltOf(next.belt).label} s’ouvre.`
+            ? `Bravo pour ta ceinture ${name} ! À toi la ceinture ${beltOf(next.belt).label} !`
             : `Bravo pour ta ceinture ${name} : tu as toutes les ceintures !`,
           actions: [{ label: subject.label, primary: true, onClick: () => ladder(subject) }],
         }),
@@ -152,11 +151,10 @@ export const ceintures: Activity = {
 
     const label = (belt: HomophoneBelt) => `Ceinture ${beltOf(belt.belt).label}`;
 
-    /** La ceinture en cours, celle dont on peut passer le test (si pas d'échec sans entraînement depuis). */
+    /** Une ceinture pas encore réussie (sauf juste après un échec, sans entraînement depuis). */
     const canTest = (subject: Subject, belt: HomophoneBelt) => {
       const progress = progressOf(load(), subject);
-      const index = subject.belts.indexOf(belt);
-      return beltStatuses(subject, progress)[index] === 'current' && !mustPracticeFirst(progress, belt.belt);
+      return !progress.passedTest?.[belt.belt] && canTakeTest(progress, belt.belt);
     };
 
     const practice = (subject: Subject, belt: HomophoneBelt) =>
@@ -201,7 +199,6 @@ export const ceintures: Activity = {
 
     function showTestResult(subject: Subject, belt: HomophoneBelt, result: TestResult, rewards: Sticker[]) {
       const { label: name, color } = beltOf(belt.belt);
-      const next = subject.belts[subject.belts.indexOf(belt) + 1];
       const count = h(
         'p',
         { class: 'big-count' },
@@ -221,9 +218,7 @@ export const ceintures: Activity = {
                 h('span', { class: 'belt-chip' }, name),
                 count,
               ),
-              message:
-                `Bravo, tu peux passer la ceinture ${name} en classe !` +
-                (next ? ` La ceinture ${beltOf(next.belt).label} s’ouvre.` : ''),
+              message: `Bravo, tu peux passer la ceinture ${name} en classe !`,
               details: result.mistakes.length > 0 ? corrections(result.mistakes) : undefined,
               actions: [{ label: subject.label, primary: true, onClick: () => ladder(subject) }],
             })
@@ -244,7 +239,7 @@ export const ceintures: Activity = {
 
     function showResult(subject: Subject, belt: HomophoneBelt, result: PracticeResult, rewards: Sticker[]) {
       const all = result.correct === result.total;
-      // Entraînement réussi sur la ceinture en cours : on propose le test.
+      // Entraînement réussi, et le test ouvert : on le propose.
       const offerTest = isPassing(result.correct, result.total) && canTest(subject, belt);
       const ready = canTest(subject, belt) && isReady(progressOf(load(), subject), belt.belt);
       show(() =>

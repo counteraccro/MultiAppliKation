@@ -131,7 +131,7 @@ les autres apparaissent quand elles sont faites (pas de tuile « bientôt »).
 - Les ceintures **de bas en haut** ou en liste, chacune à sa couleur :
   - obtenue : coloriée, avec **la date** (« obtenue le 25/10 ») ;
   - **en cours** : la première non obtenue, mise en avant (« À toi ! ») ;
-  - suivantes : grisées avec un cadenas, mais on peut lire ce qu'elles demandent.
+  - suivantes : « à faire », **toutes ouvertes** depuis la 0.24.0 (avant : grisées avec un cadenas).
 - Repères du classeur : « Objectif de fin de CM1 », « Objectif de fin de CM2 », selon la classe du profil.
 - Toucher la ceinture en cours ouvre ses trois boutons : **Leçon**, **S'entraîner**, **Passer la ceinture**.
   Une ceinture déjà obtenue reste ouverte : leçon et entraînement (pour réviser).
@@ -282,6 +282,13 @@ Retours du 25/10/2026 (0.22.1) :
 - **Question d'adulte** (commune à l'app : profils, ceintures) : un pourcentage simple (« 25 % de 160 »,
   10, 20, 25 ou 50 % d'un nombre de 30 à 200, résultat entier) au lieu de 13–19 × 6–9, à la portée d'un
   élève de CM1 qui connaît ses tables.
+- **0.24.0 : toutes les ceintures sont ouvertes.** Plus de cadenas : chaque ceinture non obtenue
+  (état `todo`, ou `current` pour la première pas encore faite, toujours « À toi ! » et ouverte d'office)
+  a Leçon, S'entraîner, **Entraînement en conditions réelles** et « Obtenue en classe ? ». L'application
+  indique toujours la ceinture suivante à faire (`current` : la première ni obtenue ni réussie, même si
+  une plus haute a déjà été réussie). L'entraînement en conditions réelles **n'est pas bloqué** (une
+  limite de 3 essais a été envisagée puis retirée) ; seul un échec demande un entraînement avant de le
+  refaire (`canTakeTest`). Réussi, il ne dit plus « la suivante s'ouvre ».
 
 Ensuite, une matière à la fois ; ordre proposé : Conjugaison (clavier déjà fait),
 Tables puis Calcul mental (pavé déjà fait), Accords, Numération, Grammaire, Mesures, Calcul posé.

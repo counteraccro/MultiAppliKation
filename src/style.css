@@ -1861,21 +1861,6 @@ button.belt-row:active {
   position: static;
 }
 
-/* Fermée : grisée, mais on lit ce qu'elle demande. */
-.belt-item.locked {
-  background: transparent;
-  box-shadow: none;
-  border: 2px dashed var(--border);
-}
-
-.belt-item.locked .belt-chip {
-  opacity: 0.4;
-}
-
-.belt-item.locked .belt-skill {
-  color: var(--text-soft);
-}
-
 .belt-actions {
   display: none;
   grid-template-columns: 1fr 1fr;

@@ -19,8 +19,8 @@ export interface LadderActions {
 
 /**
  * L'échelle d'une matière, de la blanche à la noire : obtenues (coloriées, avec la date),
- * en cours (« À toi ! »), puis fermées d'un cadenas, mais on peut lire ce qu'elles demandent.
- * Toucher une ceinture ouverte montre ses boutons ; celle en cours est ouverte d'office.
+ * en cours (« À toi ! » : la suivante à faire), puis à faire. Toutes sont ouvertes :
+ * toucher une ceinture montre ses boutons ; celle en cours est ouverte d'office.
  */
 export function renderLadder(
   root: HTMLElement,
@@ -89,20 +89,6 @@ function beltItem(
   const chip = h('span', { class: 'belt-chip' }, label);
   const skill = h('span', { class: 'belt-skill' }, belt.skill);
 
-  if (status === 'locked') {
-    return h(
-      'li',
-      { class: 'belt-item locked', style },
-      h(
-        'div',
-        { class: 'belt-row', 'aria-label': `Ceinture ${label}, ${belt.skill} : fermée` },
-        chip,
-        skill,
-        h('span', { class: 'belt-state', 'aria-hidden': 'true' }, '🔒'),
-      ),
-    );
-  }
-
   const isCurrent = status === 'current';
   const day = progress.passed[belt.belt];
   const practiceFirst = mustPracticeFirst(progress, belt.belt);
@@ -111,7 +97,7 @@ function beltItem(
     ? h('span', { class: 'badge belt-badge' }, 'À toi !')
     : status === 'tested'
       ? h('span', { class: 'belt-state tested' }, `✓ réussie le ${formatDay(passedTest!)} · à passer en classe`)
-      : h('span', { class: 'belt-state passed' }, `✓ obtenue le ${formatDay(day!)}`);
+      : status === 'passed' && h('span', { class: 'belt-state passed' }, `✓ obtenue le ${formatDay(day!)}`);
   return h(
     'li',
     { class: `belt-item ${status}${isCurrent ? ' open' : ''}`, style },
@@ -125,11 +111,11 @@ function beltItem(
       'div',
       { class: 'belt-actions' },
       status === 'tested' && h('p', { class: 'belt-ready' }, 'Réussie en conditions réelles : à toi de la passer en classe !'),
-      isCurrent && isReady(progress, belt.belt) && h('p', { class: 'belt-ready' }, readyMessage(label)),
+      status !== 'tested' && isReady(progress, belt.belt) && h('p', { class: 'belt-ready' }, readyMessage(label)),
       h('button', { class: 'button secondary', type: 'button', onclick: () => actions.onLesson(belt) }, 'Leçon'),
       h('button', { class: 'button primary', type: 'button', onclick: () => actions.onPractice(belt) }, 'S’entraîner'),
-      // Le test, seulement sur la ceinture en cours ; après un échec, on s'entraîne d'abord.
-      isCurrent &&
+      // Le test, sur toute ceinture pas encore réussie ; après un échec, on s'entraîne d'abord.
+      (isCurrent || status === 'todo') &&
         h(
           'button',
           { class: 'button mode primary belt-test', type: 'button', disabled: practiceFirst, onclick: () => actions.onTest(belt) },

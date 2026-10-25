@@ -144,23 +144,23 @@ export function progressOf(data: CeinturesData, subject: Subject): SubjectProgre
 }
 
 /**
- * Obtenue (notée par un adulte), réussie en conditions réelles (à passer en classe : la suivante s'ouvre),
- * en cours (la première ni obtenue ni réussie), ou fermée : on ne saute pas de ceinture.
+ * Obtenue (notée par un adulte), réussie en conditions réelles (à passer en classe),
+ * en cours (la première ni obtenue ni réussie : celle à faire ensuite), ou à faire.
+ * Toutes sont ouvertes : on peut s'entraîner sur n'importe laquelle.
  */
-export type BeltStatus = 'passed' | 'tested' | 'current' | 'locked';
+export type BeltStatus = 'passed' | 'tested' | 'current' | 'todo';
 
 export function beltStatuses(subject: Subject, progress: SubjectProgress): BeltStatus[] {
   let currentFound = false;
   return subject.belts.map(({ belt }) => {
     if (progress.passed[belt]) return 'passed';
-    if (currentFound) return 'locked';
     if (progress.passedTest?.[belt]) return 'tested';
+    if (currentFound) return 'todo';
     currentFound = true;
     return 'current';
   });
 }
 
-/** La plus haute ceinture obtenue (celle qu'on « porte »), ou -1. */
 /**
  * Ceintures réussies par l'enfant : réussies en conditions réelles ou notées obtenues par un adulte.
  * Pour les autocollants, qui ne dépendent pas de la validation en classe.
@@ -169,6 +169,7 @@ export function beltsSucceeded(subject: Subject, progress: SubjectProgress): num
   return beltStatuses(subject, progress).filter((s) => s === 'passed' || s === 'tested').length;
 }
 
+/** La plus haute ceinture obtenue (celle qu'on « porte »), ou -1. */
 export function highestPassed(subject: Subject, progress: SubjectProgress): number {
   const statuses = beltStatuses(subject, progress);
   return statuses.lastIndexOf('passed');
@@ -242,9 +243,14 @@ export function isReady(progress: SubjectProgress, belt: BeltId): boolean {
   return !progress.passed[belt] && (statsOf(progress, belt).goodPractices ?? 0) >= READY_PRACTICES;
 }
 
-/** Le test se passe sur la ceinture en cours, sauf s'il vient d'être raté sans entraînement depuis. */
+/** Le test vient d'être raté sans entraînement depuis : il faut s'entraîner avant de le refaire. */
 export function mustPracticeFirst(progress: SubjectProgress, belt: BeltId): boolean {
   return progress.failedTest?.[belt] !== undefined;
+}
+
+/** L'entraînement en conditions réelles d'une ceinture pas encore obtenue, sauf juste après un échec. */
+export function canTakeTest(progress: SubjectProgress, belt: BeltId): boolean {
+  return !progress.passed[belt] && !mustPracticeFirst(progress, belt);
 }
 
 /** « 25/10 » cette année, « 25/10/2025 » sinon. */
