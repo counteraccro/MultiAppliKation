@@ -8,7 +8,8 @@ export function dayOf(time: number): string {
 
 /** Nombre de jours différents où elle a joué, et le dernier (« 2026-10-24 »). */
 export interface PlayDays {
-  leitner: LeitnerState;
+  /** Boîtes de l'activité, s'il y en a (les Ceintures n'en ont pas). */
+  leitner?: LeitnerState;
   daysPlayed?: number;
   lastPlayedDay?: string;
 }
@@ -26,7 +27,7 @@ export function recordDay(data: PlayDays, now = Date.now()): void {
   const day = dayOf(now);
   if (data.daysPlayed === undefined) {
     // Données d'avant les jours de jeu : on retrouve au moins les jours encore visibles dans les boîtes.
-    const seen = new Set(Object.values(data.leitner).map((entry) => dayOf(entry.lastSeen)));
+    const seen = new Set(Object.values(data.leitner ?? {}).map((entry) => dayOf(entry.lastSeen)));
     data.daysPlayed = seen.size;
     if (seen.has(day)) data.lastPlayedDay = day;
   }

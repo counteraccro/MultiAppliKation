@@ -1911,6 +1911,40 @@ button.belt-row:active {
   box-shadow: 0 4px 0 #1f9a8f;
 }
 
+/* Ceintures : mes progrès, une ligne par ceinture aux couleurs des autres grilles */
+
+.belt-progress {
+  width: 100%;
+  max-width: 520px;
+}
+
+.belt-progress h2 {
+  margin: 8px 0;
+  font-size: 1.3rem;
+}
+
+.belt-progress-row {
+  border-left: 8px solid var(--cell);
+}
+
+.belt-facts {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+.mastery-tag {
+  flex: none;
+  max-width: 6.5em;
+  padding: 4px 8px;
+  border-radius: 10px;
+  background: var(--cell);
+  color: var(--cell-text);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-align: center;
+}
+
 /* Ceintures : résultat du test */
 
 .belt-won {

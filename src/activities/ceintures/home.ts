@@ -1,18 +1,29 @@
+import { albumCard, progressCard } from '../../components/home-cards';
 import { topbar } from '../../components/topbar';
 import { h } from '../../core/dom';
+import { countStickers } from '../../core/stickers';
 import type { ActivityContext } from '../types';
 import { beltOf, beltTextColor } from './belts';
 import { highestPassed, progressOf, type CeinturesData } from './data';
+import { MASTERY_LABELS, masteryCounts } from './mastery';
+import { STICKERS } from './stickers';
 import { SUBJECTS, type Subject } from './subjects';
 
 // Accueil de l'activité : une tuile par matière, avec la ceinture qu'on porte.
 // Seules les matières faites apparaissent (pas de tuile « bientôt »).
+// En dessous, comme dans les autres activités : « Mes progrès » et « Mes autocollants ».
+
+export interface CeinturesHomeActions {
+  onSubject(subject: Subject): void;
+  onProgress(): void;
+  onAlbum(): void;
+}
 
 export function renderCeinturesHome(
   root: HTMLElement,
   ctx: ActivityContext,
   data: CeinturesData,
-  onSubject: (subject: Subject) => void,
+  { onSubject, onProgress, onAlbum }: CeinturesHomeActions,
 ): void {
   root.append(
     h(
@@ -22,6 +33,12 @@ export function renderCeinturesHome(
       h('h1', { class: 'title' }, 'Ceintures'),
       h('p', { class: 'subtitle' }, 'Choisis une matière.'),
       h('div', { class: 'tile-grid' }, ...SUBJECTS.map((subject) => subjectTile(subject, data, onSubject))),
+      h(
+        'div',
+        { class: 'home-cards' },
+        progressCard(masteryCounts(data), MASTERY_LABELS, onProgress),
+        albumCard(countStickers(data, STICKERS), STICKERS.length, onAlbum),
+      ),
     ),
   );
 }

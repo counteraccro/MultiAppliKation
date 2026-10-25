@@ -52,16 +52,16 @@ describe('progression des ceintures', () => {
 
   it('un test réussi note la ceinture et ouvre la suivante', () => {
     const data = readCeinturesData({});
-    recordTest(data, homophones, 'blanche', true, '2026-10-25');
+    recordTest(data, homophones, 'blanche', { correct: 10, total: 10 }, true, '2026-10-25');
     expect(data.homophones?.passed).toEqual({ blanche: '2026-10-25' });
     expect(beltStatuses(homophones, progressOf(data, homophones)).slice(0, 2)).toEqual(['passed', 'current']);
   });
 
   it('après un test raté, il faut s’entraîner avant de repasser', () => {
     const data = readCeinturesData({});
-    recordTest(data, homophones, 'blanche', false, '2026-10-25');
+    recordTest(data, homophones, 'blanche', { correct: 5, total: 10 }, false, '2026-10-25');
     expect(mustPracticeFirst(progressOf(data, homophones), 'blanche')).toBe(true);
-    recordPractice(data, homophones, 'blanche', ['blanche.1', 'blanche.2']);
+    recordPractice(data, homophones, 'blanche', ['blanche.1', 'blanche.2'], { correct: 6, total: 7 });
     expect(mustPracticeFirst(progressOf(data, homophones), 'blanche')).toBe(false);
     expect(progressOf(data, homophones).lastPractice).toEqual({ blanche: ['blanche.1', 'blanche.2'] });
   });

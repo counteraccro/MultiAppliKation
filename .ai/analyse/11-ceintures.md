@@ -242,6 +242,16 @@ Ajouter des phrases ne casse rien ; en retirer une ne doit pas changer les ident
    des éventuelles erreurs. Raté : la correction (mot choisi barré, bon mot surligné), S'entraîner,
    Leçon. Quitter un test en cours ne compte pas.
 5. **Autocollants** (les repères de classe sont faits à l'étape 3).
+   Faite le 25/10/2026 (0.21.0), avec **« Mes progrès »** (demande de l'utilisateur, pour être raccord
+   avec les autres activités). Accueil : cartes « Mes progrès » et « Mes autocollants », comme ailleurs.
+   `mastery.ts` : une couleur par ceinture, celles des autres grilles — pas encore commencée, à travailler
+   (entraînée, pas encore à 90 %), prête pour le test (un entraînement à 90 %), obtenue, sans faute
+   (obtenue avec un test à 100 %). `progress-screen.ts` : une ligne par ceinture avec la date, le nombre
+   d'entraînements, le meilleur entraînement et le meilleur test (`stats` par ceinture dans `data.ts`).
+   `stickers.ts` (9) : première ceinture, trois ceintures, objectif CM1 (bleu clair), ceinture noire,
+   test sans faute, entraînement parfait, 10 d'affilée, 5 et 15 jours de jeu ; gagnés à la fin d'un
+   entraînement ou d'un test (une ceinture cochée en classe compte au suivant). Jours de jeu sans boîtes :
+   `core/play-days.ts` accepte une activité sans Leitner.
 
 Ensuite, une matière à la fois ; ordre proposé : Conjugaison (clavier déjà fait),
 Tables puis Calcul mental (pavé déjà fait), Accords, Numération, Grammaire, Mesures, Calcul posé.
