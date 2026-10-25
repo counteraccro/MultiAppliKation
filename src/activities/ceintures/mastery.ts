@@ -17,8 +17,8 @@ export const MASTERY_LABELS: Record<Mastery, string> = {
 
 /**
  * Pas encore commencée, à travailler (entraînée, pas encore à 90 %), prête à passer
- * (un entraînement à 90 %, ou examen blanc réussi), obtenue en classe, et obtenue
- * avec un examen blanc sans faute.
+ * (un entraînement à 90 %, ou réussie en conditions réelles), obtenue en classe, et obtenue
+ * avec un entraînement en conditions réelles sans faute.
  */
 export function beltMastery(progress: SubjectProgress, belt: BeltId): Mastery {
   const stats = statsOf(progress, belt);

@@ -1,4 +1,4 @@
-// Examen blanc (le test de la ceinture) : 10 phrases, sans correction pendant le test (comme une évaluation).
+// Entraînement en conditions réelles (le test de la ceinture) : 10 phrases, sans correction pendant le test (comme une évaluation).
 // Réussi avec au moins 90 % des trous justes ; tout est corrigé à la fin.
 
 import { shuffle } from '../../core/quiz';

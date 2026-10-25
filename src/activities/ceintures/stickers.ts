@@ -1,6 +1,6 @@
 import { toSticker, unlockRules, type Sticker, type StickerRule } from '../../core/stickers';
 import { beltOf } from './belts';
-import { highestPassed, progressOf, type CeinturesData } from './data';
+import { beltsSucceeded, progressOf, type CeinturesData } from './data';
 import { SUBJECTS, type Subject, type SubjectId } from './subjects';
 
 /**
@@ -23,7 +23,8 @@ type Rule = StickerRule<CeinturesData, SeriesEvent>;
  * la matière (« homophones.first-belt ») : ne jamais les changer, ils sont enregistrés.
  */
 function subjectRules(subject: Subject): Rule[] {
-  const passed = (data: CeinturesData) => highestPassed(subject, progressOf(data, subject)) + 1;
+  // Réussies en conditions réelles ou notées en classe : sans attendre la validation de l'adulte.
+  const passed = (data: CeinturesData) => beltsSucceeded(subject, progressOf(data, subject));
   const cm1 = subject.belts.findIndex((b) => b.goal === 'CM1');
   const last = subject.belts.length - 1;
   const lastLabel = beltOf(subject.belts[last]!.belt).label;
@@ -33,14 +34,14 @@ function subjectRules(subject: Subject): Rule[] {
       id: `${subject.id}.first-belt`,
       emoji: '🥋',
       name: 'Première ceinture',
-      hint: 'Obtiens ta première ceinture.',
+      hint: 'Réussis ta première ceinture en conditions réelles.',
       won: (data) => passed(data) >= 1,
     },
     {
       id: `${subject.id}.three-belts`,
       emoji: '🎽',
       name: 'Trois ceintures',
-      hint: 'Obtiens 3 ceintures.',
+      hint: 'Réussis 3 ceintures en conditions réelles.',
       won: (data) => passed(data) >= 3,
     },
   ];
@@ -49,7 +50,7 @@ function subjectRules(subject: Subject): Rule[] {
       id: `${subject.id}.goal-cm1`,
       emoji: '🎯',
       name: 'Objectif CM1',
-      hint: `La ceinture ${beltOf(subject.belts[cm1]!.belt).label} : l’objectif de fin de CM1.`,
+      hint: `Réussis la ceinture ${beltOf(subject.belts[cm1]!.belt).label} : l’objectif de fin de CM1.`,
       won: (data) => passed(data) > cm1,
     });
   }
@@ -58,14 +59,14 @@ function subjectRules(subject: Subject): Rule[] {
       id: `${subject.id}.last-belt`,
       emoji: '🐉',
       name: `Ceinture ${lastLabel}`,
-      hint: `Toutes les ceintures, jusqu’à la ${lastLabel}.`,
+      hint: `Réussis toutes les ceintures, jusqu’à la ${lastLabel}.`,
       won: (data) => passed(data) > last,
     },
     {
       id: `${subject.id}.perfect-test`,
       emoji: '💯',
       name: 'Sans faute',
-      hint: 'Un examen blanc sans aucune erreur.',
+      hint: 'Un entraînement en conditions réelles sans aucune erreur.',
       won: (_, event) => inSubject(event) && event.mode === 'test' && event.total > 0 && event.correct === event.total,
     },
     {

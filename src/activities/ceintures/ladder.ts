@@ -124,7 +124,7 @@ function beltItem(
     h(
       'div',
       { class: 'belt-actions' },
-      status === 'tested' && h('p', { class: 'belt-ready' }, 'Examen blanc réussi : à toi de la passer en classe !'),
+      status === 'tested' && h('p', { class: 'belt-ready' }, 'Réussie en conditions réelles : à toi de la passer en classe !'),
       isCurrent && isReady(progress, belt.belt) && h('p', { class: 'belt-ready' }, readyMessage(label)),
       h('button', { class: 'button secondary', type: 'button', onclick: () => actions.onLesson(belt) }, 'Leçon'),
       h('button', { class: 'button primary', type: 'button', onclick: () => actions.onPractice(belt) }, 'S’entraîner'),
@@ -133,7 +133,7 @@ function beltItem(
         h(
           'button',
           { class: 'button mode primary belt-test', type: 'button', disabled: practiceFirst, onclick: () => actions.onTest(belt) },
-          'Examen blanc',
+          'Entraînement en conditions réelles',
           h('small', {}, practiceFirst ? 'Entraîne-toi d’abord' : '10 phrases, sans aide'),
         ),
       // Seul un adulte note la ceinture : elle se passe en classe.

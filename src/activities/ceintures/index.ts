@@ -186,7 +186,7 @@ export const ceintures: Activity = {
         return renderSentenceScreen(root, {
           session,
           test: true,
-          label: `Examen blanc · ${label(belt)}`,
+          label: `En conditions réelles · ${label(belt)}`,
           onQuit: () => ladder(subject),
           onDone: () => {
             const result = session.result();
@@ -267,7 +267,7 @@ export const ceintures: Activity = {
           practiceAsSentences: true,
           actions: [
             ...(offerTest
-              ? [{ label: 'Examen blanc', primary: true, onClick: () => test(subject, belt) }]
+              ? [{ label: 'Entraînement en conditions réelles', primary: true, onClick: () => test(subject, belt) }]
               : []),
             { label: 'Encore', primary: !offerTest, onClick: () => practice(subject, belt) },
             { label: 'Leçon', onClick: () => lesson(subject, belt) },

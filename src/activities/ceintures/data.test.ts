@@ -51,7 +51,7 @@ describe('progression des ceintures', () => {
     expect(data.homophones?.passed).toEqual({});
   });
 
-  it('réussi à l’examen blanc : la suivante s’ouvre, la ceinture reste à passer en classe', () => {
+  it('réussi en conditions réelles : la suivante s’ouvre, la ceinture reste à passer en classe', () => {
     const data = readCeinturesData({});
     const statuses = () => beltStatuses(homophones, progressOf(data, homophones)).slice(0, 4);
     recordTest(data, homophones, 'blanche', { correct: 10, total: 10 }, true, '2026-10-25');

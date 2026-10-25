@@ -9,7 +9,7 @@ import { isPassing } from './test-session';
 export interface SubjectProgress {
   /** Ceintures obtenues en classe (cochées par un adulte), avec le jour : { "blanche": "2026-10-25" }. */
   passed: Partial<Record<BeltId, string>>;
-  /** Examen blanc réussi, avec le jour : l'enfant peut passer la ceinture en classe. */
+  /** Entraînement en conditions réelles réussi, avec le jour : l'enfant peut passer la ceinture en classe. */
   passedTest?: Partial<Record<BeltId, string>>;
   /** Phrases du dernier entraînement fini, par ceinture : le test en choisit d'autres. */
   lastPractice?: Partial<Record<BeltId, string[]>>;
@@ -144,7 +144,7 @@ export function progressOf(data: CeinturesData, subject: Subject): SubjectProgre
 }
 
 /**
- * Obtenue (notée par un adulte), réussie à l'examen blanc (à passer en classe : la suivante s'ouvre),
+ * Obtenue (notée par un adulte), réussie en conditions réelles (à passer en classe : la suivante s'ouvre),
  * en cours (la première ni obtenue ni réussie), ou fermée : on ne saute pas de ceinture.
  */
 export type BeltStatus = 'passed' | 'tested' | 'current' | 'locked';
@@ -161,6 +161,14 @@ export function beltStatuses(subject: Subject, progress: SubjectProgress): BeltS
 }
 
 /** La plus haute ceinture obtenue (celle qu'on « porte »), ou -1. */
+/**
+ * Ceintures réussies par l'enfant : réussies en conditions réelles ou notées obtenues par un adulte.
+ * Pour les autocollants, qui ne dépendent pas de la validation en classe.
+ */
+export function beltsSucceeded(subject: Subject, progress: SubjectProgress): number {
+  return beltStatuses(subject, progress).filter((s) => s === 'passed' || s === 'tested').length;
+}
+
 export function highestPassed(subject: Subject, progress: SubjectProgress): number {
   const statuses = beltStatuses(subject, progress);
   return statuses.lastIndexOf('passed');
@@ -206,7 +214,7 @@ export function recordPractice(data: CeinturesData, subject: Subject, belt: Belt
 }
 
 /**
- * Examen blanc fini : réussi, l'enfant peut passer la ceinture en classe
+ * Entraînement en conditions réelles fini : réussi, l'enfant peut passer la ceinture en classe
  * (seul un adulte la note obtenue) ; raté, il faudra s'entraîner avant de le refaire.
  */
 export function recordTest(data: CeinturesData, subject: Subject, belt: BeltId, score: Score, passed: boolean, day: string): void {

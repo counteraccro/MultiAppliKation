@@ -65,12 +65,18 @@ describe('autocollants des ceintures', () => {
   it('colle la première ceinture une seule fois', () => {
     const data = readCeinturesData({});
     recordTest(data, homophones, 'blanche', { correct: 9, total: 10 }, true, '2026-10-25');
-    // Examen blanc réussi : pas encore la ceinture, elle se passe en classe.
-    expect(unlockStickers(data, event({ mode: 'test', correct: 9, total: 10 }))).toEqual([]);
+    // Réussi en conditions réelles : l'autocollant n'attend pas la validation en classe.
+    expect(ids(unlockStickers(data, event({ mode: 'test', correct: 9, total: 10 })))).toEqual(['first-belt']);
     setClassLevel(data, homophones, 0, '2026-10-26');
-    expect(ids(unlockStickers(data, event({ mode: 'class', correct: 0, total: 0 })))).toEqual(['first-belt']);
     expect(unlockStickers(data, event({ mode: 'class', correct: 0, total: 0 }))).toEqual([]);
     expect(countStickers(data, STICKERS)).toBe(1);
+  });
+
+  it('compte les ceintures réussies en conditions réelles et celles notées en classe', () => {
+    const data = readCeinturesData({});
+    setClassLevel(data, homophones, 1, '2026-10-25');
+    recordTest(data, homophones, 'orange', { correct: 10, total: 10 }, true, '2026-10-26');
+    expect(ids(unlockStickers(data, event()))).toEqual(['first-belt', 'three-belts']);
   });
 
   it('récompense l’objectif de CM1 et la ceinture noire', () => {

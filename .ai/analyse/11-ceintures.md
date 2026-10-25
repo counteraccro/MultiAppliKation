@@ -257,7 +257,8 @@ Ajouter des phrases ne casse rien ; en retirer une ne doit pas changer les ident
    demande) ; les autocollants gagnés en 0.21.0 sont repris sous leur nouveau nom à la lecture.
 
 Retours du 25/10/2026 (0.22.1) :
-- le bouton du test s'appelait « Entraînement en conditions réelles » (« 10 phrases, sans aide ») ; **« Examen blanc »** depuis la 0.23.0, le mot de l'utilisateur ;
+- le bouton du test s'appelle **« Entraînement en conditions réelles »** (« 10 phrases, sans aide ») ;
+  « examen blanc » n'est pas retenu : l'utilisateur veut garder « Entraînement en conditions réelles » ;
   « test blanc » écarté (« le test blanc de la ceinture blanche » prête à confusion). Le fonctionnement
   ne change pas : réussi, la ceinture est notée et la suivante s'ouvre ;
 - après **3 entraînements réussis** (au moins 90 % du premier coup, `goodPractices`) sur la ceinture en
@@ -266,14 +267,16 @@ Retours du 25/10/2026 (0.22.1) :
   conditions réelles reste ouvert avant (seul un échec demande un entraînement avant de le refaire) ;
 - 0.22.2 : l'écran de réussite dit « Réussi ! » et « Bravo, tu peux passer la ceinture blanche en classe ! »
   (la vraie ceinture se passe en classe) ; textes sans « prêt / prête », pour tous les enfants.
-- **0.23.0 : seul un adulte note une ceinture obtenue**, mais **l'examen blanc réussi ouvre la suivante.**
-  Réussir l'entraînement en conditions réelles (l'« examen blanc ») garde sa date (`passedTest`) : la
+- **0.23.0 : seul un adulte note une ceinture obtenue**, mais **l'entraînement en conditions réelles
+  réussi ouvre la suivante.** Le réussir garde sa date (`passedTest`) : la
   ceinture passe à l'état `tested` (« ✓ réussie le 25/10 · à passer en classe », couleur « Prête à
   passer »), reste ouverte (leçon, entraînement), et la suivante devient la ceinture en cours. Plusieurs
   ceintures peuvent attendre la classe. Sur une ceinture en cours ou réussie, « ✓ Obtenue en classe ?
   Un adulte la note ici » (vérification adulte) la note obtenue du jour (avec celles d'en dessous),
-  fête « Ceinture obtenue ! » avec les autocollants. Les autocollants de ceintures (première, trois,
-  objectif CM1, dernière) ne comptent que les ceintures notées par l'adulte. L'écran
+  fête « Ceinture obtenue ! ».
+- **0.23.1 : les autocollants ne dépendent pas de la validation en classe.** Les autocollants de
+  ceintures (première, trois, objectif CM1, dernière) comptent les ceintures réussies en conditions
+  réelles ou notées par l'adulte (`beltsSucceeded`) : ils arrivent dès la réussite de l'enfant. L'écran
   « Ceintures obtenues en classe » reste pour noter plusieurs ceintures ou corriger. Les ceintures déjà
   notées par un test avant la 0.23.0 restent obtenues (on ne peut pas les distinguer).
 - **Question d'adulte** (commune à l'app : profils, ceintures) : un pourcentage simple (« 25 % de 160 »,
