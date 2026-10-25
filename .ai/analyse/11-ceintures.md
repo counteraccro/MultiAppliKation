@@ -204,6 +204,15 @@ Ajouter des phrases ne casse rien ; en retirer une ne doit pas changer les ident
    Corrigé en recopiant : majuscules et accents (« À l’école »), virgules, le prénom de la fiche 26
    (Lola dans la question, Marion dans la correction : Lola gardé).
 2. **Question à trous** avec boutons, majuscule automatique, correction surlignée avec l'astuce.
+   Faite le 25/10/2026 (0.18.0) : `practice-session.ts` (6 phrases, corrigées trou par trou ; une phrase
+   avec une erreur revient 3 phrases plus tard ; seul le premier passage compte), `sentence-screen.ts`
+   (trou en cours encadré, boutons sous le pouce, « Continuer → » après une erreur avec l'astuce,
+   série « d'affilée », touches 1 2 3 et Entrée au clavier), espace insécable avant ! ? : ;.
+   Pour l'essayer : un **accueil provisoire** liste les 11 ceintures et lance l'entraînement
+   (remplacé à l'étape 3 par l'échelle). Le résultat montre les trous justes du premier coup
+   et les phrases à retravailler, une par ligne (option `practiceAsSentences` du résultat commun).
+   Astuces reformulées avec « écris » (« écris « c’est » ») : « c’est « c’est » » se lisait mal.
+   Le bouton de son est sorti dans `components/sound-toggle.ts`.
 3. **Accueil** (matières, échelle des ceintures), **leçon** et **entraînement**.
 4. **Test de passage** : sans correction pendant, résultat, date, ouverture de la suivante,
    correction en cas d'échec, entraînement obligatoire avant de repasser.

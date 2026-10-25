@@ -1,11 +1,12 @@
 import { closestAnswer, diffParts } from '../core/diff';
 import { h } from '../core/dom';
 import { acceptedAnswers, normalizeAnswer, type QuizSession } from '../core/quiz';
-import { isMuted, setMuted, sounds } from '../core/sound';
+import { sounds } from '../core/sound';
 import { createChrono } from './chrono';
 import { createKeyboard } from './keyboard';
 import { createKeypad } from './keypad';
 import { createRace } from './race';
+import { soundToggle } from './sound-toggle';
 
 const MAX_DIGITS = 3;
 /** Assez pour « sommes allées », pas assez pour taper n'importe quoi. */
@@ -78,16 +79,7 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
         })
       : undefined;
 
-  const soundButton = h('button', { class: 'sound-toggle', type: 'button' });
-  const renderSound = () => {
-    soundButton.textContent = isMuted() ? '🔇' : '🔊';
-    soundButton.setAttribute('aria-label', isMuted() ? 'Remettre le son' : 'Couper le son');
-  };
-  soundButton.addEventListener('click', () => {
-    setMuted(!isMuted());
-    renderSound();
-  });
-  renderSound();
+  const soundButton = soundToggle();
 
   const handlers = {
     onChar(char: string) {

@@ -18,3 +18,14 @@ export const BELTS = [
 ] as const;
 
 export type BeltId = (typeof BELTS)[number]['id'];
+
+export function beltOf(id: BeltId): (typeof BELTS)[number] {
+  return BELTS.find((b) => b.id === id)!;
+}
+
+/** Texte lisible sur la couleur de la ceinture : blanc sur les foncées, sombre sur les claires. */
+export function beltTextColor(color: string): string {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(color.slice(i, i + 2), 16) / 255) as [number, number, number];
+  const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+  return luminance < 0.6 ? '#FFFFFF' : '#2D2A32';
+}

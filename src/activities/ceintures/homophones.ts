@@ -51,7 +51,7 @@ export const HOMOPHONES: readonly HomophoneBelt[] = [
       {
         choices: ['et', 'est'],
         rules: ['relie deux mots ou deux idées.', 'c’est le verbe être : il est, elle est.'],
-        tip: 'Remplace par « était » : si la phrase veut encore dire quelque chose, c’est « est ». Sinon, c’est « et » (et puis).',
+        tip: 'Remplace par « était » : si la phrase veut encore dire quelque chose, écris « est ». Sinon, écris « et » (et puis).',
         examples: ['Le ciel {est} bleu.', 'Le ciel était bleu.', 'Je mange une pomme {et} une poire.'],
         sentences: sentences('blanche', [
           [1, 'Le lion {est} un animal carnivore.', 1],
@@ -95,7 +95,7 @@ export const HOMOPHONES: readonly HomophoneBelt[] = [
       {
         choices: ['son', 'sont'],
         rules: ['est devant un nom : son vélo, son ami (à lui ou à elle).', 'c’est le verbe être : ils sont, elles sont.'],
-        tip: 'Remplace par « étaient » : si ça marche, c’est « sont ». Si tu peux dire « mon », c’est « son ».',
+        tip: 'Remplace par « étaient » : si ça marche, écris « sont ». Si tu peux dire « mon », écris « son ».',
         examples: ['Paul prend {son} sac.', 'Paul prend mon sac.', 'Les enfants {sont} dehors.', 'Les enfants étaient dehors.'],
         sentences: sentences('jaune', [
           [1, '{son} frère et sa sœur {sont} très gentils.', 7],
@@ -139,7 +139,7 @@ export const HOMOPHONES: readonly HomophoneBelt[] = [
       {
         choices: ['a', 'à'],
         rules: ['c’est le verbe avoir : il a, elle a.', 'est un petit mot qui ne change jamais : aller à, à côté.'],
-        tip: 'Remplace par « avait » : si ça marche, c’est « a », sans accent. Sinon, c’est « à ».',
+        tip: 'Remplace par « avait » : si ça marche, écris « a », sans accent. Sinon, écris « à ».',
         examples: ['Léo {a} un chien.', 'Léo avait un chien.', 'Nous allons {à} la plage.'],
         sentences: sentences('orange', [
           [1, 'Mon chat {a} peur de la sonnette.', 13],
@@ -187,7 +187,7 @@ export const HOMOPHONES: readonly HomophoneBelt[] = [
           'c’est le verbe avoir : ils ont, elles ont.',
           'c’est « on » dans une phrase qui dit non : on n’a pas, on n’entend rien.',
         ],
-        tip: 'Remplace par « il » : c’est « on ». Par « avaient » : c’est « ont ». Si la phrase dit non (pas, rien, jamais, plus), n’oublie pas « n’ ».',
+        tip: 'Remplace par « il » : écris « on ». Par « avaient » : écris « ont ». Si la phrase dit non (pas, rien, jamais, plus), n’oublie pas « n’ ».',
         examples: ['{on} chante.', 'Il chante.', 'Ils {ont} faim.', 'Ils avaient faim.', '{on n’}a pas froid.'],
         sentences: sentences('rose', [
           [1, '{on n’}a pas le même exercice.', 19],
@@ -231,7 +231,7 @@ export const HOMOPHONES: readonly HomophoneBelt[] = [
       {
         choices: ['ou', 'où'],
         rules: ['sert à choisir : du jus ou de l’eau.', 'parle d’un endroit : où vas-tu ?'],
-        tip: 'Si tu peux dire « ou bien », pas d’accent : « ou ». Si ça parle d’un endroit, c’est « où ».',
+        tip: 'Si tu peux dire « ou bien », pas d’accent : « ou ». Si ça parle d’un endroit, écris « où ».',
         examples: ['Tu veux une pomme {ou} une poire ?', 'Tu veux une pomme ou bien une poire ?', '{où} est mon sac ?'],
         sentences: sentences('vert-clair', [
           [1, 'Je ne sais pas {où} tu veux aller.', 25],
@@ -258,7 +258,7 @@ export const HOMOPHONES: readonly HomophoneBelt[] = [
           'est devant un nom au pluriel : mes amis (à moi).',
           'c’est le verbe mettre : il met, elle met.',
         ],
-        tip: 'Remplace par « tes » : si ça marche, c’est « mes ». Par « mettait » : c’est « met ». Si tu peux dire « pourtant », c’est « mais ».',
+        tip: 'Remplace par « tes » : si ça marche, écris « mes ». Par « mettait » : écris « met ». Si tu peux dire « pourtant », écris « mais ».',
         examples: ['Je range {mes} jouets.', 'Je range tes jouets.', 'Lina {met} son bonnet.', 'Il pleut, {mais} je sors.'],
         sentences: sentences('vert-clair', [
           [10, 'Ma voiture n’est pas blanche {mais} grise.', 26],
@@ -288,7 +288,7 @@ export const HOMOPHONES: readonly HomophoneBelt[] = [
       {
         choices: ['ces', 'ses'],
         rules: ['montre quelque chose : ces fleurs-là.', 'veut dire « à lui » ou « à elle » : ses jouets.'],
-        tip: 'Si tu peux ajouter « -là » après le nom, c’est « ces ». Si ce sont les siens, c’est « ses ».',
+        tip: 'Si tu peux ajouter « -là » après le nom, écris « ces ». Si ce sont les siens, écris « ses ».',
         examples: ['Regarde {ces} nuages-là !', 'Tom range {ses} affaires (les siennes).'],
         sentences: sentences('vert-fonce', [
           [1, 'Il a oublié {ses} devoirs à la maison.', 31],
@@ -306,7 +306,7 @@ export const HOMOPHONES: readonly HomophoneBelt[] = [
       {
         choices: ['c’est', 's’est'],
         rules: ['veut dire « cela est » : c’est beau.', 'est devant un verbe : il s’est levé (je me suis levé).'],
-        tip: 'Si tu peux dire « cela est », c’est « c’est ». Si tu peux dire « je me suis… », c’est « s’est ».',
+        tip: 'Si tu peux dire « cela est », écris « c’est ». Si tu peux dire « je me suis… », écris « s’est ».',
         examples: ['{c’est} mon livre.', 'Cela est mon livre.', 'Le chat {s’est} caché.', 'Je me suis caché.'],
         sentences: sentences('vert-fonce', [
           [4, 'Tu as fini, {c’est} bien !', 32],
@@ -321,7 +321,7 @@ export const HOMOPHONES: readonly HomophoneBelt[] = [
       {
         choices: ['c’était', 's’était'],
         rules: ['veut dire « cela était » : c’était beau.', 'est devant un verbe : il s’était levé (je m’étais levé).'],
-        tip: 'Si tu peux dire « cela était », c’est « c’était ». Si tu peux dire « je m’étais… », c’est « s’était ».',
+        tip: 'Si tu peux dire « cela était », écris « c’était ». Si tu peux dire « je m’étais… », écris « s’était ».',
         examples: ['{c’était} une belle journée.', 'Il {s’était} perdu.', 'Je m’étais perdu.'],
         sentences: sentences('vert-fonce', [
           [7, '{c’était} très bien.', 33],
@@ -334,7 +334,7 @@ export const HOMOPHONES: readonly HomophoneBelt[] = [
       {
         choices: ['ce', 'se'],
         rules: ['est devant un nom pour le montrer (ce livre-là), ou veut dire « cela » (ce n’est pas grave).', 'est devant un verbe : il se lave (je me lave).'],
-        tip: 'Si tu peux dire « je me… » avec le verbe, c’est « se ». Sinon, c’est « ce ».',
+        tip: 'Si tu peux dire « je me… » avec le verbe, écris « se ». Sinon, écris « ce ».',
         examples: ['{ce} chien est gentil.', 'Il {se} brosse les dents.', 'Je me brosse les dents.'],
         sentences: sentences('vert-fonce', [
           [10, '{ce} fleuve est en crue. Ses eaux {se} sont rapidement élevées.', 34],
@@ -410,7 +410,7 @@ export const HOMOPHONES: readonly HomophoneBelt[] = [
           'veut dire « l’avait » : il l’a vu.',
           'parle d’un endroit, comme « ici » : pose-le là.',
         ],
-        tip: 'Remplace par « l’avait » : c’est « l’a ». Par « ici » : c’est « là ». Sinon, c’est « la ».',
+        tip: 'Remplace par « l’avait » : écris « l’a ». Par « ici » : écris « là ». Sinon, écris « la ».',
         examples: ['Ferme {la} porte.', 'Ce film, Léo {l’a} vu.', 'Léo l’avait vu.', 'Mets-le {là}.', 'Mets-le ici.'],
         sentences: sentences('bleu-fonce', [
           [1, 'Pose {la} boîte sur {la} table.'],
@@ -437,7 +437,7 @@ export const HOMOPHONES: readonly HomophoneBelt[] = [
           'veut dire « alors » : il pleut, donc je reste.',
           'c’est « de » et « on », surtout dans « d’on ne sait où » ou « d’on ne sait quoi ».',
         ],
-        tip: 'Si tu peux dire « alors », c’est « donc ». Si « on » est le sujet du verbe qui suit, c’est « d’on ». Sinon, c’est « dont ».',
+        tip: 'Si tu peux dire « alors », écris « donc ». Si « on » est le sujet du verbe qui suit, écris « d’on ». Sinon, écris « dont ».',
         examples: ['Voici l’ami {dont} je t’ai parlé.', 'J’ai froid, {donc} je mets un pull.', 'Il arrive {d’on} ne sait où.'],
         sentences: sentences('bleu-fonce', [
           [16, 'Voici le livre {dont} je t’ai parlé.'],
@@ -466,7 +466,7 @@ export const HOMOPHONES: readonly HomophoneBelt[] = [
       {
         choices: ['si', 's’y'],
         rules: ['veut dire « à condition que » ou « tellement » : si tu veux, il est si grand.', 'est devant un verbe : il s’y promène (je m’y promène).'],
-        tip: 'Si tu peux dire « je m’y… » avec le verbe, c’est « s’y ». Sinon, c’est « si ».',
+        tip: 'Si tu peux dire « je m’y… » avec le verbe, écris « s’y ». Sinon, écris « si ».',
         examples: ['{si} tu viens, on jouera.', 'Ce parc est beau, Léa {s’y} promène.', 'Je m’y promène.'],
         sentences: sentences('violette', [
           [1, 'Je ne sais pas {si} j’irai au marché demain.', 50],
@@ -488,7 +488,7 @@ export const HOMOPHONES: readonly HomophoneBelt[] = [
       {
         choices: ['sans', 's’en'],
         rules: ['est le contraire de « avec » : un café sans sucre.', 'est devant un verbe : il s’en va (je m’en vais).'],
-        tip: 'Si tu peux dire « avec » à la place, c’est « sans ». Si tu peux dire « je m’en… », c’est « s’en ».',
+        tip: 'Si tu peux dire « avec » à la place, écris « sans ». Si tu peux dire « je m’en… », écris « s’en ».',
         examples: ['Il sort {sans} parapluie.', 'Il sort avec un parapluie.', 'Le chat {s’en} va.', 'Je m’en vais.'],
         sentences: sentences('violette', [
           [10, 'Marie {s’en} va {sans} rien dire.', 49],
@@ -516,7 +516,7 @@ export const HOMOPHONES: readonly HomophoneBelt[] = [
       {
         choices: ['peu', 'peut', 'peux'],
         rules: ['veut dire « pas beaucoup » : il mange peu.', 'c’est le verbe pouvoir avec il, elle ou on : il peut.', 'c’est le verbe pouvoir avec je ou tu : je peux, tu peux.'],
-        tip: 'Remplace par « pouvait » : si ça marche, c’est « peut » (il, elle, on) ou « peux » (je, tu). Sinon, c’est « peu » (pas beaucoup).',
+        tip: 'Remplace par « pouvait » : si ça marche, écris « peut » (il, elle, on) ou « peux » (je, tu). Sinon, écris « peu » (pas beaucoup).',
         examples: ['Il dort {peu}.', 'Il dort pas beaucoup.', 'Elle {peut} venir.', 'Elle pouvait venir.', 'Tu {peux} jouer.'],
         sentences: sentences('marron', [
           [1, 'Je {peux} rester au lit ce matin.', 55],
@@ -539,7 +539,7 @@ export const HOMOPHONES: readonly HomophoneBelt[] = [
       {
         choices: ['quel', 'quelle', 'qu’elle'],
         rules: ['est devant un nom masculin : quel cadeau ?', 'est devant un nom féminin : quelle histoire !', 'c’est « que » et « elle » : je crois qu’elle vient.'],
-        tip: 'Remplace par « qu’il » : si ça marche, c’est « qu’elle ». Sinon, regarde le nom : masculin « quel », féminin « quelle ».',
+        tip: 'Remplace par « qu’il » : si ça marche, écris « qu’elle ». Sinon, regarde le nom : masculin « quel », féminin « quelle ».',
         examples: ['{quel} beau jour !', '{quelle} belle fleur !', 'Je sais {qu’elle} viendra.', 'Je sais qu’il viendra.'],
         sentences: sentences('marron', [
           [4, '{quelle} drôle d’histoire !', 56],
@@ -553,7 +553,7 @@ export const HOMOPHONES: readonly HomophoneBelt[] = [
       {
         choices: ['quels', 'quelles', 'qu’elles'],
         rules: ['est devant un nom masculin pluriel : quels jeux ?', 'est devant un nom féminin pluriel : quelles fleurs ?', 'c’est « que » et « elles » : je crois qu’elles viennent.'],
-        tip: 'Remplace par « qu’ils » : si ça marche, c’est « qu’elles ». Sinon, regarde le nom : masculin « quels », féminin « quelles ».',
+        tip: 'Remplace par « qu’ils » : si ça marche, écris « qu’elles ». Sinon, regarde le nom : masculin « quels », féminin « quelles ».',
         examples: ['{quels} jolis chats !', '{quelles} belles roses !', 'Je pense {qu’elles} ont faim.', 'Je pense qu’ils ont faim.'],
         sentences: sentences('marron', [
           [10, '{qu’elles} sont gentilles !', 58],

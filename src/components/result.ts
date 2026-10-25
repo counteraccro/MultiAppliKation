@@ -17,6 +17,8 @@ export interface ResultOptions {
   record?: boolean;
   /** Questions à retravailler. */
   toPractice?: string[];
+  /** Ce sont des phrases : une par ligne, plutôt qu'en colonnes. */
+  practiceAsSentences?: boolean;
   /** Belle réussite : confettis et musique. */
   celebrate?: boolean;
   /** Autocollants gagnés pendant cette série. */
@@ -50,7 +52,7 @@ export function renderResult(root: HTMLElement, options: ResultOptions): void {
       practice.length > 0 &&
         h(
           'div',
-          { class: 'to-practice' },
+          { class: `to-practice${options.practiceAsSentences ? ' sentences' : ''}` },
           h('h2', {}, 'À retravailler'),
           h('ul', {}, ...practice.map((item) => h('li', {}, item))),
         ),
