@@ -3,7 +3,7 @@
 
 import { readStickers, type WithStickers } from '../../core/stickers';
 import { BELTS, type BeltId } from './belts';
-import type { Subject } from './subjects';
+import { SUBJECTS, type Subject, type SubjectId } from './subjects';
 import { isPassing } from './test-session';
 
 export interface SubjectProgress {
@@ -36,10 +36,8 @@ export interface BeltStats {
   bestTest?: Score;
 }
 
-export interface CeinturesData extends WithStickers {
-  /** Une progression par matière, sous son identifiant. */
-  homophones?: SubjectProgress;
-}
+/** Une progression par matière, sous son identifiant. */
+export interface CeinturesData extends WithStickers, Partial<Record<SubjectId, SubjectProgress>> {}
 
 /** Autocollants de la 0.21.0, d'avant le rangement par matière : tous étaient ceux des homophones. */
 const OLD_STICKERS: Record<string, string> = {
@@ -58,8 +56,10 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
 export function readCeinturesData(raw: unknown): CeinturesData {
   const data = (typeof raw === 'object' && raw !== null ? raw : {}) as Record<string, unknown>;
   const copy: CeinturesData = { ...(data as CeinturesData) };
-  const homophones = data.homophones as Partial<SubjectProgress> | undefined;
-  if (homophones !== undefined) copy.homophones = readProgress(homophones);
+  for (const { id } of SUBJECTS) {
+    const progress = data[id] as Partial<SubjectProgress> | undefined;
+    if (progress !== undefined) copy[id] = readProgress(progress);
+  }
   const stickers = readStickers(data.stickers);
   if (stickers) copy.stickers = renameOldStickers(stickers);
   else delete copy.stickers;

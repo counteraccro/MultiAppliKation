@@ -16,6 +16,7 @@ import { gradeGoal, gradeNote } from './grade';
 import { SUBJECTS } from './subjects';
 
 const homophones = SUBJECTS[0]!;
+const conjugaison = SUBJECTS[1]!;
 
 describe('progression des ceintures', () => {
   it('commence à la blanche, les autres à faire mais ouvertes', () => {
@@ -117,6 +118,19 @@ describe('progression des ceintures', () => {
     // Une fois obtenue en classe, on ne le dit plus.
     setClassLevel(data, homophones, 0, '2026-10-25');
     expect(ready()).toBe(false);
+  });
+
+  it('garde une progression par matière', () => {
+    const data = readCeinturesData({
+      homophones: { passed: { blanche: '2026-10-20' } },
+      conjugaison: { passed: { blanche: '2026-10-21', noire: '2026-10-21' }, passedTest: { jaune: '2026-10-26' } },
+    });
+    // Pas de ceinture noire en conjugaison : elle n'est pas comptée.
+    expect(beltStatuses(conjugaison, progressOf(data, conjugaison)).slice(0, 3)).toEqual(['passed', 'tested', 'current']);
+    expect(beltStatuses(conjugaison, progressOf(data, conjugaison)).length).toBe(10);
+    setClassLevel(data, conjugaison, 2, '2026-10-26');
+    expect(data.homophones?.passed).toEqual({ blanche: '2026-10-20' });
+    expect(highestPassed(conjugaison, progressOf(data, conjugaison))).toBe(2);
   });
 
   it('écrit la date comme dans le classeur', () => {

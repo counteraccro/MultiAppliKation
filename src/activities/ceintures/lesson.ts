@@ -2,8 +2,12 @@ import { topbar } from '../../components/topbar';
 import { h } from '../../core/dom';
 import type { ActivityContext } from '../types';
 import { beltOf, beltTextColor } from './belts';
-import type { Group, HomophoneBelt } from './homophones';
+import { pronoun, sentence } from '../conjugaison/questions';
+import type { Person } from '../conjugaison/verbs';
+import { TENSES, type ConjugationBelt, type Exercise, type TenseId } from './conjugaison';
+import type { Group } from './homophones';
 import { capitalize, parseSentence, withNbsp } from './sentence';
+import { isHomophoneBelt, type SubjectBelt } from './subjects';
 
 export interface LessonActions {
   onPractice(): void;
@@ -11,13 +15,14 @@ export interface LessonActions {
 }
 
 /**
- * La leçon d'une ceinture, à lire avant de s'entraîner : pour chaque famille de mots,
+ * La leçon d'une ceinture, à lire avant de s'entraîner. Homophones : pour chaque famille de mots,
  * ce qu'est chaque mot, l'astuce pour choisir et des exemples, le mot en couleur.
+ * Conjugaison : les pièges du classeur, et un verbe conjugué à chaque temps de la ceinture.
  */
 export function renderLesson(
   root: HTMLElement,
   ctx: ActivityContext,
-  belt: HomophoneBelt,
+  belt: SubjectBelt,
   backLabel: string,
   { onPractice, onBack }: LessonActions,
 ): void {
@@ -29,8 +34,10 @@ export function renderLesson(
       topbar(backLabel, onBack, ctx.profile),
       h('h1', { class: 'title' }, h('span', { class: 'belt-chip' }, label)),
       h('p', { class: 'subtitle' }, belt.skill),
-      ...belt.groups.map((group) => groupCard(group, belt.groups.length > 1)),
-      h('button', { class: 'button primary lesson-practice', type: 'button', onclick: onPractice }, 'S’entraîner'),
+      ...(isHomophoneBelt(belt) ? belt.groups.map((group) => groupCard(group, belt.groups.length > 1)) : conjugationCards(belt)),
+      // Conjugaison : l'entraînement arrive à l'étape 3.
+      isHomophoneBelt(belt) &&
+        h('button', { class: 'button primary lesson-practice', type: 'button', onclick: onPractice }, 'S’entraîner'),
     ),
   );
 }
@@ -67,6 +74,42 @@ function example(text: string): HTMLElement {
     ...segments.map((s) =>
       typeof s === 'string' ? withNbsp(s) : h('strong', { class: 'lesson-word' }, s.capital ? capitalize(s.answer) : s.answer),
     ),
+  );
+}
+
+function conjugationCards(belt: ConjugationBelt): HTMLElement[] {
+  const tenses = [...new Set(belt.exercises.map((e) => e.tense))];
+  return [
+    h(
+      'article',
+      { class: 'lesson-card' },
+      h('h2', {}, 'Attention aux pièges !'),
+      h('ul', { class: 'lesson-rules' }, ...belt.tips.map((tip) => h('li', {}, withNbsp(tip)))),
+    ),
+    ...tenses.map((tense) => {
+      // De préférence un verbe ordinaire : être et avoir ont souvent leurs propres formes (sois, aie).
+      const ofTense = belt.exercises.filter((e) => e.tense === tense);
+      const example = ofTense.find((e) => e.verb !== 'être' && e.verb !== 'avoir') ?? ofTense[0]!;
+      return conjugatedExample(example, tense);
+    }),
+  ];
+}
+
+/** Un verbe de la ceinture conjugué en entier, la forme en couleur : « nous {parlons} ». */
+function conjugatedExample(exercise: Exercise, tense: TenseId): HTMLElement {
+  const imperative = tense === 'imperatif';
+  const lines = exercise.forms.map((form, i) => {
+    const answer = Array.isArray(form) ? form[0] : typeof form === 'string' ? form : form.answer;
+    if (imperative) return h('li', {}, h('strong', { class: 'lesson-word' }, answer), '\u00a0!');
+    const prompt = pronoun((i + 1) as Person, answer, false);
+    const full = sentence({ prompt, answer });
+    return h('li', {}, full.slice(0, full.length - answer.length), h('strong', { class: 'lesson-word' }, answer));
+  });
+  return h(
+    'article',
+    { class: 'lesson-card' },
+    h('h2', {}, `${capitalize(exercise.verb)} ${TENSES[tense].at}`),
+    h('ul', { class: `lesson-examples lesson-conjugation${imperative ? ' imperative' : ''}` }, ...lines),
   );
 }
 

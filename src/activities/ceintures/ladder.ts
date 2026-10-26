@@ -4,15 +4,14 @@ import type { ActivityContext } from '../types';
 import { beltOf, beltTextColor } from './belts';
 import { gradeGoal, gradeNote } from './grade';
 import { beltStatuses, formatDay, isReady, mustPracticeFirst, progressOf, type BeltStatus, type CeinturesData, type SubjectProgress } from './data';
-import type { HomophoneBelt } from './homophones';
-import type { Subject } from './subjects';
+import { isHomophoneBelt, type Subject, type SubjectBelt } from './subjects';
 
 export interface LadderActions {
-  onLesson(belt: HomophoneBelt): void;
-  onPractice(belt: HomophoneBelt): void;
-  onTest(belt: HomophoneBelt): void;
+  onLesson(belt: SubjectBelt): void;
+  onPractice(belt: SubjectBelt): void;
+  onTest(belt: SubjectBelt): void;
   /** Un adulte note la ceinture en cours obtenue en classe. */
-  onPassedInClass(belt: HomophoneBelt): void;
+  onPassedInClass(belt: SubjectBelt): void;
   onClassBelts(): void;
   onBack(): void;
 }
@@ -78,7 +77,7 @@ export function renderLadder(
 }
 
 function beltItem(
-  belt: HomophoneBelt,
+  belt: SubjectBelt,
   status: BeltStatus,
   progress: SubjectProgress,
   actions: LadderActions,
@@ -92,6 +91,7 @@ function beltItem(
   const isCurrent = status === 'current';
   const day = progress.passed[belt.belt];
   const practiceFirst = mustPracticeFirst(progress, belt.belt);
+  const playable = isHomophoneBelt(belt);
   const passedTest = progress.passedTest?.[belt.belt];
   const state = isCurrent
     ? h('span', { class: 'badge belt-badge' }, 'À toi !')
@@ -113,9 +113,13 @@ function beltItem(
       status === 'tested' && h('p', { class: 'belt-ready' }, 'Réussie en conditions réelles : à toi de la passer en classe !'),
       status !== 'tested' && isReady(progress, belt.belt) && h('p', { class: 'belt-ready' }, readyMessage(label)),
       h('button', { class: 'button secondary', type: 'button', onclick: () => actions.onLesson(belt) }, 'Leçon'),
-      h('button', { class: 'button primary', type: 'button', onclick: () => actions.onPractice(belt) }, 'S’entraîner'),
+      // Conjugaison : l'entraînement et le test arrivent aux étapes 3 et 4 (12-ceintures-conjugaison.md).
+      playable
+        ? h('button', { class: 'button primary', type: 'button', onclick: () => actions.onPractice(belt) }, 'S’entraîner')
+        : h('p', { class: 'belt-soon' }, 'L’entraînement arrive bientôt.'),
       // Le test, sur toute ceinture pas encore réussie ; après un échec, on s'entraîne d'abord.
-      (isCurrent || status === 'todo') &&
+      playable &&
+        (isCurrent || status === 'todo') &&
         h(
           'button',
           { class: 'button mode primary belt-test', type: 'button', disabled: practiceFirst, onclick: () => actions.onTest(belt) },

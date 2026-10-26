@@ -1861,6 +1861,14 @@ button.belt-row:active {
   position: static;
 }
 
+.belt-soon {
+  margin: 0;
+  align-self: center;
+  color: var(--text-soft);
+  font-size: 0.95rem;
+  text-align: center;
+}
+
 .belt-actions {
   display: none;
   grid-template-columns: 1fr 1fr;
@@ -2123,6 +2131,20 @@ button.belt-row:active {
   color: var(--text-soft);
   font-style: italic;
   font-weight: 600;
+}
+
+/* Conjugaison : je, tu, il à gauche, nous, vous, ils à droite, comme sur la fiche. */
+.lesson-conjugation {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(3, auto);
+  gap: 8px 24px;
+  font-weight: 600;
+}
+
+.lesson-conjugation.imperative {
+  grid-auto-flow: row;
+  grid-template-rows: none;
 }
 
 .lesson-practice {

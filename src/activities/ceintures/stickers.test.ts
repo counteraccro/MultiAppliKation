@@ -50,7 +50,8 @@ describe('progrès des ceintures', () => {
   it('compte les ceintures de chaque couleur pour la barre de l’accueil', () => {
     const data = readCeinturesData({});
     setClassLevel(data, homophones, 1, '2026-10-25');
-    expect(masteryCounts(data)).toEqual({ unseen: 9, learning: 0, progress: 0, known: 2, mastered: 0 });
+    // 9 homophones et 10 conjugaison pas encore commencées.
+    expect(masteryCounts(data)).toEqual({ unseen: 19, learning: 0, progress: 0, known: 2, mastered: 0 });
   });
 
   it('ne garde pas des statistiques abîmées', () => {
@@ -94,9 +95,12 @@ describe('autocollants des ceintures', () => {
   });
 
   it('range l’album par matière', () => {
-    expect(STICKER_SECTIONS.map((s) => s.title)).toEqual(['Homophones']);
+    expect(STICKER_SECTIONS.map((s) => s.title)).toEqual(['Homophones', 'Conjugaison']);
     expect(STICKER_SECTIONS.flatMap((s) => s.stickers)).toEqual(STICKERS);
-    expect(STICKERS.every((s) => s.id.startsWith('homophones.'))).toBe(true);
+    const [homophones, conjugaison] = STICKER_SECTIONS;
+    expect(homophones!.stickers.every((s) => s.id.startsWith('homophones.'))).toBe(true);
+    expect(conjugaison!.stickers.map((s) => s.id)).toContain('conjugaison.goal-cm1');
+    expect(conjugaison!.stickers.map((s) => s.name)).toContain('Ceinture marron');
   });
 
   it('garde les autocollants de la 0.21.0 sous leur nouveau nom, sans les jours', () => {

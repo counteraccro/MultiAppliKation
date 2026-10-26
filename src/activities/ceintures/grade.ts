@@ -2,7 +2,7 @@ import type { Grade } from '../../core/grades';
 
 /**
  * Les ceintures sont celles d'une classe de CM1 (le classeur) : on prévient seulement les
- * plus petits, sans rien bloquer. Repères du classeur : bleu clair en fin de CM1, noire en fin de CM2.
+ * plus petits, sans rien bloquer. Chaque matière a ses repères de fin de CM1 et de CM2.
  */
 export function gradeNote(grade: Grade | undefined): string | undefined {
   switch (grade) {

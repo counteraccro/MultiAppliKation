@@ -74,6 +74,15 @@ Progression du profil : sous `ceintures`, une nouvelle matière `conjugaison` (m
 2. **La matière dans l'app** : une tuile « Conjugaison » à l'accueil des Ceintures, son échelle et sa
    leçon (les pièges, et un exemple conjugué) ; le code des Ceintures devient commun aux matières
    (aujourd'hui écrit pour les phrases à trous).
+   Faite le 26/10/2026 (0.26.0) : `subjects.ts` (deux matières ; une ceinture est `HomophoneBelt` ou
+   `ConjugationBelt`, `isHomophoneBelt` les distingue), `data.ts` (une progression par matière, lue pour
+   chaque matière de `SUBJECTS`), tuile « ✏️ Conjugaison », échelle avec les mêmes règles (repères CM1
+   sur la rose, CM2 sur la bleu foncé), « Ceintures obtenues en classe », « Mes progrès » et autocollants
+   de la matière (partie « Conjugaison » de l'album). Leçon : la carte « Attention aux pièges ! », puis un
+   verbe conjugué à chaque temps de la ceinture, sur deux colonnes comme la fiche (je, tu, il | nous,
+   vous, ils), la forme en couleur ; de préférence un verbe ordinaire (parler plutôt qu'être à
+   l'impératif). En attendant l'étape 3, l'échelle dit « L’entraînement arrive bientôt. » à la place
+   des boutons d'entraînement.
 3. **Entraînement** : un verbe de la ceinture, ses formes tapées une à une, corrigées tout de suite
    (une forme ratée revient plus tard) ; résultat « 5 / 6 du premier coup ».
 4. **Entraînement en conditions réelles** : 3 verbes de la ceinture (chaque temps de la ceinture

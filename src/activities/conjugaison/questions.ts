@@ -10,7 +10,7 @@ export interface ConjugationQuestion extends QuizQuestion {
 }
 
 /** Au passé composé on lit aussi l'auxiliaire : « je suis », « j'ai ». */
-function pronoun(person: Person, answer: string, feminine: boolean): string {
+export function pronoun(person: Person, answer: string, feminine: boolean): string {
   switch (person) {
     case 1:
       return /^[aeéèêiouh]/.test(answer) ? 'j’' : 'je';

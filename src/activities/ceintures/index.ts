@@ -25,10 +25,10 @@ import { pickSentences, PracticeSession, type PracticeResult } from './practice-
 import { capitalize, fullSentence, parseSentence, withNbsp } from './sentence';
 import { renderSentenceScreen } from './sentence-screen';
 import { STICKER_SECTIONS, STICKERS, unlockStickers } from './stickers';
-import type { Subject } from './subjects';
+import { isHomophoneBelt, type Subject, type SubjectBelt } from './subjects';
 import { isPassing, pickTestSentences, TestSession, type TestMistake, type TestResult } from './test-session';
 
-// Voir .ai/analyse/11-ceintures.md : les ceintures de la classe, en commençant par les homophones.
+// Voir .ai/analyse/11-ceintures.md : les ceintures de la classe, homophones puis conjugaison (12-ceintures-conjugaison.md).
 // Accueil (les matières), échelle d'une matière, leçon, entraînement et test d'une ceinture,
 // progrès et autocollants.
 export const ceintures: Activity = {
@@ -68,18 +68,19 @@ export const ceintures: Activity = {
       show(() =>
         renderLadder(root, ctx, subject, load(), {
           onLesson: (belt) => lesson(subject, belt),
-          onPractice: (belt) => practice(subject, belt),
-          onTest: (belt) => test(subject, belt),
+          // Conjugaison : l'entraînement et le test arrivent aux étapes 3 et 4.
+          onPractice: (belt) => isHomophoneBelt(belt) && practice(subject, belt),
+          onTest: (belt) => isHomophoneBelt(belt) && test(subject, belt),
           onPassedInClass: (belt) => checkPassedInClass(subject, belt),
           onClassBelts: () => checkClassBelts(subject),
           onBack: home,
         }),
       );
 
-    const lesson = (subject: Subject, belt: HomophoneBelt) =>
+    const lesson = (subject: Subject, belt: SubjectBelt) =>
       show(() =>
         renderLesson(root, ctx, belt, subject.label, {
-          onPractice: () => practice(subject, belt),
+          onPractice: () => isHomophoneBelt(belt) && practice(subject, belt),
           onBack: () => ladder(subject),
         }),
       );
@@ -97,7 +98,7 @@ export const ceintures: Activity = {
       );
 
     // La ceinture en cours, obtenue en classe aujourd'hui : un adulte la note, et c'est la fête.
-    const checkPassedInClass = (subject: Subject, belt: HomophoneBelt) =>
+    const checkPassedInClass = (subject: Subject, belt: SubjectBelt) =>
       openAdultCheck(
         root,
         {
@@ -114,7 +115,7 @@ export const ceintures: Activity = {
         },
       );
 
-    function showBeltWon(subject: Subject, belt: HomophoneBelt, rewards: Sticker[]) {
+    function showBeltWon(subject: Subject, belt: SubjectBelt, rewards: Sticker[]) {
       const { label: name, color } = beltOf(belt.belt);
       const next = subject.belts[subject.belts.indexOf(belt) + 1];
       show(() =>
