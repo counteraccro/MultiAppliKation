@@ -21,3 +21,4 @@ Application en ligne : https://counteraccro.github.io/MultiAppliKation/
 9. [Étapes](09-etapes.md) — ordre de travail
 10. [Conjugaison](10-conjugaison.md) — deuxième activité : verbes, clavier de lettres, modes
 11. [Ceintures](11-ceintures.md) — troisième activité : passer les ceintures de la classe, en commençant par les homophones
+12. [Ceintures : la Conjugaison](12-ceintures-conjugaison.md) — deuxième matière des Ceintures

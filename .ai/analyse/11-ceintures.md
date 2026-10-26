@@ -290,7 +290,8 @@ Retours du 25/10/2026 (0.22.1) :
   limite de 3 essais a été envisagée puis retirée) ; seul un échec demande un entraînement avant de le
   refaire (`canTakeTest`). Réussi, il ne dit plus « la suivante s'ouvre ».
 
-Ensuite, une matière à la fois ; ordre proposé : Conjugaison (clavier déjà fait),
+Ensuite, une matière à la fois ; ordre proposé : Conjugaison (clavier déjà fait, commencée le 26/10/2026 :
+voir [12-ceintures-conjugaison.md](12-ceintures-conjugaison.md)),
 Tables puis Calcul mental (pavé déjà fait), Accords, Numération, Grammaire, Mesures, Calcul posé.
 
 ## Réponses du 25/10/2026
