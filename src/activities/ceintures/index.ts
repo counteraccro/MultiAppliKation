@@ -1,5 +1,6 @@
 import { openAdultCheck } from '../../components/adult-check';
 import { renderAlbum } from '../../components/album';
+import { renderQuestionScreen } from '../../components/question-screen';
 import { renderResult } from '../../components/result';
 import { h } from '../../core/dom';
 import { dayOf } from '../../core/play-days';
@@ -7,6 +8,7 @@ import type { Sticker } from '../../core/stickers';
 import type { Activity } from '../types';
 import { beltOf, beltTextColor } from './belts';
 import { renderClassBelts } from './class-belts';
+import type { ConjugationBelt } from './conjugaison';
 import {
   canTakeTest,
   isReady,
@@ -15,18 +17,20 @@ import {
   recordPractice,
   recordTest,
   setClassLevel,
+  type Score,
 } from './data';
 import { renderCeinturesHome } from './home';
 import type { HomophoneBelt } from './homophones';
 import { readyMessage, renderLadder } from './ladder';
 import { renderLesson } from './lesson';
 import { renderProgress } from './progress-screen';
-import { pickSentences, PracticeSession, type PracticeResult } from './practice-session';
+import { pickSentences, PracticeSession } from './practice-session';
 import { capitalize, fullSentence, parseSentence, withNbsp } from './sentence';
 import { renderSentenceScreen } from './sentence-screen';
 import { STICKER_SECTIONS, STICKERS, unlockStickers } from './stickers';
 import { isHomophoneBelt, type Subject, type SubjectBelt } from './subjects';
 import { isPassing, pickTestSentences, TestSession, type TestMistake, type TestResult } from './test-session';
+import { pickExercise, VerbPracticeSession } from './verb-practice';
 
 // Voir .ai/analyse/11-ceintures.md : les ceintures de la classe, homophones puis conjugaison (12-ceintures-conjugaison.md).
 // Accueil (les matières), échelle d'une matière, leçon, entraînement et test d'une ceinture,
@@ -68,8 +72,8 @@ export const ceintures: Activity = {
       show(() =>
         renderLadder(root, ctx, subject, load(), {
           onLesson: (belt) => lesson(subject, belt),
-          // Conjugaison : l'entraînement et le test arrivent aux étapes 3 et 4.
-          onPractice: (belt) => isHomophoneBelt(belt) && practice(subject, belt),
+          onPractice: (belt) => practice(subject, belt),
+          // Conjugaison : le test arrive à l'étape 4.
           onTest: (belt) => isHomophoneBelt(belt) && test(subject, belt),
           onPassedInClass: (belt) => checkPassedInClass(subject, belt),
           onClassBelts: () => checkClassBelts(subject),
@@ -80,7 +84,7 @@ export const ceintures: Activity = {
     const lesson = (subject: Subject, belt: SubjectBelt) =>
       show(() =>
         renderLesson(root, ctx, belt, subject.label, {
-          onPractice: () => isHomophoneBelt(belt) && practice(subject, belt),
+          onPractice: () => practice(subject, belt),
           onBack: () => ladder(subject),
         }),
       );
@@ -150,15 +154,19 @@ export const ceintures: Activity = {
         }),
       );
 
-    const label = (belt: HomophoneBelt) => `Ceinture ${beltOf(belt.belt).label}`;
+    const label = (belt: SubjectBelt) => `Ceinture ${beltOf(belt.belt).label}`;
 
     /** Une ceinture pas encore réussie (sauf juste après un échec, sans entraînement depuis). */
-    const canTest = (subject: Subject, belt: HomophoneBelt) => {
+    const canTest = (subject: Subject, belt: SubjectBelt) => {
       const progress = progressOf(load(), subject);
-      return !progress.passedTest?.[belt.belt] && canTakeTest(progress, belt.belt);
+      // Conjugaison : le test arrive à l'étape 4.
+      return isHomophoneBelt(belt) && !progress.passedTest?.[belt.belt] && canTakeTest(progress, belt.belt);
     };
 
-    const practice = (subject: Subject, belt: HomophoneBelt) =>
+    const practice = (subject: Subject, belt: SubjectBelt) =>
+      isHomophoneBelt(belt) ? practiceSentences(subject, belt) : practiceVerb(subject, belt);
+
+    const practiceSentences = (subject: Subject, belt: HomophoneBelt) =>
       show(() => {
         const items = pickSentences(belt);
         const session = new PracticeSession(items);
@@ -169,14 +177,36 @@ export const ceintures: Activity = {
           onDone: ({ bestStreak }) => {
             // Fini jusqu'au bout : le test peut être (re)passé, avec d'autres phrases.
             const result = session.result();
-            const data = load();
-            recordPractice(data, subject, belt.belt, items.map((i) => i.sentence.id), result);
-            const rewards = unlockStickers(data, { subject: subject.id, mode: 'practice', bestStreak, correct: result.correct, total: result.total });
-            ctx.save(data);
-            showResult(subject, belt, result, rewards);
+            const toPractice = result.toPractice.map((s) => withNbsp(fullSentence(s.text)));
+            practiceDone(subject, belt, items.map((i) => i.sentence.id), result, toPractice, bestStreak);
           },
         });
       });
+
+    /** Conjugaison : un verbe de la ceinture, ses formes tapées au clavier de lettres. */
+    const practiceVerb = (subject: Subject, belt: ConjugationBelt) =>
+      show(() => {
+        const seen = progressOf(load(), subject).lastPractice?.[belt.belt];
+        const session = new VerbPracticeSession(pickExercise(belt, seen));
+        return renderQuestionScreen(root, {
+          session,
+          label: label(belt),
+          input: 'letters',
+          onQuit: () => ladder(subject),
+          onDone: ({ bestStreak }) => {
+            const result = session.result();
+            practiceDone(subject, belt, [session.exercise.id], result, result.toPractice, bestStreak);
+          },
+        });
+      });
+
+    function practiceDone(subject: Subject, belt: SubjectBelt, ids: string[], result: Score, toPractice: string[], bestStreak: number) {
+      const data = load();
+      recordPractice(data, subject, belt.belt, ids, result);
+      const rewards = unlockStickers(data, { subject: subject.id, mode: 'practice', bestStreak, correct: result.correct, total: result.total });
+      ctx.save(data);
+      showResult(subject, belt, result, toPractice, rewards);
+    }
 
     const test = (subject: Subject, belt: HomophoneBelt) =>
       show(() => {
@@ -238,7 +268,7 @@ export const ceintures: Activity = {
       );
     }
 
-    function showResult(subject: Subject, belt: HomophoneBelt, result: PracticeResult, rewards: Sticker[]) {
+    function showResult(subject: Subject, belt: SubjectBelt, result: Score, toPractice: string[], rewards: Sticker[]) {
       const all = result.correct === result.total;
       // Entraînement réussi, et le test ouvert : on le propose.
       const offerTest = isPassing(result.correct, result.total) && canTest(subject, belt);
@@ -259,10 +289,10 @@ export const ceintures: Activity = {
             : all
               ? 'Tout juste, bravo !'
               : 'Continue, chaque essai te fait progresser !',
-          toPractice: result.toPractice.map((s) => withNbsp(fullSentence(s.text))),
+          toPractice,
           practiceAsSentences: true,
           actions: [
-            ...(offerTest
+            ...(offerTest && isHomophoneBelt(belt)
               ? [{ label: 'Entraînement en conditions réelles', primary: true, onClick: () => test(subject, belt) }]
               : []),
             { label: 'Encore', primary: !offerTest, onClick: () => practice(subject, belt) },

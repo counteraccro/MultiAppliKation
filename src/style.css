@@ -1861,14 +1861,6 @@ button.belt-row:active {
   position: static;
 }
 
-.belt-soon {
-  margin: 0;
-  align-self: center;
-  color: var(--text-soft);
-  font-size: 0.95rem;
-  text-align: center;
-}
-
 .belt-actions {
   display: none;
   grid-template-columns: 1fr 1fr;

@@ -120,6 +120,16 @@ describe('progression des ceintures', () => {
     expect(ready()).toBe(false);
   });
 
+  it('n’enregistre que le score d’un résultat', () => {
+    const data = readCeinturesData({});
+    const result = { correct: 5, total: 6, toPractice: ['je place'] };
+    recordPractice(data, homophones, 'blanche', [], result);
+    const testResult = { ...result, mistakes: [] };
+    recordTest(data, homophones, 'blanche', testResult, false, '2026-10-26');
+    expect(data.homophones?.stats?.blanche?.bestPractice).toEqual({ correct: 5, total: 6 });
+    expect(data.homophones?.stats?.blanche?.bestTest).toEqual({ correct: 5, total: 6 });
+  });
+
   it('garde une progression par matière', () => {
     const data = readCeinturesData({
       homophones: { passed: { blanche: '2026-10-20' } },

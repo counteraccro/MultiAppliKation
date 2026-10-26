@@ -85,6 +85,14 @@ Progression du profil : sous `ceintures`, une nouvelle matière `conjugaison` (m
    des boutons d'entraînement.
 3. **Entraînement** : un verbe de la ceinture, ses formes tapées une à une, corrigées tout de suite
    (une forme ratée revient plus tard) ; résultat « 5 / 6 du premier coup ».
+   Faite le 26/10/2026 (0.27.0) : `verb-practice.ts` (un verbe au hasard dans la ceinture, de préférence
+   pas celui du dernier entraînement ; formes dans l'ordre de la fiche, je → ils ; à l'impératif, la
+   personne rappelée entre parenthèses, « (tu) », sans pronom à écrire ; avec être, il / elle au hasard
+   et le participe accordé), sur l'écran de question de l'activité Conjugaison (clavier de lettres,
+   différence surlignée après une erreur). Résultat : « 5 / 6 du premier coup », les formes à
+   retravailler (« nous plaçons »), Encore / Leçon. Un entraînement réussi (90 %) demande donc toutes
+   les formes justes. Touche « û » ajoutée au clavier (passé simple : nous fûmes, vous eûtes).
+   Corrigé au passage : le meilleur score enregistré ne garde plus la liste des phrases à retravailler.
 4. **Entraînement en conditions réelles** : 3 verbes de la ceinture (chaque temps de la ceinture
    représenté, de préférence pas celui du dernier entraînement), sans correction pendant, 90 % des
    formes justes, la correction à la fin ; progrès et autocollants de la matière.

@@ -122,9 +122,9 @@ function readStats(raw: unknown): BeltStats | undefined {
   return stats;
 }
 
-/** Le meilleur des deux scores, en proportion. */
+/** Le meilleur des deux scores, en proportion ; seulement le score (pas le reste d'un résultat). */
 function best(a: Score | undefined, b: Score): Score {
-  return a && a.correct * b.total >= b.correct * a.total ? a : b;
+  return a && a.correct * b.total >= b.correct * a.total ? a : { correct: b.correct, total: b.total };
 }
 
 /** Les ceintures connues d'un objet enregistré { ceinture: valeur }. */

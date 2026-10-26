@@ -35,9 +35,7 @@ export function renderLesson(
       h('h1', { class: 'title' }, h('span', { class: 'belt-chip' }, label)),
       h('p', { class: 'subtitle' }, belt.skill),
       ...(isHomophoneBelt(belt) ? belt.groups.map((group) => groupCard(group, belt.groups.length > 1)) : conjugationCards(belt)),
-      // Conjugaison : l'entraînement arrive à l'étape 3.
-      isHomophoneBelt(belt) &&
-        h('button', { class: 'button primary lesson-practice', type: 'button', onclick: onPractice }, 'S’entraîner'),
+      h('button', { class: 'button primary lesson-practice', type: 'button', onclick: onPractice }, 'S’entraîner'),
     ),
   );
 }

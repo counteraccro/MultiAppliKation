@@ -113,11 +113,9 @@ function beltItem(
       status === 'tested' && h('p', { class: 'belt-ready' }, 'Réussie en conditions réelles : à toi de la passer en classe !'),
       status !== 'tested' && isReady(progress, belt.belt) && h('p', { class: 'belt-ready' }, readyMessage(label)),
       h('button', { class: 'button secondary', type: 'button', onclick: () => actions.onLesson(belt) }, 'Leçon'),
-      // Conjugaison : l'entraînement et le test arrivent aux étapes 3 et 4 (12-ceintures-conjugaison.md).
-      playable
-        ? h('button', { class: 'button primary', type: 'button', onclick: () => actions.onPractice(belt) }, 'S’entraîner')
-        : h('p', { class: 'belt-soon' }, 'L’entraînement arrive bientôt.'),
+      h('button', { class: 'button primary', type: 'button', onclick: () => actions.onPractice(belt) }, 'S’entraîner'),
       // Le test, sur toute ceinture pas encore réussie ; après un échec, on s'entraîne d'abord.
+      // Conjugaison : il arrive à l'étape 4 (12-ceintures-conjugaison.md).
       playable &&
         (isCurrent || status === 'todo') &&
         h(

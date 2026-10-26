@@ -9,7 +9,7 @@ export interface KeyboardHandlers {
 
 const ROWS = ['azertyuiop', 'qsdfghjklm', 'wxcvbn'];
 /** Toujours visibles : le clavier de l'iPhone les cache derrière un appui long. */
-const ACCENTS = 'éèêàçùâîô';
+const ACCENTS = 'éèêàçùâîôû';
 /** Ce que la frappe d'un clavier d'ordinateur peut écrire (accents compris). */
 const TYPABLE = /^[a-zàâäçéèêëîïôöùûüœæ ]$/;
 
