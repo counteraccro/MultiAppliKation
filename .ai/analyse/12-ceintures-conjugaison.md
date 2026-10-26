@@ -96,3 +96,13 @@ Progression du profil : sous `ceintures`, une nouvelle matière `conjugaison` (m
 4. **Entraînement en conditions réelles** : 3 verbes de la ceinture (chaque temps de la ceinture
    représenté, de préférence pas celui du dernier entraînement), sans correction pendant, 90 % des
    formes justes, la correction à la fin ; progrès et autocollants de la matière.
+   Faite le 26/10/2026 (0.28.0) : `verb-test.ts` (3 verbes différents, chaque temps de la ceinture
+   représenté, de préférence pas celui du dernier entraînement ; 18 formes, 15 avec l'impératif ;
+   réussi à 90 %, soit une faute au plus sur 18). L'écran de question a un mode test (`test`) : la
+   forme se place sans dire si elle est juste. Bouton « Entraînement en conditions réelles · 3 verbes,
+   sans aide » sur l'échelle et à la fin d'un entraînement réussi ; mêmes résultats que les Homophones
+   (« Réussi ! », « tu peux passer la ceinture en classe », autocollants ; raté : « Entraîne-toi
+   d'abord »). Correction verbe par verbe : « Jouer au présent », puis « nous ~~jouon~~ jouons ».
+   Progrès et autocollants de la matière : déjà en place depuis l'étape 2.
+
+La Conjugaison est complète, de la blanche à la marron. Reste possible plus tard : la ceinture noire.

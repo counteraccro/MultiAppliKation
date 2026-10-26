@@ -91,7 +91,6 @@ function beltItem(
   const isCurrent = status === 'current';
   const day = progress.passed[belt.belt];
   const practiceFirst = mustPracticeFirst(progress, belt.belt);
-  const playable = isHomophoneBelt(belt);
   const passedTest = progress.passedTest?.[belt.belt];
   const state = isCurrent
     ? h('span', { class: 'badge belt-badge' }, 'À toi !')
@@ -115,14 +114,12 @@ function beltItem(
       h('button', { class: 'button secondary', type: 'button', onclick: () => actions.onLesson(belt) }, 'Leçon'),
       h('button', { class: 'button primary', type: 'button', onclick: () => actions.onPractice(belt) }, 'S’entraîner'),
       // Le test, sur toute ceinture pas encore réussie ; après un échec, on s'entraîne d'abord.
-      // Conjugaison : il arrive à l'étape 4 (12-ceintures-conjugaison.md).
-      playable &&
-        (isCurrent || status === 'todo') &&
+      (isCurrent || status === 'todo') &&
         h(
           'button',
           { class: 'button mode primary belt-test', type: 'button', disabled: practiceFirst, onclick: () => actions.onTest(belt) },
           'Entraînement en conditions réelles',
-          h('small', {}, practiceFirst ? 'Entraîne-toi d’abord' : '10 phrases, sans aide'),
+          h('small', {}, practiceFirst ? 'Entraîne-toi d’abord' : isHomophoneBelt(belt) ? '10 phrases, sans aide' : '3 verbes, sans aide'),
         ),
       // Seul un adulte note la ceinture : elle se passe en classe.
       status !== 'passed' &&

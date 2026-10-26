@@ -8,7 +8,7 @@ import type { Sticker } from '../../core/stickers';
 import type { Activity } from '../types';
 import { beltOf, beltTextColor } from './belts';
 import { renderClassBelts } from './class-belts';
-import type { ConjugationBelt } from './conjugaison';
+import { TENSES, type ConjugationBelt } from './conjugaison';
 import {
   canTakeTest,
   isReady,
@@ -29,8 +29,9 @@ import { capitalize, fullSentence, parseSentence, withNbsp } from './sentence';
 import { renderSentenceScreen } from './sentence-screen';
 import { STICKER_SECTIONS, STICKERS, unlockStickers } from './stickers';
 import { isHomophoneBelt, type Subject, type SubjectBelt } from './subjects';
-import { isPassing, pickTestSentences, TestSession, type TestMistake, type TestResult } from './test-session';
+import { isPassing, pickTestSentences, TestSession, type TestMistake } from './test-session';
 import { pickExercise, VerbPracticeSession } from './verb-practice';
+import { pickTestExercises, VerbTestSession, type VerbMistake } from './verb-test';
 
 // Voir .ai/analyse/11-ceintures.md : les ceintures de la classe, homophones puis conjugaison (12-ceintures-conjugaison.md).
 // Accueil (les matières), échelle d'une matière, leçon, entraînement et test d'une ceinture,
@@ -73,8 +74,7 @@ export const ceintures: Activity = {
         renderLadder(root, ctx, subject, load(), {
           onLesson: (belt) => lesson(subject, belt),
           onPractice: (belt) => practice(subject, belt),
-          // Conjugaison : le test arrive à l'étape 4.
-          onTest: (belt) => isHomophoneBelt(belt) && test(subject, belt),
+          onTest: (belt) => test(subject, belt),
           onPassedInClass: (belt) => checkPassedInClass(subject, belt),
           onClassBelts: () => checkClassBelts(subject),
           onBack: home,
@@ -159,8 +159,7 @@ export const ceintures: Activity = {
     /** Une ceinture pas encore réussie (sauf juste après un échec, sans entraînement depuis). */
     const canTest = (subject: Subject, belt: SubjectBelt) => {
       const progress = progressOf(load(), subject);
-      // Conjugaison : le test arrive à l'étape 4.
-      return isHomophoneBelt(belt) && !progress.passedTest?.[belt.belt] && canTakeTest(progress, belt.belt);
+      return !progress.passedTest?.[belt.belt] && canTakeTest(progress, belt.belt);
     };
 
     const practice = (subject: Subject, belt: SubjectBelt) =>
@@ -208,7 +207,10 @@ export const ceintures: Activity = {
       showResult(subject, belt, result, toPractice, rewards);
     }
 
-    const test = (subject: Subject, belt: HomophoneBelt) =>
+    const test = (subject: Subject, belt: SubjectBelt) =>
+      isHomophoneBelt(belt) ? testSentences(subject, belt) : testVerbs(subject, belt);
+
+    const testSentences = (subject: Subject, belt: HomophoneBelt) =>
       show(() => {
         const seen = progressOf(load(), subject).lastPractice?.[belt.belt];
         const session = new TestSession(pickTestSentences(belt, seen));
@@ -219,22 +221,52 @@ export const ceintures: Activity = {
           onQuit: () => ladder(subject),
           onDone: () => {
             const result = session.result();
-            const data = load();
-            recordTest(data, subject, belt.belt, result, result.passed, dayOf(Date.now()));
-            const rewards = unlockStickers(data, { subject: subject.id, mode: 'test', bestStreak: 0, correct: result.correct, total: result.total });
-            ctx.save(data);
-            showTestResult(subject, belt, result, rewards);
+            testDone(subject, belt, result, 'trous justes', result.mistakes.length > 0 ? corrections(result.mistakes) : undefined);
           },
         });
       });
 
-    function showTestResult(subject: Subject, belt: HomophoneBelt, result: TestResult, rewards: Sticker[]) {
+    /** Conjugaison : 3 verbes, comme une fiche de passage. */
+    const testVerbs = (subject: Subject, belt: ConjugationBelt) =>
+      show(() => {
+        const seen = progressOf(load(), subject).lastPractice?.[belt.belt];
+        const session = new VerbTestSession(pickTestExercises(belt, seen));
+        return renderQuestionScreen(root, {
+          session,
+          test: true,
+          label: `En conditions réelles · ${label(belt)}`,
+          input: 'letters',
+          onQuit: () => ladder(subject),
+          onDone: () => {
+            const result = session.result();
+            testDone(subject, belt, result, 'formes justes', result.mistakes.length > 0 ? verbCorrections(result.mistakes) : undefined);
+          },
+        });
+      });
+
+    function testDone(subject: Subject, belt: SubjectBelt, result: Score & { passed: boolean }, unit: string, details?: HTMLElement) {
+      const data = load();
+      recordTest(data, subject, belt.belt, result, result.passed, dayOf(Date.now()));
+      const rewards = unlockStickers(data, { subject: subject.id, mode: 'test', bestStreak: 0, correct: result.correct, total: result.total });
+      ctx.save(data);
+      showTestResult(subject, belt, result, unit, details, rewards);
+    }
+
+    /** `unit` : « trous justes », « formes justes » ; `details` : la correction, s'il y a des erreurs. */
+    function showTestResult(
+      subject: Subject,
+      belt: SubjectBelt,
+      result: Score & { passed: boolean },
+      unit: string,
+      details: HTMLElement | undefined,
+      rewards: Sticker[],
+    ) {
       const { label: name, color } = beltOf(belt.belt);
       const count = h(
         'p',
         { class: 'big-count' },
         h('strong', {}, `${result.correct} / ${result.total}`),
-        h('small', {}, 'trous justes'),
+        h('small', {}, unit),
       );
       show(() =>
         result.passed
@@ -250,7 +282,7 @@ export const ceintures: Activity = {
                 count,
               ),
               message: `Bravo, tu peux passer la ceinture ${name} en classe !`,
-              details: result.mistakes.length > 0 ? corrections(result.mistakes) : undefined,
+              details,
               actions: [{ label: subject.label, primary: true, onClick: () => ladder(subject) }],
             })
           : renderResult(root, {
@@ -258,7 +290,7 @@ export const ceintures: Activity = {
               highlight: count,
               rewards,
               message: 'Encore un peu d’entraînement ! Regarde la correction, puis entraîne-toi.',
-              details: corrections(result.mistakes),
+              details,
               actions: [
                 { label: 'S’entraîner', primary: true, onClick: () => practice(subject, belt) },
                 { label: 'Leçon', onClick: () => lesson(subject, belt) },
@@ -292,7 +324,7 @@ export const ceintures: Activity = {
           toPractice,
           practiceAsSentences: true,
           actions: [
-            ...(offerTest && isHomophoneBelt(belt)
+            ...(offerTest
               ? [{ label: 'Entraînement en conditions réelles', primary: true, onClick: () => test(subject, belt) }]
               : []),
             { label: 'Encore', primary: !offerTest, onClick: () => practice(subject, belt) },
@@ -336,6 +368,42 @@ function corrections(mistakes: TestMistake[]): HTMLElement {
           }),
         );
       }),
+    ),
+  );
+}
+
+/**
+ * La correction d'un test de conjugaison, verbe par verbe : chaque forme fausse,
+ * ce qui a été tapé barré et la bonne surlignée.
+ */
+function verbCorrections(mistakes: VerbMistake[]): HTMLElement {
+  const byExercise = new Map<VerbMistake['exercise'], VerbMistake[]>();
+  for (const mistake of mistakes) byExercise.set(mistake.exercise, [...(byExercise.get(mistake.exercise) ?? []), mistake]);
+  return h(
+    'div',
+    { class: 'to-practice sentences test-corrections' },
+    h('h2', {}, 'La correction'),
+    h(
+      'ul',
+      {},
+      ...[...byExercise].map(([exercise, wrong]) =>
+        h(
+          'li',
+          {},
+          h('small', { class: 'correction-context' }, `${capitalize(exercise.verb)} ${TENSES[exercise.tense].at}`),
+          ...wrong.map(({ question, typed }) => {
+            // « nous » + forme ; à l'impératif, forme + « ! ».
+            const at = question.full.lastIndexOf(question.answer);
+            return h(
+              'span',
+              { class: 'correction-line' },
+              question.full.slice(0, at),
+              h('span', { class: 'correction' }, typed && h('s', {}, typed), h('mark', {}, question.answer)),
+              question.full.slice(at + question.answer.length),
+            );
+          }),
+        ),
+      ),
     ),
   );
 }

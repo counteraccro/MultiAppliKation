@@ -36,6 +36,8 @@ export interface QuestionScreenOptions {
   recordMs?: number;
   /** Phrase sous la bonne réponse après une erreur. */
   wrongHint?: string;
+  /** Test (ceintures) : la réponse se place sans dire si elle est juste, tout est corrigé à la fin. */
+  test?: boolean;
   onDone(summary: SeriesSummary): void;
   onQuit(): void;
 }
@@ -106,7 +108,12 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
       if (!question) return;
       chrono?.pause();
       const correct = session.answer(typed, performance.now() - shownAt);
-      if (correct) {
+      if (options.test) {
+        state = 'correct';
+        answerBox.classList.add('is-placed');
+        sounds.placed();
+        timer = window.setTimeout(next, CORRECT_PAUSE_MS);
+      } else if (correct) {
         state = 'correct';
         answerBox.classList.add('is-correct');
         feedback.textContent = 'Bravo !';

@@ -1397,6 +1397,12 @@ button {
   color: #fff;
 }
 
+/* Test : la réponse se place, sans dire si elle est juste. */
+.answer-box.is-placed {
+  background: var(--border);
+  animation: pop 0.25s ease-out;
+}
+
 /* Erreur : la bonne réponse, en couleur douce, sans écran rouge. */
 .answer-box.is-wrong {
   background: #fff1d6;
@@ -1719,6 +1725,7 @@ button {
   .streak.bump,
   .streak.milestone,
   .answer-box.is-correct,
+  .answer-box.is-placed,
   .stars-large .star.on,
   .record,
   .rewards .sticker-emoji {
@@ -1975,6 +1982,16 @@ button.belt-row:active {
 
 .test-corrections li {
   line-height: 1.6;
+}
+
+.correction-context,
+.correction-line {
+  display: block;
+}
+
+.correction-context {
+  color: var(--text-soft);
+  font-weight: 600;
 }
 
 .correction s {
