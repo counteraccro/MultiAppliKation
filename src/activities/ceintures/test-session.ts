@@ -103,6 +103,25 @@ export class TestSession {
     return word === blanks[answers.length - 1];
   }
 
+  /** Les mots déjà choisis dans la phrase en cours. */
+  chosen(): readonly string[] {
+    return this.answers[this.index]?.slice(0, this.blankIndex) ?? [];
+  }
+
+  /**
+   * Revient au trou d'avant pour changer de mot, au besoin dans la phrase d'avant ;
+   * renvoie le mot retiré (undefined au début du test).
+   */
+  undo(): string | undefined {
+    if (this.blankIndex === 0) {
+      if (this.index === 0) return undefined;
+      this.index--;
+      this.blankIndex = this.answers[this.index]!.length;
+    }
+    this.blankIndex--;
+    return this.answers[this.index]!.pop();
+  }
+
   result(): TestResult {
     let correct = 0;
     let total = 0;

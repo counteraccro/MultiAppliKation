@@ -2006,12 +2006,6 @@ button.belt-row:active {
   color: inherit;
 }
 
-.belt-actions .belt-class {
-  grid-column: 1 / -1;
-  margin-top: 0;
-  padding: 6px;
-}
-
 /* Ceintures : ceintures obtenues en classe (pour l'adulte) */
 
 .class-belts {

@@ -284,11 +284,22 @@ Retours du 25/10/2026 (0.22.1) :
   élève de CM1 qui connaît ses tables.
 - **0.24.0 : toutes les ceintures sont ouvertes.** Plus de cadenas : chaque ceinture non obtenue
   (état `todo`, ou `current` pour la première pas encore faite, toujours « À toi ! » et ouverte d'office)
-  a Leçon, S'entraîner, **Entraînement en conditions réelles** et « Obtenue en classe ? ». L'application
+  a Leçon, S'entraîner, **Entraînement en conditions réelles** et « Obtenue en classe ? » (retiré en 0.28.1). L'application
   indique toujours la ceinture suivante à faire (`current` : la première ni obtenue ni réussie, même si
   une plus haute a déjà été réussie). L'entraînement en conditions réelles **n'est pas bloqué** (une
   limite de 3 essais a été envisagée puis retirée) ; seul un échec demande un entraînement avant de le
   refaire (`canTakeTest`). Réussi, il ne dit plus « la suivante s'ouvre ».
+- **0.28.1 (27/10/2026) : plus de « ✓ Obtenue en classe ? Un adulte la note ici » sur chaque
+  ceinture** : l'application sert à s'entraîner, la validation se fait en classe. Une ceinture réussie
+  en conditions réelles reste « réussie · à passer en classe ». Reste, en bas de l'échelle, l'écran
+  « Ceintures obtenues en classe » (vérification adulte) pour reporter le niveau de l'enfant.
+- **0.29.0 (27/10/2026) : revenir en arrière pendant l'entraînement en conditions réelles**, seulement
+  là (pas à l'entraînement). Demandé après une réponse validée trop vite (une lettre au lieu du verbe).
+  Homophones : « ← Revenir au mot d'avant » retire le dernier mot placé, au besoin dans la phrase
+  d'avant, et l'enfant choisit à nouveau (`TestSession.undo`, `chosen`). Conjugaison : « ← Revenir à la
+  réponse d'avant » remet la forme tapée dans la case, à corriger (`VerbTestSession.undo`, option `undo`
+  des séries dans `core/quiz.ts`). Autant de fois qu'on veut ; caché au début du test. Rien n'étant
+  corrigé pendant, revenir ne dit pas si la réponse était juste.
 
 Ensuite, une matière à la fois ; ordre proposé : Conjugaison (clavier déjà fait, commencée le 26/10/2026 :
 voir [12-ceintures-conjugaison.md](12-ceintures-conjugaison.md)),

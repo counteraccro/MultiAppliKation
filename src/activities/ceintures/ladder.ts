@@ -10,8 +10,6 @@ export interface LadderActions {
   onLesson(belt: SubjectBelt): void;
   onPractice(belt: SubjectBelt): void;
   onTest(belt: SubjectBelt): void;
-  /** Un adulte note la ceinture en cours obtenue en classe. */
-  onPassedInClass(belt: SubjectBelt): void;
   onClassBelts(): void;
   onBack(): void;
 }
@@ -120,13 +118,6 @@ function beltItem(
           { class: 'button mode primary belt-test', type: 'button', disabled: practiceFirst, onclick: () => actions.onTest(belt) },
           'Entraînement en conditions réelles',
           h('small', {}, practiceFirst ? 'Entraîne-toi d’abord' : isHomophoneBelt(belt) ? '10 phrases, sans aide' : '3 verbes, sans aide'),
-        ),
-      // Seul un adulte note la ceinture : elle se passe en classe.
-      status !== 'passed' &&
-        h(
-          'button',
-          { class: 'link-button belt-class', type: 'button', onclick: () => actions.onPassedInClass(belt) },
-          '✓ Obtenue en classe ? Un adulte la note ici',
         ),
     ),
   );

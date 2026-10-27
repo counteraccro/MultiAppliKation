@@ -79,6 +79,11 @@ export class VerbTestSession implements QuizSession<VerbQuestion> {
     return isCorrect(item.question, typed);
   }
 
+  /** Revient à la forme d'avant pour la corriger ; renvoie ce qui avait été tapé (undefined au début). */
+  undo(): string | undefined {
+    return this.typed.pop();
+  }
+
   result(): VerbTestResult {
     const mistakes = this.items
       .map((item, i) => ({ ...item, typed: this.typed[i] ?? '' }))

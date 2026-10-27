@@ -45,4 +45,16 @@ describe('conjugaison en conditions réelles', () => {
     while (session.current()) session.answer(session.current()!.answer);
     expect(session.result()).toMatchObject({ correct: 17, total: 18, passed: true });
   });
+
+  it('revient à la forme d’avant pour la corriger', () => {
+    const session = new VerbTestSession(conjugationBelt('blanche')!.exercises.slice(0, 3), () => 0.9);
+    expect(session.undo()).toBeUndefined();
+    // Validé par erreur après une lettre.
+    session.answer('a');
+    expect(session.attempted).toBe(1);
+    expect(session.undo()).toBe('a');
+    expect(session.attempted).toBe(0);
+    while (session.current()) session.answer(session.current()!.answer);
+    expect(session.result()).toMatchObject({ correct: 18, total: 18, mistakes: [] });
+  });
 });

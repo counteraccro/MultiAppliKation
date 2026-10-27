@@ -82,6 +82,19 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
       : undefined;
 
   const soundButton = soundToggle();
+  // Test : revenir à la réponse d'avant (validée trop vite) ; elle revient dans la case, à corriger.
+  const undoButton =
+    options.test && session.undo
+      ? h('button', { class: 'link-button undo', type: 'button', onclick: undo }, '← Revenir à la réponse d’avant')
+      : undefined;
+
+  function undo() {
+    const previous = session.undo?.();
+    if (previous === undefined) return;
+    next();
+    typed = previous;
+    renderAnswer();
+  }
 
   const handlers = {
     onChar(char: string) {
@@ -179,6 +192,7 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
       );
     }
     progressText.textContent = `Question ${shown} sur ${session.total}`;
+    if (undoButton) undoButton.hidden = session.attempted === 0;
   }
 
   function next() {
@@ -225,6 +239,7 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
         equation,
         feedback,
         streakEl,
+        undoButton,
       ),
       h('div', { class: 'keypad-area' }, keypad.el),
     ),

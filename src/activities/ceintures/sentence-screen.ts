@@ -49,6 +49,20 @@ export function renderSentenceScreen(root: HTMLElement, options: SentenceScreenO
   const progress = h('div', { class: 'progress', 'aria-hidden': 'true' });
   const progressText = h('span', { class: 'visually-hidden' });
   const buttons = h('div', { class: 'choice-buttons' });
+  // Test : revenir au trou d'avant (mot touché par erreur), au besoin dans la phrase d'avant.
+  const testSession = options.test ? (session as TestSession) : undefined;
+  const undoButton =
+    testSession && h('button', { class: 'link-button undo', type: 'button', onclick: undo }, '← Revenir au mot d’avant');
+
+  function undo() {
+    if (!testSession || testSession.undo() === undefined) return;
+    window.clearTimeout(timer);
+    item = testSession.current();
+    // En test, rien n'est corrigé : `correct` ne s'affiche pas.
+    filled = testSession.chosen().map((word) => ({ word, correct: false }));
+    nextBlank();
+    renderProgress();
+  }
 
   function choose(word: string) {
     if (state !== 'asking' || !item) return;
@@ -152,6 +166,7 @@ export function renderSentenceScreen(root: HTMLElement, options: SentenceScreenO
     );
     const shown = Math.min(session.attempted + 1, session.total);
     progressText.textContent = `Phrase ${shown} sur ${session.total}`;
+    if (undoButton) undoButton.hidden = session.attempted === 0 && filled.length === 0;
   }
 
   // Au clavier d'ordinateur : 1, 2, 3 pour les boutons, Entrée pour continuer.
@@ -182,7 +197,7 @@ export function renderSentenceScreen(root: HTMLElement, options: SentenceScreenO
         progressText,
         soundToggle(),
       ),
-      h('div', { class: 'question' }, cloze, feedback, streakEl),
+      h('div', { class: 'question' }, cloze, feedback, streakEl, undoButton),
       h('div', { class: 'keypad-area' }, buttons),
     ),
   );

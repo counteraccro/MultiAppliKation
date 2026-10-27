@@ -22,6 +22,8 @@ export interface QuizSession<Q extends QuizQuestion = QuizQuestion> {
   current(): Q | undefined;
   /** Enregistre la réponse tapée à la question courante ; renvoie true si elle est juste. */
   answer(typed: string, elapsedMs: number): boolean;
+  /** Test (ceintures) : annule la dernière réponse et la renvoie, pour la corriger. */
+  undo?(): string | undefined;
 }
 
 /** Ce qui ne compte pas dans une réponse en mots : espaces en trop, majuscules. Les accents comptent. */

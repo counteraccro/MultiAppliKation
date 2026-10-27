@@ -11,7 +11,8 @@ La fiche scannée « entrainement conj.pdf » n'est pas utilisée (pas de texte)
   la prochaine à faire mise en avant (« À toi ! ») ; entraînement libre ; **entraînement en conditions
   réelles** jamais bloqué (sauf juste après un échec : un entraînement d'abord), réussi à **90 %**,
   sans correction pendant, corrigé à la fin ; « tu peux la passer en classe » ; **seul un adulte note
-  une ceinture obtenue** ; autocollants dès la réussite en conditions réelles.
+  une ceinture obtenue** (depuis la 0.28.1, seulement par l'écran « Ceintures obtenues en classe ») ;
+  autocollants dès la réussite en conditions réelles.
 - **L'enfant tape chaque forme** au clavier de lettres de l'activité Conjugaison, comme sur la fiche :
   « Conjugue le verbe parler au présent », puis le pronom affiché (« nous ») et la forme à taper
   (« parlons »). Pas de boutons à choisir : c'est ce qu'il fera en classe.
@@ -104,5 +105,8 @@ Progression du profil : sous `ceintures`, une nouvelle matière `conjugaison` (m
    (« Réussi ! », « tu peux passer la ceinture en classe », autocollants ; raté : « Entraîne-toi
    d'abord »). Correction verbe par verbe : « Jouer au présent », puis « nous ~~jouon~~ jouons ».
    Progrès et autocollants de la matière : déjà en place depuis l'étape 2.
+
+Depuis la 0.29.0, on peut revenir à la forme d'avant pendant l'entraînement en conditions réelles
+(voir 11-ceintures.md).
 
 La Conjugaison est complète, de la blanche à la marron. Reste possible plus tard : la ceinture noire.

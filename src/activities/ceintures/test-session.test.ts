@@ -44,6 +44,22 @@ describe('test de passage', () => {
     expect(result.mistakes).toEqual([{ sentence: { id: 'a', text: 'Le chat {est} noir {et} blanc.' }, chosen: ['est', 'est'] }]);
   });
 
+  it('revient en arrière pour changer de mot, jusque dans la phrase d’avant', () => {
+    const session = new TestSession([item('a', 'Le chat {est} noir {et} blanc.'), item('b', 'Il {est} là.')]);
+    expect(session.undo()).toBeUndefined();
+    session.choose('est');
+    session.choose('est');
+    expect(session.current()?.sentence.id).toBe('b');
+    expect(session.undo()).toBe('est');
+    expect(session.current()?.sentence.id).toBe('a');
+    expect(session.attempted).toBe(0);
+    expect(session.chosen()).toEqual(['est']);
+    expect(session.blank).toBe(1);
+    expect(session.choose('et')).toBe(true);
+    session.choose('est');
+    expect(session.result()).toMatchObject({ correct: 3, total: 3, passed: true });
+  });
+
   it('réussi à partir de 90 % des trous', () => {
     expect(isPassing(9, 10)).toBe(true);
     expect(isPassing(8, 10)).toBe(false);
