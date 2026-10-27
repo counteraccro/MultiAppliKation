@@ -106,6 +106,30 @@ Progression du profil : sous `ceintures`, une nouvelle matière `conjugaison` (m
    d'abord »). Correction verbe par verbe : « Jouer au présent », puis « nous ~~jouon~~ jouons ».
    Progrès et autocollants de la matière : déjà en place depuis l'étape 2.
 
+5. **Plusieurs verbes par série, avec un piège** (0.30.0, 27/10/2026, demandé : « tu ne donnes qu'un
+   verbe »). L'entraînement tire maintenant **3 verbes** au hasard parmi ceux de la ceinture (qui
+   respectent sa règle : verbes en -er à la blanche, en -ir et -re à la rose…), comme l'entraînement en
+   conditions réelles, avec la même fonction (`pickExercises` dans `verb-practice.ts`) : verbes
+   différents, chaque temps de la ceinture représenté, de préférence pas ceux de la dernière fois, et
+   **au moins un piège**. Les pièges sont marqués exercice par exercice (`Exercise.trap`, liste de
+   numéros par ceinture dans `conjugaison.ts`), d'après les « Attention aux pièges ! » :
+
+   | Ceinture | Pièges |
+   | --- | --- |
+   | Blanche | être, avoir, -ger, -cer (nous mangeons, nous lançons) |
+   | Jaune | être, avoir, les deux s (je finissais), nous pliions |
+   | Orange | être, avoir, aller, faire, dire, venir, je plierai |
+   | Rose | croire, écrire, dire, partir, sortir, lire, rendre (pas comme « nous finissons ») |
+   | Vert clair | être, avoir, parle ! (pas de -s), mangeons !, pu, été, eu, cru |
+   | Vert foncé | nager, grincer, payer, plier, commencer, crier, travailler à l'imparfait ; courir, pouvoir au futur |
+   | Bleu clair | être, avoir, faire, dire, prendre, venir |
+   | Bleu foncé | dire, faire, voir, croire (les pièges du classeur) |
+   | Violette | être, avoir, faire, vouloir, aller, pouvoir |
+   | Marron | venir, partir, aller (auxiliaire être, accord) |
+
+   Chaque ceinture garde aussi des verbes ordinaires. Une série d'entraînement fait 18 formes (15 avec
+   l'impératif) : réussie à 90 %, elle permet maintenant une faute.
+
 Depuis la 0.29.0, on peut revenir à la forme d'avant pendant l'entraînement en conditions réelles
 (voir 11-ceintures.md).
 

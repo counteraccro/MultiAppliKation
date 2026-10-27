@@ -30,8 +30,8 @@ import { renderSentenceScreen } from './sentence-screen';
 import { STICKER_SECTIONS, STICKERS, unlockStickers } from './stickers';
 import { isHomophoneBelt, type Subject, type SubjectBelt } from './subjects';
 import { isPassing, pickTestSentences, TestSession, type TestMistake } from './test-session';
-import { pickExercise, VerbPracticeSession } from './verb-practice';
-import { pickTestExercises, VerbTestSession, type VerbMistake } from './verb-test';
+import { pickExercises, VerbPracticeSession } from './verb-practice';
+import { VerbTestSession, type VerbMistake } from './verb-test';
 
 // Voir .ai/analyse/11-ceintures.md : les ceintures de la classe, homophones puis conjugaison (12-ceintures-conjugaison.md).
 // Accueil (les matières), échelle d'une matière, leçon, entraînement et test d'une ceinture,
@@ -146,7 +146,7 @@ export const ceintures: Activity = {
     const practiceVerb = (subject: Subject, belt: ConjugationBelt) =>
       show(() => {
         const seen = progressOf(load(), subject).lastPractice?.[belt.belt];
-        const session = new VerbPracticeSession(pickExercise(belt, seen));
+        const session = new VerbPracticeSession(pickExercises(belt, seen));
         return renderQuestionScreen(root, {
           session,
           label: label(belt),
@@ -154,7 +154,7 @@ export const ceintures: Activity = {
           onQuit: () => ladder(subject),
           onDone: ({ bestStreak }) => {
             const result = session.result();
-            practiceDone(subject, belt, [session.exercise.id], result, result.toPractice, bestStreak);
+            practiceDone(subject, belt, session.exercises.map((e) => e.id), result, result.toPractice, bestStreak);
           },
         });
       });
@@ -190,7 +190,7 @@ export const ceintures: Activity = {
     const testVerbs = (subject: Subject, belt: ConjugationBelt) =>
       show(() => {
         const seen = progressOf(load(), subject).lastPractice?.[belt.belt];
-        const session = new VerbTestSession(pickTestExercises(belt, seen));
+        const session = new VerbTestSession(pickExercises(belt, seen));
         return renderQuestionScreen(root, {
           session,
           test: true,

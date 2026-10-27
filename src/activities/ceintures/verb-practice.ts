@@ -1,7 +1,7 @@
-// Entraînement d'une ceinture de conjugaison : un verbe de la ceinture, comme sur la fiche
-// (« Conjugue le verbe parler au présent »), ses formes tapées une à une dans l'ordre
-// (je … ils), corrigées tout de suite. Une forme ratée revient un peu plus tard ;
-// seul le premier essai compte.
+// Entraînement d'une ceinture de conjugaison : 3 verbes de la ceinture tirés au hasard, dont au
+// moins un piège, comme sur la fiche (« Conjugue le verbe parler au présent »), leurs formes tapées
+// une à une dans l'ordre (je … ils), corrigées tout de suite. Une forme ratée revient un peu plus
+// tard ; seul le premier essai compte.
 
 import { shuffle, type QuizQuestion } from '../../core/quiz';
 import { Series } from '../../core/series';
@@ -35,28 +35,62 @@ export function exerciseQuestions(exercise: Exercise, random: () => number = Mat
   });
 }
 
-/** Le verbe de l'entraînement : au hasard, de préférence pas celui de la fois d'avant (`seen`). */
-export function pickExercise(belt: ConjugationBelt, seen: readonly string[] = [], random = Math.random): Exercise {
-  const fresh = belt.exercises.filter((e) => !seen.includes(e.id));
-  return shuffle(fresh.length > 0 ? fresh : belt.exercises, random)[0]!;
+/** Verbes par série, à l'entraînement comme en conditions réelles. */
+export const VERB_COUNT = 3;
+
+/**
+ * Les verbes d'une série, au hasard parmi ceux de la ceinture : un verbe différent à chaque fois,
+ * au moins un piège (`Exercise.trap`), chaque temps de la ceinture représenté (vert clair : passé
+ * composé et impératif), de préférence pas ceux de la dernière fois (`seen`).
+ */
+export function pickExercises(
+  belt: ConjugationBelt,
+  seen: readonly string[] = [],
+  count = VERB_COUNT,
+  random = Math.random,
+): Exercise[] {
+  const unseenFirst = (exercises: readonly Exercise[]) => [
+    ...shuffle(exercises.filter((e) => !seen.includes(e.id)), random),
+    ...shuffle(exercises.filter((e) => seen.includes(e.id)), random),
+  ];
+  const picked: Exercise[] = [];
+  const isNew = (e: Exercise) => !picked.some((p) => p.verb === e.verb);
+  // D'abord un piège, puis chaque temps à son tour, en commençant par ceux qui manquent encore.
+  const trap = unseenFirst(belt.exercises.filter((e) => e.trap))[0];
+  if (trap) picked.push(trap);
+  const tenses = shuffle([...new Set(belt.exercises.map((e) => e.tense))], random).sort(
+    (a, b) => Number(picked.some((e) => e.tense === a)) - Number(picked.some((e) => e.tense === b)),
+  );
+  const piles = tenses.map((tense) => unseenFirst(belt.exercises.filter((e) => e.tense === tense)));
+  // Pas deux fois le même verbe.
+  while (picked.length < count && piles.some((pile) => pile.length > 0)) {
+    for (const pile of piles) {
+      let next = pile.shift();
+      while (next && !isNew(next)) next = pile.shift();
+      if (next && picked.length < count) picked.push(next);
+    }
+  }
+  // Le piège n'est pas toujours le premier.
+  return shuffle(picked, random);
 }
 
 export interface VerbPracticeResult {
   /** Formes justes au premier essai. */
   correct: number;
   total: number;
-  /** Formes ratées au premier essai, dans l'ordre de la fiche. */
+  /** Formes ratées au premier essai, dans l'ordre des fiches. */
   toPractice: string[];
 }
 
 export class VerbPracticeSession extends Series<VerbQuestion> {
   private readonly questions: readonly VerbQuestion[];
 
+  /** Les verbes l'un après l'autre, chacun dans l'ordre de la fiche. */
   constructor(
-    readonly exercise: Exercise,
+    readonly exercises: readonly Exercise[],
     random: () => number = Math.random,
   ) {
-    const questions = exerciseQuestions(exercise, random);
+    const questions = exercises.flatMap((exercise) => exerciseQuestions(exercise, random));
     super(questions);
     this.questions = questions;
   }

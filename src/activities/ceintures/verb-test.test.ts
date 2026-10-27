@@ -1,24 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { conjugationBelt } from './conjugaison';
-import { pickTestExercises, VerbTestSession } from './verb-test';
+import { VerbTestSession } from './verb-test';
 
 describe('conjugaison en conditions réelles', () => {
-  it('prend 3 verbes différents, chaque temps de la ceinture représenté', () => {
-    const belt = conjugationBelt('vert-clair')!;
-    for (let i = 0; i < 20; i++) {
-      const picked = pickTestExercises(belt);
-      expect(picked).toHaveLength(3);
-      expect(new Set(picked.map((e) => e.verb)).size).toBe(3);
-      expect(new Set(picked.map((e) => e.tense))).toEqual(new Set(['imperatif', 'passe-compose']));
-    }
-  });
-
-  it('évite le verbe du dernier entraînement', () => {
-    const belt = conjugationBelt('blanche')!;
-    const seen = [belt.exercises[0]!.id];
-    for (let i = 0; i < 20; i++) expect(pickTestExercises(belt, seen).map((e) => e.id)).not.toContain(seen[0]);
-  });
-
   it('ne corrige rien pendant, et réussit à 90 % des formes', () => {
     const belt = conjugationBelt('blanche')!;
     const exercises = belt.exercises.slice(0, 3);

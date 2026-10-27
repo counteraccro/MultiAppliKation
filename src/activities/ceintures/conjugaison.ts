@@ -35,6 +35,8 @@ export interface Exercise {
   forms: Forms | ImperativeForms;
   /** Lettre de la fiche (« A »), ou absente pour un exercice écrit pour l'app. */
   fiche?: string;
+  /** Un piège de la ceinture (nous mangeons, être et avoir…) : chaque série en a au moins un. */
+  trap?: true;
 }
 
 export interface ConjugationBelt {
@@ -94,8 +96,16 @@ const ETRE_FUTUR = 'serai seras sera serons serez seront';
 /** [numéro, verbe, temps, formes, lettre de la fiche] ; sans lettre : exercice écrit pour l'app. */
 type Raw = readonly [number, string, TenseId, Forms | ImperativeForms, string?];
 
-function exercises(belt: BeltId, raw: readonly Raw[]): Exercise[] {
-  return raw.map(([n, verb, tense, forms, fiche]) => ({ id: `${belt}.${n}`, verb, tense, forms, ...(fiche ? { fiche } : {}) }));
+/** `traps` : les numéros des exercices à piège (voir `Exercise.trap`). */
+function exercises(belt: BeltId, raw: readonly Raw[], traps: readonly number[]): Exercise[] {
+  return raw.map(([n, verb, tense, forms, fiche]) => ({
+    id: `${belt}.${n}`,
+    verb,
+    tense,
+    forms,
+    ...(fiche ? { fiche } : {}),
+    ...(traps.includes(n) ? { trap: true as const } : {}),
+  }));
 }
 
 export const CONJUGAISON: readonly ConjugationBelt[] = [
@@ -107,6 +117,7 @@ export const CONJUGAISON: readonly ConjugationBelt[] = [
       'Attention aux verbes en -ger, comme nager : nous nageons.',
       'Attention aux verbes en -cer, comme lancer : nous lançons.',
     ],
+    // Pièges : être, avoir, les verbes en -ger et -cer (nous mangeons, nous lançons).
     exercises: exercises('blanche', [
       [1, 'avoir', 'present', six('ai as a avons avez ont'), 'A'],
       [2, 'être', 'present', six('suis es est sommes êtes sont'), 'B'],
@@ -119,7 +130,7 @@ export const CONJUGAISON: readonly ConjugationBelt[] = [
       [9, 'manger', 'present', six('mange manges mange mangeons mangez mangent')],
       [10, 'commencer', 'present', six('commence commences commence commençons commencez commencent')],
       [11, 'aimer', 'present', six('aime aimes aime aimons aimez aiment')],
-    ]),
+    ], [1, 2, 4, 5, 6, 7, 9, 10]),
   },
   {
     belt: 'jaune',
@@ -128,6 +139,7 @@ export const CONJUGAISON: readonly ConjugationBelt[] = [
       'L’imparfait se trouve en disant « quand j’étais petit… » (j’avais, j’allais…).',
       'Quand on entend [s], attention aux deux s : je finissais, nous rougissions.',
     ],
+    // Pièges : être, avoir, les deux s (je finissais), nous pliions.
     exercises: exercises('jaune', [
       [1, 'avoir', 'imparfait', six('avais avais avait avions aviez avaient'), 'A'],
       [2, 'être', 'imparfait', six('étais étais était étions étiez étaient'), 'B'],
@@ -140,7 +152,7 @@ export const CONJUGAISON: readonly ConjugationBelt[] = [
       [8, 'chanter', 'imparfait', six('chantais chantais chantait chantions chantiez chantaient')],
       [9, 'finir', 'imparfait', six('finissais finissais finissait finissions finissiez finissaient')],
       [10, 'rougir', 'imparfait', six('rougissais rougissais rougissait rougissions rougissiez rougissaient')],
-    ]),
+    ], [1, 2, 3, 5, 6, 9, 10]),
   },
   {
     belt: 'orange',
@@ -151,6 +163,7 @@ export const CONJUGAISON: readonly ConjugationBelt[] = [
       'Au futur, on entend toujours le « r » : j’irai, tu chanteras…',
     ],
     // La fiche M reprend la fiche I (préparer) : gardée une fois.
+    // Pièges : être, avoir, aller, faire, dire, venir, et le e qu'on n'entend pas (je plierai).
     exercises: exercises('orange', [
       [1, 'avoir', 'futur', six('aurai auras aura aurons aurez auront'), 'A'],
       [2, 'être', 'futur', six('serai seras sera serons serez seront'), 'B'],
@@ -165,13 +178,14 @@ export const CONJUGAISON: readonly ConjugationBelt[] = [
       [11, 'rêver', 'futur', six('rêverai rêveras rêvera rêverons rêverez rêveront'), 'K'],
       [12, 'grossir', 'futur', six('grossirai grossiras grossira grossirons grossirez grossiront'), 'L'],
       [13, 'venir', 'futur', six('viendrai viendras viendra viendrons viendrez viendront'), 'N'],
-    ]),
+    ], [1, 2, 3, 4, 5, 6, 13]),
   },
   {
     belt: 'rose',
     skill: 'Présent des verbes en -ir et -re',
     goal: 'CM1',
     tips: ['Repère bien l’infinitif du verbe pour choisir les bonnes terminaisons : je plie (verbe plier) mais je remplis (verbe remplir).'],
+    // Pièges : les verbes en -re et les -ir qui ne font pas « nous finissons » (nous croyons, vous dites, je pars).
     exercises: exercises('rose', [
       [1, 'croire', 'present', six('crois crois croit croyons croyez croient'), 'A'],
       [2, 'écrire', 'present', six('écris écris écrit écrivons écrivez écrivent'), 'B'],
@@ -184,7 +198,7 @@ export const CONJUGAISON: readonly ConjugationBelt[] = [
       [9, 'sortir', 'present', six('sors sors sort sortons sortez sortent')],
       [10, 'lire', 'present', six('lis lis lit lisons lisez lisent')],
       [11, 'rendre', 'present', six('rends rends rend rendons rendez rendent')],
-    ]),
+    ], [1, 2, 3, 5, 9, 10, 11]),
   },
   {
     belt: 'vert-clair',
@@ -196,6 +210,7 @@ export const CONJUGAISON: readonly ConjugationBelt[] = [
       'À l’impératif, il n’y a pas de pronom : on écrit seulement le verbe.',
       'À l’impératif, à la 2ᵉ personne du singulier, pas de -s après le -e ni après le -a : va ! écoute !',
     ],
+    // Pièges : être et avoir, pas de -s à l'impératif (parle !), nous mangeons, les participes pu, été, eu, cru.
     exercises: exercises('vert-clair', [
       [1, 'être', 'imperatif', three('sois soyons soyez'), 'A'],
       [2, 'avoir', 'imperatif', three('aie ayons ayez'), 'B'],
@@ -211,7 +226,7 @@ export const CONJUGAISON: readonly ConjugationBelt[] = [
       [12, 'avoir', 'passe-compose', withAvoir(AVOIR_PRESENT, 'eu'), 'L'],
       [13, 'croire', 'passe-compose', withAvoir(AVOIR_PRESENT, 'cru'), 'M'],
       [14, 'grandir', 'passe-compose', withAvoir(AVOIR_PRESENT, 'grandi'), 'N'],
-    ]),
+    ], [1, 2, 3, 7, 9, 11, 12, 13]),
   },
   {
     belt: 'vert-fonce',
@@ -222,6 +237,7 @@ export const CONJUGAISON: readonly ConjugationBelt[] = [
       'À l’imparfait des verbes en -cer, comme lancer : tu lançais, mais vous lanciez.',
       'À l’imparfait des verbes en -ier, -iller, -yer, comme crier : nous criions, nous travaillions, nous payions.',
     ],
+    // Pièges : nous nagions, tu lançais, nous pliions, nous payions, je courrai, je pourrai.
     exercises: exercises('vert-fonce', [
       [1, 'nager', 'imparfait', six('nageais nageais nageait nagions nagiez nageaient'), 'A'],
       [2, 'grincer', 'imparfait', six('grinçais grinçais grinçait grincions grinciez grinçaient'), 'B'],
@@ -235,7 +251,7 @@ export const CONJUGAISON: readonly ConjugationBelt[] = [
       [10, 'travailler', 'imparfait', six('travaillais travaillais travaillait travaillions travailliez travaillaient')],
       [11, 'jouer', 'futur', six('jouerai joueras jouera jouerons jouerez joueront')],
       [12, 'plier', 'futur', six('plierai plieras pliera plierons plierez plieront')],
-    ]),
+    ], [1, 2, 3, 4, 5, 7, 8, 9, 10]),
   },
   {
     belt: 'bleu-clair',
@@ -244,6 +260,7 @@ export const CONJUGAISON: readonly ConjugationBelt[] = [
       'Le passé simple se trouve en inventant un conte : « Le chevalier marchait quand, tout à coup… » (il aperçut…, il décida…, il vit…).',
     ],
     // Les titres de la fiche annoncent l'imparfait et le futur, ses corrections sont au passé simple, comme le classeur.
+    // Pièges : les verbes irréguliers (je fus, nous eûmes, il fit, il dit, il prit, nous vînmes).
     exercises: exercises('bleu-clair', [
       [1, 'être', 'passe-simple', six('fus fus fut fûmes fûtes furent'), 'A'],
       [2, 'avoir', 'passe-simple', six('eus eus eut eûmes eûtes eurent'), 'B'],
@@ -255,7 +272,7 @@ export const CONJUGAISON: readonly ConjugationBelt[] = [
       [8, 'chanter', 'passe-simple', six('chantai chantas chanta chantâmes chantâtes chantèrent')],
       [9, 'prendre', 'passe-simple', six('pris pris prit prîmes prîtes prirent')],
       [10, 'venir', 'passe-simple', six('vins vins vint vînmes vîntes vinrent')],
-    ]),
+    ], [1, 2, 6, 7, 9, 10]),
   },
   {
     belt: 'bleu-fonce',
@@ -266,6 +283,7 @@ export const CONJUGAISON: readonly ConjugationBelt[] = [
       'On écrit vous dites (et non « vous disez »), vous faites (et non « vous faisez »).',
       'On écrit ils voient (et non « ils voyent »), ils croient (et non « ils croivent »).',
     ],
+    // Pièges du classeur : vous dites, vous faites, ils voient, ils croient.
     exercises: exercises('bleu-fonce', [
       [1, 'être', 'present', six('suis es est sommes êtes sont'), 'A'],
       [2, 'avoir', 'present', six('ai as a avons avez ont'), 'B'],
@@ -279,7 +297,7 @@ export const CONJUGAISON: readonly ConjugationBelt[] = [
       [10, 'prendre', 'present', six('prends prends prend prenons prenez prennent')],
       [11, 'pouvoir', 'present', six('peux peux peut pouvons pouvez peuvent')],
       [12, 'devoir', 'present', six('dois dois doit devons devez doivent')],
-    ]),
+    ], [3, 4, 5, 6]),
   },
   {
     belt: 'violette',
@@ -288,6 +306,7 @@ export const CONJUGAISON: readonly ConjugationBelt[] = [
       'Le conditionnel se trouve en disant « si j’étais riche, je… » (je partirais, j’achèterais…).',
       'Ne confonds pas le conditionnel et l’imparfait, qui ont les mêmes terminaisons : si j’étais riche, j’irais… (conditionnel) ; quand j’étais petit, j’allais… (imparfait).',
     ],
+    // Pièges : les radicaux qui changent (je serais, j'aurais, je ferais, j'irais, je voudrais, je pourrais).
     exercises: exercises('violette', [
       [1, 'être', 'conditionnel', six('serais serais serait serions seriez seraient'), 'A'],
       [2, 'avoir', 'conditionnel', six('aurais aurais aurait aurions auriez auraient'), 'B'],
@@ -300,7 +319,7 @@ export const CONJUGAISON: readonly ConjugationBelt[] = [
       [8, 'aller', 'conditionnel', six('irais irais irait irions iriez iraient')],
       [9, 'chanter', 'conditionnel', six('chanterais chanterais chanterait chanterions chanteriez chanteraient')],
       [10, 'pouvoir', 'conditionnel', six('pourrais pourrais pourrait pourrions pourriez pourraient')],
-    ]),
+    ], [1, 2, 4, 7, 8, 10]),
   },
   {
     belt: 'marron',
@@ -314,6 +333,7 @@ export const CONJUGAISON: readonly ConjugationBelt[] = [
     // Fiches D et E : « nous avons, vous avez » corrigés en « nous avions, vous aviez ».
     // Fiche F (partir au plus-que-parfait) : sa correction est au conditionnel, et la fiche G
     // donne la bonne ; F n'est pas reprise.
+    // Pièges : l'auxiliaire être et l'accord du participe (je serai venu, elles étaient parties).
     exercises: exercises('marron', [
       [1, 'être', 'futur-anterieur', withAvoir(AVOIR_FUTUR, 'été'), 'A'],
       [2, 'venir', 'futur-anterieur', withEtre(ETRE_FUTUR, 'venu'), 'B'],
@@ -324,7 +344,7 @@ export const CONJUGAISON: readonly ConjugationBelt[] = [
       [7, 'aller', 'futur-anterieur', withEtre(ETRE_FUTUR, 'allé')],
       [8, 'avoir', 'plus-que-parfait', withAvoir(AVOIR_IMPARFAIT, 'eu')],
       [9, 'chanter', 'plus-que-parfait', withAvoir(AVOIR_IMPARFAIT, 'chanté')],
-    ]),
+    ], [2, 6, 7]),
   },
 ];
 
