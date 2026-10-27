@@ -22,3 +22,4 @@ Application en ligne : https://counteraccro.github.io/MultiAppliKation/
 10. [Conjugaison](10-conjugaison.md) — deuxième activité : verbes, clavier de lettres, modes
 11. [Ceintures](11-ceintures.md) — troisième activité : passer les ceintures de la classe, en commençant par les homophones
 12. [Ceintures : la Conjugaison](12-ceintures-conjugaison.md) — deuxième matière des Ceintures
+13. [Ceintures : les Tables](13-ceintures-tables.md) — troisième matière, 20 calculs en une minute

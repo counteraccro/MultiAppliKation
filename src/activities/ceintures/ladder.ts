@@ -4,7 +4,7 @@ import type { ActivityContext } from '../types';
 import { beltOf, beltTextColor } from './belts';
 import { gradeGoal, gradeNote } from './grade';
 import { beltStatuses, formatDay, isReady, mustPracticeFirst, progressOf, type BeltStatus, type CeinturesData, type SubjectProgress } from './data';
-import { isHomophoneBelt, type Subject, type SubjectBelt } from './subjects';
+import { isHomophoneBelt, isTableBelt, type Subject, type SubjectBelt } from './subjects';
 
 export interface LadderActions {
   onLesson(belt: SubjectBelt): void;
@@ -15,7 +15,7 @@ export interface LadderActions {
 }
 
 /**
- * L'échelle d'une matière, de la blanche à la noire : obtenues (coloriées, avec la date),
+ * L'échelle d'une matière, de la blanche à la plus haute : obtenues (coloriées, avec la date),
  * en cours (« À toi ! » : la suivante à faire), puis à faire. Toutes sont ouvertes :
  * toucher une ceinture montre ses boutons ; celle en cours est ouverte d'office.
  */
@@ -117,10 +117,16 @@ function beltItem(
           'button',
           { class: 'button mode primary belt-test', type: 'button', disabled: practiceFirst, onclick: () => actions.onTest(belt) },
           'Entraînement en conditions réelles',
-          h('small', {}, practiceFirst ? 'Entraîne-toi d’abord' : isHomophoneBelt(belt) ? '10 phrases, sans aide' : '3 verbes, sans aide'),
+          h('small', {}, practiceFirst ? 'Entraîne-toi d’abord' : testHint(belt)),
         ),
     ),
   );
+}
+
+function testHint(belt: SubjectBelt): string {
+  if (isHomophoneBelt(belt)) return '10 phrases, sans aide';
+  if (isTableBelt(belt)) return `${belt.testSize} calculs en 1 minute`;
+  return '3 verbes, sans aide';
 }
 
 /** Après 3 entraînements réussis sur la ceinture en cours. Sans « prêt / prête » : pour tous les enfants. */

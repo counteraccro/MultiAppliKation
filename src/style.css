@@ -1693,6 +1693,10 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+.countdown.low {
+  color: #c0392b;
+}
+
 .chrono-penalty {
   position: absolute;
   left: 100%;
@@ -1984,6 +1988,11 @@ button.belt-row:active {
   line-height: 1.6;
 }
 
+.to-practice .table-corrections {
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  margin-bottom: 12px;
+}
+
 .correction-context,
 .correction-line {
   display: block;
@@ -2143,6 +2152,14 @@ button.belt-row:active {
   grid-template-rows: repeat(3, auto);
   gap: 8px 24px;
   font-weight: 600;
+}
+
+.lesson-table {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(5, auto);
+  gap: 8px 24px;
+  font-variant-numeric: tabular-nums;
 }
 
 .lesson-conjugation.imperative {

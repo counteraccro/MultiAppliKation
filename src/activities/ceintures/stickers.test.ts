@@ -50,8 +50,8 @@ describe('progrès des ceintures', () => {
   it('compte les ceintures de chaque couleur pour la barre de l’accueil', () => {
     const data = readCeinturesData({});
     setClassLevel(data, homophones, 1, '2026-10-25');
-    // 9 homophones et 10 conjugaison pas encore commencées.
-    expect(masteryCounts(data)).toEqual({ unseen: 19, learning: 0, progress: 0, known: 2, mastered: 0 });
+    // 9 homophones, 10 conjugaison et 10 tables pas encore commencées.
+    expect(masteryCounts(data)).toEqual({ unseen: 29, learning: 0, progress: 0, known: 2, mastered: 0 });
   });
 
   it('ne garde pas des statistiques abîmées', () => {
@@ -88,6 +88,23 @@ describe('autocollants des ceintures', () => {
     expect(unlockStickers(data, event())).toMatchObject([{ id: 'homophones.last-belt', name: 'Ceinture noire' }]);
   });
 
+  it('récompense l’objectif de CE2 et la ceinture brillante aux tables', () => {
+    const tables = SUBJECTS[2]!;
+    const data = readCeinturesData({});
+    setClassLevel(data, tables, 7, '2026-10-27');
+    expect(unlockStickers(data, event({ subject: 'tables', mode: 'class' })).map((s) => s.id)).toEqual([
+      'tables.first-belt',
+      'tables.three-belts',
+      'tables.goal-ce2',
+    ]);
+    recordTest(data, tables, 'noire', { correct: 20, total: 20 }, true, '2026-10-27');
+    recordTest(data, tables, 'brillante', { correct: 30, total: 30 }, true, '2026-10-27');
+    expect(unlockStickers(data, event({ subject: 'tables', mode: 'test', correct: 30, total: 30 }))).toMatchObject([
+      { id: 'tables.last-belt', name: 'Ceinture brillante' },
+      { id: 'tables.perfect-test' },
+    ]);
+  });
+
   it('récompense un test sans faute, un entraînement parfait et les séries', () => {
     const data = readCeinturesData({});
     expect(ids(unlockStickers(data, event({ mode: 'test', correct: 12, total: 12 })))).toEqual(['perfect-test']);
@@ -95,12 +112,17 @@ describe('autocollants des ceintures', () => {
   });
 
   it('range l’album par matière', () => {
-    expect(STICKER_SECTIONS.map((s) => s.title)).toEqual(['Homophones', 'Conjugaison']);
+    expect(STICKER_SECTIONS.map((s) => s.title)).toEqual(['Homophones', 'Conjugaison', 'Tables']);
     expect(STICKER_SECTIONS.flatMap((s) => s.stickers)).toEqual(STICKERS);
     const [homophones, conjugaison] = STICKER_SECTIONS;
     expect(homophones!.stickers.every((s) => s.id.startsWith('homophones.'))).toBe(true);
     expect(conjugaison!.stickers.map((s) => s.id)).toContain('conjugaison.goal-cm1');
     expect(conjugaison!.stickers.map((s) => s.name)).toContain('Ceinture marron');
+    // Pas encore de ceinture « objectif CM1 » aux tables : elle viendra avec les divisions (mauve).
+    expect(STICKER_SECTIONS[2]!.stickers.map((s) => s.name)).toContain('Ceinture brillante');
+    expect(STICKER_SECTIONS[2]!.stickers.map((s) => s.id)).not.toContain('tables.goal-cm1');
+    expect(STICKER_SECTIONS[2]!.stickers.map((s) => s.id)).toContain('tables.goal-ce2');
+    expect(conjugaison!.stickers.map((s) => s.id)).not.toContain('conjugaison.goal-ce2');
   });
 
   it('garde les autocollants de la 0.21.0 sous leur nouveau nom, sans les jours', () => {

@@ -15,6 +15,7 @@ export const BELTS = [
   { id: 'violette', label: 'violette', color: '#9B85E8' },
   { id: 'marron', label: 'marron', color: '#B08865' },
   { id: 'noire', label: 'noire', color: '#4A3F35' },
+  { id: 'brillante', label: 'brillante', color: '#F2C94C' },
 ] as const;
 
 export type BeltId = (typeof BELTS)[number]['id'];

@@ -28,12 +28,15 @@ import { pickSentences, PracticeSession } from './practice-session';
 import { capitalize, fullSentence, parseSentence, withNbsp } from './sentence';
 import { renderSentenceScreen } from './sentence-screen';
 import { STICKER_SECTIONS, STICKERS, unlockStickers } from './stickers';
-import { isHomophoneBelt, type Subject, type SubjectBelt } from './subjects';
+import { isHomophoneBelt, isTableBelt, type Subject, type SubjectBelt } from './subjects';
+import { factText, pickFacts, PRACTICE_SIZE, TablePracticeSession, TableTestSession, type TableMistake } from './table-practice';
+import { TEST_TIME_MS, type TableBelt } from './tables';
 import { isPassing, pickTestSentences, TestSession, type TestMistake } from './test-session';
 import { pickExercises, VerbPracticeSession } from './verb-practice';
 import { VerbTestSession, type VerbMistake } from './verb-test';
 
-// Voir .ai/analyse/11-ceintures.md : les ceintures de la classe, homophones puis conjugaison (12-ceintures-conjugaison.md).
+// Voir .ai/analyse/11-ceintures.md : les ceintures de la classe, homophones puis conjugaison (12-ceintures-conjugaison.md)
+// et tables (13-ceintures-tables.md).
 // Accueil (les matières), échelle d'une matière, leçon, entraînement et test d'une ceinture,
 // progrès et autocollants.
 export const ceintures: Activity = {
@@ -123,7 +126,11 @@ export const ceintures: Activity = {
     };
 
     const practice = (subject: Subject, belt: SubjectBelt) =>
-      isHomophoneBelt(belt) ? practiceSentences(subject, belt) : practiceVerb(subject, belt);
+      isHomophoneBelt(belt)
+        ? practiceSentences(subject, belt)
+        : isTableBelt(belt)
+          ? practiceTables(subject, belt)
+          : practiceVerb(subject, belt);
 
     const practiceSentences = (subject: Subject, belt: HomophoneBelt) =>
       show(() => {
@@ -159,6 +166,23 @@ export const ceintures: Activity = {
         });
       });
 
+    /** Tables : 10 calculs au pavé, corrigés tout de suite. */
+    const practiceTables = (subject: Subject, belt: TableBelt) =>
+      show(() => {
+        const seen = progressOf(load(), subject).lastPractice?.[belt.belt];
+        const keys = pickFacts(belt, PRACTICE_SIZE, seen);
+        const session = new TablePracticeSession(keys);
+        return renderQuestionScreen(root, {
+          session,
+          label: label(belt),
+          onQuit: () => ladder(subject),
+          onDone: ({ bestStreak }) => {
+            const result = session.result();
+            practiceDone(subject, belt, keys, result, result.toPractice, bestStreak);
+          },
+        });
+      });
+
     function practiceDone(subject: Subject, belt: SubjectBelt, ids: string[], result: Score, toPractice: string[], bestStreak: number) {
       const data = load();
       recordPractice(data, subject, belt.belt, ids, result);
@@ -168,7 +192,7 @@ export const ceintures: Activity = {
     }
 
     const test = (subject: Subject, belt: SubjectBelt) =>
-      isHomophoneBelt(belt) ? testSentences(subject, belt) : testVerbs(subject, belt);
+      isHomophoneBelt(belt) ? testSentences(subject, belt) : isTableBelt(belt) ? testTables(subject, belt) : testVerbs(subject, belt);
 
     const testSentences = (subject: Subject, belt: HomophoneBelt) =>
       show(() => {
@@ -200,6 +224,24 @@ export const ceintures: Activity = {
           onDone: () => {
             const result = session.result();
             testDone(subject, belt, result, 'formes justes', result.mistakes.length > 0 ? verbCorrections(result.mistakes) : undefined);
+          },
+        });
+      });
+
+    /** Tables : 20 calculs en une minute (30 à la brillante), comme en classe. */
+    const testTables = (subject: Subject, belt: TableBelt) =>
+      show(() => {
+        const seen = progressOf(load(), subject).lastPractice?.[belt.belt];
+        const session = new TableTestSession(pickFacts(belt, belt.testSize, seen));
+        return renderQuestionScreen(root, {
+          session,
+          test: true,
+          timeLimitMs: TEST_TIME_MS,
+          label: `En conditions réelles · ${label(belt)}`,
+          onQuit: () => ladder(subject),
+          onDone: () => {
+            const result = session.result();
+            testDone(subject, belt, result, 'calculs justes', result.mistakes.length > 0 ? tableCorrections(result.mistakes) : undefined);
           },
         });
       });
@@ -282,7 +324,7 @@ export const ceintures: Activity = {
               ? 'Tout juste, bravo !'
               : 'Continue, chaque essai te fait progresser !',
           toPractice,
-          practiceAsSentences: true,
+          practiceAsSentences: !isTableBelt(belt),
           actions: [
             ...(offerTest
               ? [{ label: 'Entraînement en conditions réelles', primary: true, onClick: () => test(subject, belt) }]
@@ -329,6 +371,27 @@ function corrections(mistakes: TestMistake[]): HTMLElement {
         );
       }),
     ),
+  );
+}
+
+/** La correction d'un test de tables : les calculs faux (la réponse barrée), puis ceux qui n'ont pas eu le temps. */
+function tableCorrections(mistakes: TableMistake[]): HTMLElement {
+  const wrong = mistakes.filter((m) => m.typed !== undefined);
+  const missing = mistakes.filter((m) => m.typed === undefined);
+  return h(
+    'div',
+    { class: 'to-practice test-corrections' },
+    h('h2', {}, 'La correction'),
+    wrong.length > 0 &&
+      h(
+        'ul',
+        { class: 'table-corrections' },
+        ...wrong.map(({ question, typed }) =>
+          h('li', {}, `${question.prompt} = `, h('span', { class: 'correction' }, h('s', {}, typed!), h('mark', {}, String(question.answer)))),
+        ),
+      ),
+    missing.length > 0 && h('p', { class: 'correction-context' }, 'Pas eu le temps :'),
+    missing.length > 0 && h('ul', {}, ...missing.map(({ question }) => h('li', {}, factText(question)))),
   );
 }
 

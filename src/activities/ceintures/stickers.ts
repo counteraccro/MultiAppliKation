@@ -25,6 +25,7 @@ type Rule = StickerRule<CeinturesData, SeriesEvent>;
 function subjectRules(subject: Subject): Rule[] {
   // Réussies en conditions réelles ou notées en classe : sans attendre la validation de l'adulte.
   const passed = (data: CeinturesData) => beltsSucceeded(subject, progressOf(data, subject));
+  const ce2 = subject.belts.findIndex((b) => b.goal === 'CE2');
   const cm1 = subject.belts.findIndex((b) => b.goal === 'CM1');
   const last = subject.belts.length - 1;
   const lastLabel = beltOf(subject.belts[last]!.belt).label;
@@ -45,6 +46,16 @@ function subjectRules(subject: Subject): Rule[] {
       won: (data) => passed(data) >= 3,
     },
   ];
+  // Tables : la bleu foncé, objectif de fin de CE2.
+  if (ce2 >= 0) {
+    rules.push({
+      id: `${subject.id}.goal-ce2`,
+      emoji: '🏅',
+      name: 'Objectif CE2',
+      hint: `Réussis la ceinture ${beltOf(subject.belts[ce2]!.belt).label} : l’objectif de fin de CE2.`,
+      won: (data) => passed(data) > ce2,
+    });
+  }
   if (cm1 >= 0) {
     rules.push({
       id: `${subject.id}.goal-cm1`,

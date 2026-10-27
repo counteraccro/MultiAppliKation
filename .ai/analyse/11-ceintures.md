@@ -35,7 +35,7 @@ c'est le principe même des ceintures.
 |---|---|---|---|
 | **Homophones** | 11 (blanche → noire) | 20 min | **Première matière** |
 | Conjugaison | 11 | 20 min | Plus tard : clavier de lettres et verbes déjà faits, temps à ajouter |
-| Tables de multiplication | 13 (+ brillante) | 1 min | Plus tard : pavé et tables déjà faits |
+| Tables de multiplication | 13 (+ brillante) | 1 min | **Troisième matière** (0.31.0, sans les divisions) : voir [13-ceintures-tables.md](13-ceintures-tables.md) |
 | Calcul mental | 16 | 2 min, 1 erreur au plus | Plus tard : pavé de chiffres |
 | Accords | 11 | 20 min | Plus tard : transposer des phrases entières (saisie longue) |
 | Numération | 13 (jusqu'à or) | 20 min | Plus tard : exercices variés (droites graduées…) |
@@ -303,7 +303,7 @@ Retours du 25/10/2026 (0.22.1) :
 
 Ensuite, une matière à la fois ; ordre proposé : Conjugaison (clavier déjà fait, commencée le 26/10/2026 :
 voir [12-ceintures-conjugaison.md](12-ceintures-conjugaison.md)),
-Tables puis Calcul mental (pavé déjà fait), Accords, Numération, Grammaire, Mesures, Calcul posé.
+Tables (faites le 27/10/2026 sauf les divisions : voir [13-ceintures-tables.md](13-ceintures-tables.md)), puis Calcul mental (pavé déjà fait), Accords, Numération, Grammaire, Mesures, Calcul posé.
 
 ## Réponses du 25/10/2026
 

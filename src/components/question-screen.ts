@@ -3,6 +3,7 @@ import { h } from '../core/dom';
 import { acceptedAnswers, normalizeAnswer, type QuizSession } from '../core/quiz';
 import { sounds } from '../core/sound';
 import { createChrono } from './chrono';
+import { createCountdown } from './countdown';
 import { createKeyboard } from './keyboard';
 import { createKeypad } from './keypad';
 import { createRace } from './race';
@@ -13,6 +14,8 @@ const MAX_DIGITS = 3;
 const MAX_LETTERS = 24;
 /** Temps pendant lequel une bonne réponse reste affichée avant la suivante. */
 const CORRECT_PAUSE_MS = 450;
+/** Temps pendant lequel « Temps écoulé ! » reste affiché avant le résultat. */
+const TIME_UP_PAUSE_MS = 1200;
 /** Au-delà, des points de progression ne tiendraient pas sur un téléphone : on affiche « 5 / 20 ». */
 const MAX_DOTS = 12;
 /** Le compteur « d'affilée » apparaît à partir de là ; il fait la fête à chaque multiple de 5. */
@@ -38,6 +41,8 @@ export interface QuestionScreenOptions {
   wrongHint?: string;
   /** Test (ceintures) : la réponse se place sans dire si elle est juste, tout est corrigé à la fin. */
   test?: boolean;
+  /** Compte à rebours (ceintures de tables : une minute) ; à zéro, la série s'arrête là. */
+  timeLimitMs?: number;
   onDone(summary: SeriesSummary): void;
   onQuit(): void;
 }
@@ -52,7 +57,7 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
   const letters = options.input === 'letters';
   let typed = '';
   let shownAt = 0;
-  let state: 'asking' | 'correct' | 'wrong' = 'asking';
+  let state: 'asking' | 'correct' | 'wrong' | 'over' = 'asking';
   let timer: number | undefined;
   // « D'affilée » : seulement les bonnes réponses du premier coup ; une question ratée
   // qui revient ne fait ni monter ni retomber la série.
@@ -69,6 +74,7 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
   const progress = h('div', { class: 'progress', 'aria-hidden': 'true' });
   const progressText = h('span', { class: 'visually-hidden' });
   const chrono = options.chrono && createChrono();
+  const countdown = options.timeLimitMs !== undefined ? createCountdown(options.timeLimitMs, timeUp) : undefined;
   const wrongHint = options.wrongHint ?? 'Elle reviendra un peu plus tard.';
   const streakEl = h('p', { class: 'streak', 'aria-live': 'polite' });
   const race =
@@ -88,7 +94,18 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
       ? h('button', { class: 'link-button undo', type: 'button', onclick: undo }, '← Revenir à la réponse d’avant')
       : undefined;
 
+  /** Le temps est fini : ce qui est tapé sans être validé ne compte pas. */
+  function timeUp() {
+    window.clearTimeout(timer);
+    state = 'over';
+    answerBox.classList.add('is-placed');
+    feedback.textContent = '⏰ Temps écoulé !';
+    if (undoButton) undoButton.hidden = true;
+    timer = window.setTimeout(() => options.onDone({ bestStreak }), TIME_UP_PAUSE_MS);
+  }
+
   function undo() {
+    if (state === 'over') return;
     const previous = session.undo?.();
     if (previous === undefined) return;
     next();
@@ -120,6 +137,7 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
       const question = session.current();
       if (!question) return;
       chrono?.pause();
+      countdown?.pause();
       const correct = session.answer(typed, performance.now() - shownAt);
       if (options.test) {
         state = 'correct';
@@ -214,6 +232,7 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
     renderAnswer();
     shownAt = performance.now();
     chrono?.start();
+    countdown?.start();
     race?.start();
   }
 
@@ -234,6 +253,7 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
         'div',
         { class: 'question' },
         chrono?.el,
+        countdown?.el,
         race?.el,
         context,
         equation,
@@ -251,6 +271,7 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
     window.clearTimeout(timer);
     keypad.destroy();
     chrono?.destroy();
+    countdown?.destroy();
     race?.destroy();
   };
 }

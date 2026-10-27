@@ -159,7 +159,8 @@ describe('classe du profil', () => {
   it('met en avant l’objectif de sa classe', () => {
     expect(gradeGoal('CM1')).toBe('CM1');
     expect(gradeGoal('CM2')).toBe('CM2');
-    expect(gradeGoal('CE2')).toBeUndefined();
+    expect(gradeGoal('CE2')).toBe('CE2');
+    expect(gradeGoal('CE1')).toBeUndefined();
     expect(homophones.belts.filter((b) => b.goal).map((b) => [b.belt, b.goal])).toEqual([
       ['bleu-clair', 'CM1'],
       ['noire', 'CM2'],

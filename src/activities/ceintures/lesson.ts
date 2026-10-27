@@ -7,7 +7,8 @@ import type { Person } from '../conjugaison/verbs';
 import { TENSES, type ConjugationBelt, type Exercise, type TenseId } from './conjugaison';
 import type { Group } from './homophones';
 import { capitalize, parseSentence, withNbsp } from './sentence';
-import { isHomophoneBelt, type SubjectBelt } from './subjects';
+import { isHomophoneBelt, isTableBelt, type SubjectBelt } from './subjects';
+import { MAX_FACTOR, newTables, type TableBelt } from './tables';
 
 export interface LessonActions {
   onPractice(): void;
@@ -18,6 +19,7 @@ export interface LessonActions {
  * La leçon d'une ceinture, à lire avant de s'entraîner. Homophones : pour chaque famille de mots,
  * ce qu'est chaque mot, l'astuce pour choisir et des exemples, le mot en couleur.
  * Conjugaison : les pièges du classeur, et un verbe conjugué à chaque temps de la ceinture.
+ * Tables : les astuces, et les tables de la ceinture qu'aucune ceinture d'avant n'a montrées.
  */
 export function renderLesson(
   root: HTMLElement,
@@ -34,7 +36,11 @@ export function renderLesson(
       topbar(backLabel, onBack, ctx.profile),
       h('h1', { class: 'title' }, h('span', { class: 'belt-chip' }, label)),
       h('p', { class: 'subtitle' }, belt.skill),
-      ...(isHomophoneBelt(belt) ? belt.groups.map((group) => groupCard(group, belt.groups.length > 1)) : conjugationCards(belt)),
+      ...(isHomophoneBelt(belt)
+        ? belt.groups.map((group) => groupCard(group, belt.groups.length > 1))
+        : isTableBelt(belt)
+          ? tableCards(belt)
+          : conjugationCards(belt)),
       h('button', { class: 'button primary lesson-practice', type: 'button', onclick: onPractice }, 'S’entraîner'),
     ),
   );
@@ -109,6 +115,31 @@ function conjugatedExample(exercise: Exercise, tense: TenseId): HTMLElement {
     h('h2', {}, `${capitalize(exercise.verb)} ${TENSES[tense].at}`),
     h('ul', { class: `lesson-examples lesson-conjugation${imperative ? ' imperative' : ''}` }, ...lines),
   );
+}
+
+function tableCards(belt: TableBelt): HTMLElement[] {
+  return [
+    h(
+      'article',
+      { class: 'lesson-card' },
+      h('h2', {}, 'Astuces'),
+      h('ul', { class: 'lesson-rules' }, ...belt.tips.map((tip) => h('li', {}, withNbsp(tip)))),
+    ),
+    ...newTables(belt).map((table) =>
+      h(
+        'article',
+        { class: 'lesson-card' },
+        h('h2', {}, `Table de ${table}`),
+        h(
+          'ul',
+          { class: 'lesson-examples lesson-table' },
+          ...Array.from({ length: MAX_FACTOR }, (_, i) =>
+            h('li', {}, `${table} × ${i + 1} = `, h('strong', { class: 'lesson-word' }, String(table * (i + 1)))),
+          ),
+        ),
+      ),
+    ),
+  ];
 }
 
 /** Des terminaisons (« mang{é} ») : le trou colle au mot, la leçon écrit « -é ». */

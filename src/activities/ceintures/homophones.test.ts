@@ -10,7 +10,7 @@ const all = HOMOPHONES.flatMap((belt) => beltSentences(belt).map((s) => ({ belt,
 
 describe('ceintures d’homophones', () => {
   it('suivent les 11 ceintures du classeur, dans l’ordre', () => {
-    expect(HOMOPHONES.map((b) => b.belt)).toEqual(BELTS.map((b) => b.id));
+    expect(HOMOPHONES.map((b) => b.belt)).toEqual(BELTS.map((b) => b.id).filter((id) => id !== 'brillante'));
   });
 
   it('ont assez de phrases chacune', () => {
