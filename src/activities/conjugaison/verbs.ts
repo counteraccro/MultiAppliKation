@@ -140,7 +140,7 @@ export const VERBS: readonly Verb[] = [
   byHand('commencer', 'commencer', 'commence commences commence commençons commencez commencent', 'commençais commençais commençait commencions commenciez commençaient', futur('commencer'), withAvoir('commencé')),
   byHand('appeler', 'appeler', 'appelle appelles appelle appelons appelez appellent', 'appelais appelais appelait appelions appeliez appelaient', futur('appeller'), withAvoir('appelé')),
   byHand('jeter', 'jeter', 'jette jettes jette jetons jetez jettent', 'jetais jetais jetait jetions jetiez jetaient', futur('jetter'), withAvoir('jeté')),
-  byHand('acheter', 'acheter', 'achète achètes achète achetons achetez achète nt', 'achetais achetais achetait achetions achetiez achetaient', futur('achèter'), withAvoir('acheté')),
+  byHand('acheter', 'acheter', 'achète achètes achète achetons achetez achètent', 'achetais achetais achetait achetions achetiez achetaient', futur('achèter'), withAvoir('acheté')),
   byHand('esperer', 'espérer', 'espère espères espère espérons espérez espèrent', 'espérais espérais espérait espérions espériez espéraient', futurEsperer, withAvoir('espéré')),
   byHand('nettoyer', 'nettoyer', 'nettoie nettoies nettoie nettoyons nettoyez nettoient', 'nettoyais nettoyais nettoyait nettoyions nettoyiez nettoyaient', futur('nettoier'), withAvoir('nettoyé')),
   byHand('dire', 'dire', 'dis dis dit disons dites disent', 'disais disais disait disions disiez disaient', futur('dir'), withAvoir('dit')),
