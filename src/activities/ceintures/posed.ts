@@ -179,8 +179,65 @@ export class PosedSubtraction extends ColumnBase {
 
 }
 
+/**
+ * Multiplication par un nombre à 1 chiffre : chaque chiffre du haut multiplié, en commençant
+ * par les unités ; la retenue s'écrit en petit au-dessus du chiffre suivant, et s'ajoute après.
+ */
+export class PosedMultiplication extends ColumnBase {
+  readonly sign = '×';
+  readonly id: string;
+  readonly text: string;
+  readonly result: number;
+  readonly terms: readonly [number, number];
+  readonly columns: number;
+
+  constructor(top: number, factor: number) {
+    super();
+    this.terms = [top, factor];
+    this.id = `${top}x${factor}`;
+    this.text = `${top} × ${factor}`;
+    this.result = top * factor;
+    this.columns = length(top);
+  }
+
+  steps(): PosedStep[] {
+    const [top, factor] = this.terms;
+    const steps: PosedStep[] = [];
+    let i = 0;
+    let carryIn = 0;
+    for (let column = 0; column < this.columns; column++) {
+      const a = digitAt(top, column);
+      const product = a * factor;
+      const total = product + carryIn;
+      const carry = Math.floor(total / 10);
+      const last = column === this.columns - 1;
+      const computed = carryIn > 0 ? `${factor} × ${a} = ${product}, + ${carryIn} = ${total}` : `${factor} × ${a} = ${total}`;
+      const explain =
+        carry === 0
+          ? `${computed} : on écrit ${total}.`
+          : last
+            ? `${computed} : c’est la dernière colonne, on écrit ${total}.`
+            : `${computed} : on écrit ${total % 10} et on retient ${carry}.`;
+      steps.push({ kind: 'digit', column, expected: total % 10, ask: `Les ${COLUMN_NAMES[column]}`, explain });
+      if (i++ >= this.values.length) return steps;
+      if (carry === 0) {
+        carryIn = 0;
+        continue;
+      }
+      if (last) {
+        steps.push({ kind: 'digit', column: column + 1, expected: carry, ask: 'On écrit le nombre en entier', explain });
+        return steps;
+      }
+      steps.push({ kind: 'carry', column: column + 1, expected: carry, ask: `La retenue, au-dessus des ${COLUMN_NAMES[column + 1]}`, explain });
+      if (i >= this.values.length) return steps;
+      carryIn = this.values[i++]!;
+    }
+    return steps;
+  }
+}
+
 /** Une opération posée en colonnes (pas la division). */
-export type ColumnOperation = PosedAddition | PosedSubtraction;
+export type ColumnOperation = PosedAddition | PosedSubtraction | PosedMultiplication;
 
 /** Pose l'opération en entier, juste : pour l'exemple de la leçon. */
 export function solve(operation: PosedOperation): PosedOperation {

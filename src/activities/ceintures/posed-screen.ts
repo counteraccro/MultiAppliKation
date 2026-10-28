@@ -2,7 +2,7 @@ import { createKeypad } from '../../components/keypad';
 import { soundToggle } from '../../components/sound-toggle';
 import { h } from '../../core/dom';
 import { sounds } from '../../core/sound';
-import { PosedAddition, PosedSubtraction, type PosedOperation } from './posed';
+import { PosedAddition, PosedMultiplication, PosedSubtraction, type PosedOperation } from './posed';
 import type { PosedSession } from './posed-session';
 
 /** Temps pendant lequel une étape juste reste en vert avant la suivante. */
@@ -24,10 +24,11 @@ export interface GridOptions {
  * L'opération posée, comme sur le cahier : les nombres en colonnes, le trait, puis le résultat.
  * Addition : les retenues dans des ronds en haut. Soustraction (par compensation) : les retenues
  * dans des ronds sous le nombre du bas, et le 10 ajouté en haut (un petit 1 devant le chiffre).
+ * Multiplication : les retenues en petit au-dessus du nombre, sans rond, comme sur la fiche.
  * La case en cours est encadrée.
  */
 export function posedGrid(operation: PosedOperation, options: GridOptions = {}): HTMLElement {
-  if (!(operation instanceof PosedAddition || operation instanceof PosedSubtraction)) {
+  if (!(operation instanceof PosedAddition || operation instanceof PosedSubtraction || operation instanceof PosedMultiplication)) {
     throw new Error('Opération pas encore posée à l’écran');
   }
   const subtraction = operation instanceof PosedSubtraction;
@@ -41,7 +42,9 @@ export function posedGrid(operation: PosedOperation, options: GridOptions = {}):
   const steps = operation.steps();
   const placed = operation.placed;
   // Soustraction : une retenue écrite sous la colonne suivante, c'est 10 ajouté en haut de celle-ci.
-  const tens = new Set(steps.filter((step, i) => step.kind === 'carry' && i < placed.length).map((step) => step.column - 1));
+  const tens = new Set(
+    subtraction ? steps.filter((step, i) => step.kind === 'carry' && i < placed.length).map((step) => step.column - 1) : [],
+  );
 
   const firstTerm = subtraction ? 1 : 2;
   const carryRow = subtraction ? 3 : 1;
@@ -57,7 +60,8 @@ export function posedGrid(operation: PosedOperation, options: GridOptions = {}):
 
   steps.forEach((step, i) => {
     const row = step.kind === 'carry' ? carryRow : resultRow;
-    const kind = step.kind === 'carry' ? `pc-carry${subtraction ? ' pc-carry-under' : ''}` : 'pc-result';
+    const carryKind = subtraction ? ' pc-carry-under' : operation instanceof PosedMultiplication ? ' pc-carry-small' : '';
+    const kind = step.kind === 'carry' ? `pc-carry${carryKind}` : 'pc-result';
     if (i < placed.length) {
       const state = i === placed.length - 1 && options.last ? options.last : options.corrected?.has(i) ? 'wrong' : '';
       cell(row, step.column, String(placed[i]), `${kind} ${state && `is-${state}`}`);

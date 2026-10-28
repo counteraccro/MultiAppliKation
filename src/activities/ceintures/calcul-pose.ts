@@ -4,7 +4,7 @@
 
 import { shuffle } from '../../core/quiz';
 import type { BeltId } from './belts';
-import { PosedAddition, PosedSubtraction, type PosedOperation } from './posed';
+import { PosedAddition, PosedMultiplication, PosedSubtraction, type PosedOperation } from './posed';
 
 export interface PosedBelt {
   belt: BeltId;
@@ -12,7 +12,7 @@ export interface PosedBelt {
   skill: string;
   /** « Objectif de fin de CE2 » dans le classeur. */
   goal?: 'CE2' | 'CM1' | 'CM2';
-  operation: 'addition' | 'soustraction';
+  operation: 'addition' | 'soustraction' | 'multiplication';
   /** La méthode, pour la leçon. */
   tips: readonly string[];
   /** L'opération posée en entier dans la leçon. */
@@ -63,6 +63,15 @@ export function drawSubtraction(bottomDigits: number, random: () => number): [nu
   }
 }
 
+/** Orange : un nombre de 3 chiffres par un nombre de 2 à 9 (fiche p. 3 : 723 × 8), avec au moins une retenue. */
+export function drawMultiplication(random: () => number): [number, number] {
+  for (;;) {
+    const top = between(100, 999, random);
+    const factor = between(2, 9, random);
+    if ([...String(top)].some((d) => Number(d) * factor >= 10)) return [top, factor];
+  }
+}
+
 export const CALCUL_POSE: readonly PosedBelt[] = [
   {
     belt: 'blanche',
@@ -89,6 +98,19 @@ export const CALCUL_POSE: readonly PosedBelt[] = [
     ],
     example: () => new PosedSubtraction(492, 166),
     draw: (random, index) => new PosedSubtraction(...drawSubtraction(index % 2 === 0 ? 3 : 2, random)),
+  },
+  {
+    belt: 'orange',
+    skill: 'Multiplications à 1 chiffre',
+    operation: 'multiplication',
+    tips: [
+      'Écris le nombre à 1 chiffre sous les unités, et commence par les unités.',
+      'Multiplie chaque chiffre du haut par ce nombre : tes tables te servent ici !',
+      'Si le résultat fait 10 ou plus, écris les unités en bas et la retenue en petit au-dessus du chiffre suivant.',
+      'Multiplie d’abord, puis ajoute la retenue. À la dernière colonne, écris le nombre en entier.',
+    ],
+    example: () => new PosedMultiplication(723, 8),
+    draw: (random) => new PosedMultiplication(...drawMultiplication(random)),
   },
 ];
 

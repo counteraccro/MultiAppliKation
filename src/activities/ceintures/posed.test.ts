@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CALCUL_POSE, drawAdditionTerms, drawSubtraction, pickOperations } from './calcul-pose';
-import { PosedAddition, PosedSubtraction, solve } from './posed';
+import { CALCUL_POSE, drawAdditionTerms, drawMultiplication, drawSubtraction, pickOperations } from './calcul-pose';
+import { PosedAddition, PosedMultiplication, PosedSubtraction, solve } from './posed';
 import { PosedSession } from './posed-session';
 
 /** Graine fixe pour des tirages reproductibles. */
@@ -91,6 +91,37 @@ describe('PosedSubtraction (par compensation)', () => {
       expect(op.written()).toBe(top - bottom);
       expect(op.result).toBeGreaterThanOrEqual(100);
       expect(op.steps().some((s) => s.kind === 'carry')).toBe(true);
+    }
+  });
+});
+
+describe('PosedMultiplication (à 1 chiffre)', () => {
+  it('pose 723 × 8 comme la fiche : retenues 2 puis 1, la dernière colonne en entier', () => {
+    const op = solve(new PosedMultiplication(723, 8));
+    expect(op.steps().map((s) => [s.kind, s.column, s.expected])).toEqual([
+      ['digit', 0, 4],
+      ['carry', 1, 2],
+      ['digit', 1, 8],
+      ['carry', 2, 1],
+      ['digit', 2, 7],
+      ['digit', 3, 5],
+    ]);
+    expect(op.written()).toBe(5784);
+    expect(op.steps()[0]!.explain).toBe('8 × 3 = 24 : on écrit 4 et on retient 2.');
+    expect(op.steps()[2]!.explain).toBe('8 × 2 = 16, + 2 = 18 : on écrit 8 et on retient 1.');
+    expect(op.steps()[4]!.explain).toBe('8 × 7 = 56, + 1 = 57 : c’est la dernière colonne, on écrit 57.');
+  });
+
+  it('garde le 0 du milieu : 409 × 6 = 2 454', () => {
+    expect(solve(new PosedMultiplication(409, 6)).written()).toBe(2454);
+  });
+
+  it('retrouve tous les produits tirés', () => {
+    const random = seeded(5);
+    for (let i = 0; i < 300; i++) {
+      const [top, factor] = drawMultiplication(random);
+      expect(factor).toBeGreaterThanOrEqual(2);
+      expect(solve(new PosedMultiplication(top, factor)).written()).toBe(top * factor);
     }
   });
 });

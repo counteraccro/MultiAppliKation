@@ -2313,6 +2313,11 @@ button.belt-row:active {
   color: var(--text-soft);
 }
 
+/* Multiplication : la retenue en petit au-dessus du chiffre, sans rond, comme sur la fiche. */
+.pc-carry-small {
+  border-color: transparent;
+}
+
 /* Soustraction : la retenue sous le nombre du bas, et le 10 ajouté en haut (un petit 1). */
 .pc-carry-under {
   align-self: start;

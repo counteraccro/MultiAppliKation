@@ -85,7 +85,21 @@ Réponse de l'utilisateur le 28/10/2026 : la classe soustrait **par compensation
 - Tirage : un nombre de 3 chiffres moins un de 2 ou 3 chiffres (en alternance), au moins une retenue,
   un résultat d'au moins 100 (pas de 0 à gauche à écrire).
 
-### Multiplication, division
+### Multiplication à 1 chiffre (orange)
+
+```
+    1  2          ← retenues, en petit au-dessus (sans rond, comme la fiche)
+    7  2  3
+ ×        8
+ ─────────
+ 5  7  8  4
+```
+
+- Depuis les unités : « 8 × 3 = 24 : on écrit 4 et on retient 2. », puis « 8 × 2 = 16, + 2 = 18 : on écrit 8
+  et on retient 1. », et la dernière colonne en entier (« 8 × 7 = 56, + 1 = 57 : … on écrit 57 »).
+- Tirage : un nombre de 3 chiffres par un nombre de 2 à 9, au moins une retenue.
+
+### Multiplication à 2 chiffres, division
 
 À préciser à leur étape. Points déjà relevés sur les fiches :
 - multiplication à 2 chiffres : la 2ᵉ ligne commence par un 0 (ou un point) sous les unités ;
@@ -115,7 +129,8 @@ dans `subjects.ts` (identifiant à ne jamais changer).
    « dernière ceinture » tant que des ceintures sont à venir (`unfinished` de la matière).
 2. **Jaune : les soustractions**, par compensation. Faite le 28/10/2026 (0.34.0) : `PosedSubtraction`,
    les opérations en colonnes ont une base commune (`ColumnBase`).
-3. **Orange et rose : les multiplications.**
+3. **Orange et rose : les multiplications.** Orange faite le 28/10/2026 (0.35.0) : `PosedMultiplication`.
+   Rose (deux lignes puis leur somme) à faire.
 4. **Vert clair : la division par un nombre à 1 chiffre** (la potence).
 5. **Vert foncé** : additions à trois termes, soustractions avec des 0, multiplications à 2 ou 3 chiffres.
 6. **Bleu clair et violette : les décimaux** (+, −, ×) : la virgule.
