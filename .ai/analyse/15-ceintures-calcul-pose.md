@@ -64,11 +64,30 @@ l'échelle est celui du classeur, l'ordre de travail regroupe ce qui se ressembl
   fausse ne compte qu'une fois (chaque étape est jugée d'après ce qui est déjà écrit, comme un maître
   qui corrige).
 
-### Soustraction, multiplication, division
+### Soustraction (jaune) : par compensation
+
+Réponse de l'utilisateur le 28/10/2026 : la classe soustrait **par compensation**.
+
+```
+    4  9 ¹2
+ −  1  6  6
+       ①          ← retenue, sous le nombre du bas
+ ─────────
+    3  2  6
+```
+
+- Colonne par colonne depuis les unités, l'enfant tape le chiffre du résultat.
+- Si le chiffre du haut est trop petit, on ajoute 10 en haut et 1 en bas de la colonne suivante :
+  l'enfant tape la retenue (1) dans le rond sous le nombre du bas ; le petit 1 devant le chiffre du haut
+  s'affiche quand la retenue est écrite.
+- Explication : « 2 < 6 : on ajoute 10 en haut (12) et 1 en bas des dizaines. 12 − 6 = 6 : on écrit 6. »,
+  puis « 6 + 1 = 7 ; 9 − 7 = 2 : on écrit 2. »
+- Tirage : un nombre de 3 chiffres moins un de 2 ou 3 chiffres (en alternance), au moins une retenue,
+  un résultat d'au moins 100 (pas de 0 à gauche à écrire).
+
+### Multiplication, division
 
 À préciser à leur étape. Points déjà relevés sur les fiches :
-- soustraction : les retenues ne se voient pas sur le scan (méthode « par compensation » ou « par emprunt »
-  à demander) ;
 - multiplication à 2 chiffres : la 2ᵉ ligne commence par un 0 (ou un point) sous les unités ;
 - division : potence « à la française », on n'écrit que les restes, on abaisse le chiffre suivant ; on prend
   d'abord assez de chiffres (34 pour 348 : 7) ; vérification à la fin.
@@ -94,7 +113,8 @@ dans `subjects.ts` (identifiant à ne jamais changer).
    conditions réelles, progrès et autocollants). Faite le 28/10/2026 (0.33.0) : `posed.ts` (`PosedAddition`),
    `posed-session.ts`, `posed-screen.ts`, `calcul-pose.ts` ; tests `posed.test.ts`. Pas d'autocollant
    « dernière ceinture » tant que des ceintures sont à venir (`unfinished` de la matière).
-2. **Jaune : les soustractions** (méthode des retenues à confirmer).
+2. **Jaune : les soustractions**, par compensation. Faite le 28/10/2026 (0.34.0) : `PosedSubtraction`,
+   les opérations en colonnes ont une base commune (`ColumnBase`).
 3. **Orange et rose : les multiplications.**
 4. **Vert clair : la division par un nombre à 1 chiffre** (la potence).
 5. **Vert foncé** : additions à trois termes, soustractions avec des 0, multiplications à 2 ou 3 chiffres.

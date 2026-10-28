@@ -39,23 +39,57 @@ export const COLUMN_NAMES = ['unités', 'dizaines', 'centaines', 'milliers', 'di
 export const digitAt = (n: number, column: number) => Math.floor(n / 10 ** column) % 10;
 const length = (n: number) => String(n).length;
 
-export class PosedAddition implements PosedOperation {
+/** Ce qui est commun aux opérations en colonnes : les valeurs écrites, une par étape. */
+abstract class ColumnBase implements PosedOperation {
+  abstract readonly id: string;
+  abstract readonly text: string;
+  abstract readonly result: number;
+  protected readonly values: number[] = [];
+
+  /** Les étapes déjà faites, puis celle en cours, d'après ce qui est écrit. */
+  abstract steps(): PosedStep[];
+
+  get placed(): readonly number[] {
+    return this.values;
+  }
+
+  current(): PosedStep | undefined {
+    return this.steps()[this.values.length];
+  }
+
+  get done(): boolean {
+    return this.current() === undefined;
+  }
+
+  place(value: number): void {
+    if (this.done) throw new Error('L’opération est finie');
+    this.values.push(value);
+  }
+
+  undo(): number | undefined {
+    return this.values.pop();
+  }
+
+  written(): number {
+    const steps = this.steps();
+    return this.values.reduce((sum, value, i) => (steps[i]!.kind === 'digit' ? sum + value * 10 ** steps[i]!.column : sum), 0);
+  }
+}
+
+export class PosedAddition extends ColumnBase {
+  readonly sign = '+';
   readonly id: string;
   readonly text: string;
   readonly result: number;
   /** Colonnes des nombres à additionner (le résultat peut en avoir une de plus). */
   readonly columns: number;
-  private readonly values: number[] = [];
 
   constructor(readonly terms: readonly number[]) {
+    super();
     this.id = terms.join('+');
     this.text = terms.join(' + ');
     this.result = terms.reduce((a, b) => a + b, 0);
     this.columns = Math.max(...terms.map(length));
-  }
-
-  get placed(): readonly number[] {
-    return this.values;
   }
 
   steps(): PosedStep[] {
@@ -91,28 +125,62 @@ export class PosedAddition implements PosedOperation {
     return steps;
   }
 
-  current(): PosedStep | undefined {
-    return this.steps()[this.values.length];
-  }
-
-  get done(): boolean {
-    return this.current() === undefined;
-  }
-
-  place(value: number): void {
-    if (this.done) throw new Error('L’opération est finie');
-    this.values.push(value);
-  }
-
-  undo(): number | undefined {
-    return this.values.pop();
-  }
-
-  written(): number {
-    const steps = this.steps();
-    return this.values.reduce((sum, value, i) => (steps[i]!.kind === 'digit' ? sum + value * 10 ** steps[i]!.column : sum), 0);
-  }
 }
+
+/**
+ * Soustraction par compensation, comme en classe : si le chiffre du haut est trop petit, on ajoute
+ * 10 en haut et 1 en bas de la colonne suivante (la retenue, dans un rond sous le nombre du bas).
+ */
+export class PosedSubtraction extends ColumnBase {
+  readonly sign = '−';
+  readonly id: string;
+  readonly text: string;
+  readonly result: number;
+  readonly terms: readonly [number, number];
+  readonly columns: number;
+
+  constructor(top: number, bottom: number) {
+    super();
+    this.terms = [top, bottom];
+    this.id = `${top}-${bottom}`;
+    this.text = `${top} − ${bottom}`;
+    this.result = top - bottom;
+    this.columns = length(top);
+  }
+
+  steps(): PosedStep[] {
+    const [top, bottom] = this.terms;
+    const steps: PosedStep[] = [];
+    let i = 0;
+    let carryIn = 0;
+    for (let column = 0; column < this.columns; column++) {
+      const a = digitAt(top, column);
+      const b = length(bottom) > column ? digitAt(bottom, column) : 0;
+      const under = b + carryIn;
+      const last = column === this.columns - 1;
+      const borrow = a < under && !last;
+      const up = borrow ? a + 10 : a;
+      const counted = carryIn > 0 ? `${b} + ${carryIn} = ${under} ; ` : '';
+      const explain = borrow
+        ? `${counted}${a} < ${under} : on ajoute 10 en haut (${up}) et 1 en bas des ${COLUMN_NAMES[column + 1]}. ${up} − ${under} = ${up - under} : on écrit ${up - under}.`
+        : `${counted}${a} − ${under} = ${a - under} : on écrit ${a - under}.`;
+      steps.push({ kind: 'digit', column, expected: up - under, ask: `Les ${COLUMN_NAMES[column]}`, explain });
+      if (i++ >= this.values.length) return steps;
+      if (!borrow) {
+        carryIn = 0;
+        continue;
+      }
+      steps.push({ kind: 'carry', column: column + 1, expected: 1, ask: `La retenue, en bas des ${COLUMN_NAMES[column + 1]}`, explain });
+      if (i >= this.values.length) return steps;
+      carryIn = this.values[i++]!;
+    }
+    return steps;
+  }
+
+}
+
+/** Une opération posée en colonnes (pas la division). */
+export type ColumnOperation = PosedAddition | PosedSubtraction;
 
 /** Pose l'opération en entier, juste : pour l'exemple de la leçon. */
 export function solve(operation: PosedOperation): PosedOperation {

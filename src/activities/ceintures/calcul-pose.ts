@@ -4,7 +4,7 @@
 
 import { shuffle } from '../../core/quiz';
 import type { BeltId } from './belts';
-import { PosedAddition, type PosedOperation } from './posed';
+import { PosedAddition, PosedSubtraction, type PosedOperation } from './posed';
 
 export interface PosedBelt {
   belt: BeltId;
@@ -12,7 +12,7 @@ export interface PosedBelt {
   skill: string;
   /** « Objectif de fin de CE2 » dans le classeur. */
   goal?: 'CE2' | 'CM1' | 'CM2';
-  operation: 'addition';
+  operation: 'addition' | 'soustraction';
   /** La méthode, pour la leçon. */
   tips: readonly string[];
   /** L'opération posée en entier dans la leçon. */
@@ -43,6 +43,26 @@ export function drawAdditionTerms(count: number, random: () => number): number[]
   }
 }
 
+/** Une retenue dans la soustraction : un chiffre du haut plus petit que celui du bas. */
+const hasBorrow = (top: number, bottom: number) => {
+  for (let unit = 1; unit <= 100; unit *= 10) {
+    if (Math.floor(top / unit) % 10 < Math.floor(bottom / unit) % 10) return true;
+  }
+  return false;
+};
+
+/**
+ * Jaune : un nombre de 3 chiffres moins un de 2 ou 3 chiffres (fiche p. 2 : 405 − 206, 563 − 78),
+ * avec au moins une retenue, le résultat a encore 3 chiffres.
+ */
+export function drawSubtraction(bottomDigits: number, random: () => number): [number, number] {
+  for (;;) {
+    const top = between(200, 999, random);
+    const bottom = bottomDigits === 2 ? between(10, 99, random) : between(100, top - 100, random);
+    if (top - bottom >= 100 && hasBorrow(top, bottom)) return [top, bottom];
+  }
+}
+
 export const CALCUL_POSE: readonly PosedBelt[] = [
   {
     belt: 'blanche',
@@ -56,6 +76,19 @@ export const CALCUL_POSE: readonly PosedBelt[] = [
     ],
     example: () => new PosedAddition([437, 76, 209]),
     draw: (random, index) => new PosedAddition(drawAdditionTerms(index % 2 === 0 ? 2 : 3, random)),
+  },
+  {
+    belt: 'jaune',
+    skill: 'Soustractions',
+    operation: 'soustraction',
+    tips: [
+      'Écris le plus grand nombre en haut, bien en colonnes, et commence par les unités.',
+      'Si le chiffre du haut est trop petit, ajoute 10 en haut : écris un petit 1 devant lui.',
+      'Pour compenser, ajoute aussi 1 en bas de la colonne suivante : c’est la retenue.',
+      'Dans la colonne suivante, ajoute la retenue au chiffre du bas avant de soustraire.',
+    ],
+    example: () => new PosedSubtraction(492, 166),
+    draw: (random, index) => new PosedSubtraction(...drawSubtraction(index % 2 === 0 ? 3 : 2, random)),
   },
 ];
 

@@ -2313,6 +2313,25 @@ button.belt-row:active {
   color: var(--text-soft);
 }
 
+/* Soustraction : la retenue sous le nombre du bas, et le 10 ajouté en haut (un petit 1). */
+.pc-carry-under {
+  align-self: start;
+  margin-top: 0.1em;
+  margin-bottom: 0.05em;
+}
+
+.pc {
+  position: relative;
+}
+
+.pc-ten {
+  position: absolute;
+  top: 0.1em;
+  left: -0.15em;
+  font-size: 0.45em;
+  color: var(--text-soft);
+}
+
 .pc-active {
   border-radius: 0.15em;
   background: var(--surface);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CALCUL_POSE, drawAdditionTerms, pickOperations } from './calcul-pose';
-import { PosedAddition, solve } from './posed';
+import { CALCUL_POSE, drawAdditionTerms, drawSubtraction, pickOperations } from './calcul-pose';
+import { PosedAddition, PosedSubtraction, solve } from './posed';
 import { PosedSession } from './posed-session';
 
 /** Graine fixe pour des tirages reproductibles. */
@@ -54,6 +54,43 @@ describe('PosedAddition', () => {
       const op = solve(new PosedAddition(terms));
       expect(op.written()).toBe(op.result);
       expect(op.steps().some((s) => s.kind === 'carry' || s.column >= (op as PosedAddition).columns)).toBe(true);
+    }
+  });
+});
+
+describe('PosedSubtraction (par compensation)', () => {
+  it('pose 492 − 166 : 10 en haut des unités, 1 en bas des dizaines', () => {
+    const op = solve(new PosedSubtraction(492, 166));
+    expect(op.steps().map((s) => [s.kind, s.column, s.expected])).toEqual([
+      ['digit', 0, 6],
+      ['carry', 1, 1],
+      ['digit', 1, 2],
+      ['digit', 2, 3],
+    ]);
+    expect(op.written()).toBe(326);
+    expect(op.steps()[0]!.explain).toBe('2 < 6 : on ajoute 10 en haut (12) et 1 en bas des dizaines. 12 − 6 = 6 : on écrit 6.');
+    expect(op.steps()[2]!.explain).toBe('6 + 1 = 7 ; 9 − 7 = 2 : on écrit 2.');
+  });
+
+  it('enchaîne les retenues : 405 − 206 = 199', () => {
+    const op = solve(new PosedSubtraction(405, 206));
+    expect(op.steps().filter((s) => s.kind === 'carry')).toHaveLength(2);
+    expect(op.written()).toBe(199);
+  });
+
+  it('pose un nombre de 2 chiffres sous un de 3 : 563 − 78 = 485', () => {
+    expect(solve(new PosedSubtraction(563, 78)).written()).toBe(485);
+  });
+
+  it('retrouve toutes les différences tirées, avec au moins une retenue', () => {
+    const random = seeded(11);
+    for (let i = 0; i < 300; i++) {
+      const [top, bottom] = drawSubtraction(2 + (i % 2), random);
+      expect(String(bottom)).toHaveLength(2 + (i % 2));
+      const op = solve(new PosedSubtraction(top, bottom));
+      expect(op.written()).toBe(top - bottom);
+      expect(op.result).toBeGreaterThanOrEqual(100);
+      expect(op.steps().some((s) => s.kind === 'carry')).toBe(true);
     }
   });
 });

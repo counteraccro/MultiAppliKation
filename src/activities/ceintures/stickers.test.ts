@@ -50,8 +50,8 @@ describe('progrès des ceintures', () => {
   it('compte les ceintures de chaque couleur pour la barre de l’accueil', () => {
     const data = readCeinturesData({});
     setClassLevel(data, homophones, 1, '2026-10-25');
-    // 9 homophones, 10 conjugaison, 10 tables et 1 calcul posé pas encore commencées.
-    expect(masteryCounts(data)).toEqual({ unseen: 30, learning: 0, progress: 0, known: 2, mastered: 0 });
+    // 9 homophones, 10 conjugaison, 10 tables et 2 calcul posé pas encore commencées.
+    expect(masteryCounts(data)).toEqual({ unseen: 31, learning: 0, progress: 0, known: 2, mastered: 0 });
   });
 
   it('ne garde pas des statistiques abîmées', () => {

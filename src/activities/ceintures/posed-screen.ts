@@ -2,7 +2,7 @@ import { createKeypad } from '../../components/keypad';
 import { soundToggle } from '../../components/sound-toggle';
 import { h } from '../../core/dom';
 import { sounds } from '../../core/sound';
-import { PosedAddition, type PosedOperation } from './posed';
+import { PosedAddition, PosedSubtraction, type PosedOperation } from './posed';
 import type { PosedSession } from './posed-session';
 
 /** Temps pendant lequel une étape juste reste en vert avant la suivante. */
@@ -21,31 +21,43 @@ export interface GridOptions {
 }
 
 /**
- * L'opération posée, comme sur le cahier : les retenues dans des ronds en haut, les nombres
- * en colonnes, le trait, puis le résultat. La case en cours est encadrée.
+ * L'opération posée, comme sur le cahier : les nombres en colonnes, le trait, puis le résultat.
+ * Addition : les retenues dans des ronds en haut. Soustraction (par compensation) : les retenues
+ * dans des ronds sous le nombre du bas, et le 10 ajouté en haut (un petit 1 devant le chiffre).
+ * La case en cours est encadrée.
  */
 export function posedGrid(operation: PosedOperation, options: GridOptions = {}): HTMLElement {
-  if (!(operation instanceof PosedAddition)) throw new Error('Opération pas encore posée à l’écran');
+  if (!(operation instanceof PosedAddition || operation instanceof PosedSubtraction)) {
+    throw new Error('Opération pas encore posée à l’écran');
+  }
+  const subtraction = operation instanceof PosedSubtraction;
   // Une colonne pour le signe, une de plus à gauche pour une dernière retenue (« 1 255 »).
   const width = operation.columns + 2;
   const at = (column: number) => width - column;
   const cells: HTMLElement[] = [];
-  const cell = (row: number, column: number, text: string, extra = '') =>
-    cells.push(h('span', { class: `pc ${extra}`, style: `grid-row: ${row}; grid-column: ${at(column)}` }, text));
-
-  const resultRow = operation.terms.length + 2;
-  operation.terms.forEach((term, i) => {
-    const row = i + 2;
-    if (i > 0) cells.push(h('span', { class: 'pc pc-sign', style: `grid-row: ${row}; grid-column: 1` }, '+'));
-    [...String(term)].reverse().forEach((digit, column) => cell(row, column, digit));
-  });
-  cells.push(h('span', { class: 'pc-line', style: `grid-row: ${resultRow}; grid-column: 1 / -1` }));
+  const cell = (row: number, column: number, text: string | (string | HTMLElement)[], extra = '') =>
+    cells.push(h('span', { class: `pc ${extra}`, style: `grid-row: ${row}; grid-column: ${at(column)}` }, ...[text].flat()));
 
   const steps = operation.steps();
   const placed = operation.placed;
+  // Soustraction : une retenue écrite sous la colonne suivante, c'est 10 ajouté en haut de celle-ci.
+  const tens = new Set(steps.filter((step, i) => step.kind === 'carry' && i < placed.length).map((step) => step.column - 1));
+
+  const firstTerm = subtraction ? 1 : 2;
+  const carryRow = subtraction ? 3 : 1;
+  const resultRow = firstTerm + operation.terms.length + (subtraction ? 1 : 0);
+  operation.terms.forEach((term, i) => {
+    const row = firstTerm + i;
+    if (i > 0) cells.push(h('span', { class: 'pc pc-sign', style: `grid-row: ${row}; grid-column: 1` }, operation.sign));
+    [...String(term)].reverse().forEach((digit, column) =>
+      cell(row, column, i === 0 && tens.has(column) ? [h('small', { class: 'pc-ten' }, '1'), digit] : digit),
+    );
+  });
+  cells.push(h('span', { class: 'pc-line', style: `grid-row: ${resultRow}; grid-column: 1 / -1` }));
+
   steps.forEach((step, i) => {
-    const row = step.kind === 'carry' ? 1 : resultRow;
-    const kind = step.kind === 'carry' ? 'pc-carry' : 'pc-result';
+    const row = step.kind === 'carry' ? carryRow : resultRow;
+    const kind = step.kind === 'carry' ? `pc-carry${subtraction ? ' pc-carry-under' : ''}` : 'pc-result';
     if (i < placed.length) {
       const state = i === placed.length - 1 && options.last ? options.last : options.corrected?.has(i) ? 'wrong' : '';
       cell(row, step.column, String(placed[i]), `${kind} ${state && `is-${state}`}`);
