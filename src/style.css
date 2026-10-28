@@ -2386,3 +2386,40 @@ button.belt-row:active {
   padding-left: 1.4em;
   line-height: 1.5;
 }
+
+/* Division en potence (calcul posé, vert clair). */
+.pd-bar {
+  justify-self: center;
+  width: 0;
+  border-left: 0.06em solid var(--text);
+}
+
+.pd-divisor {
+  text-align: left;
+  padding-left: 0.15em;
+  border-bottom: 0.06em solid var(--text);
+}
+
+/* Les chiffres pris d'abord, soulignés comme sur le cahier. */
+.pd-took {
+  text-decoration: underline;
+  text-decoration-thickness: 0.06em;
+  text-underline-offset: 0.12em;
+}
+
+/* Le nombre en cours, à diviser. */
+.pd-focus {
+  border-radius: 0.15em;
+  background: #fff1b8;
+}
+
+.pd-first {
+  text-align: left;
+  justify-self: start;
+  padding: 0 0.2em;
+}
+
+.pc-result,
+.pd-rest {
+  min-width: 1em;
+}

@@ -120,11 +120,26 @@ Réponse de l'utilisateur le 28/10/2026 : la classe soustrait **par compensation
 - Tirage : un nombre de 3 chiffres par un nombre de 2 chiffres sans 0 ni 1 (22 à 99), comme sur la fiche.
 - Une série est longue (une vingtaine d'étapes par multiplication) : c'est le travail de la ceinture.
 
-### Division
+### Division par un nombre à 1 chiffre (vert clair)
 
-À préciser à son étape. Points déjà relevés sur les fiches :
-- division : potence « à la française », on n'écrit que les restes, on abaisse le chiffre suivant ; on prend
-  d'abord assez de chiffres (34 pour 348 : 7) ; vérification à la fin.
+```
+   7  3  8 │ 5
+   ‾        ├───────
+   2  3     │ 1  4  7
+      3  8  │
+         3  │
+```
+
+- Potence « à la française », comme la fiche : on n'écrit que les restes, pas les soustractions.
+- D'abord, **le nombre pris** : l'enfant le tape (7, ou 34 pour 348 : 7), il se souligne sous le dividende.
+  « 3 est plus petit que 7 : on prend 34. »
+- Puis, pour chaque nombre en cours (surligné) : **le chiffre du quotient** (« Dans 34, combien de fois 7 ? » ;
+  « 7 × 4 = 28 et 7 × 5 = 35, c'est trop : on écrit 4. »), **le reste** (« 34 − 28 = 6 : il reste 6. On abaisse
+  le 8 : 68. »). Le chiffre suivant s'abaisse tout seul à côté du reste ; un nombre trop petit donne un 0 au quotient.
+- À la fin : « 738 : 5 = 147, reste 3 ✓ · Vérifie : 147 × 5 + 3 = 738 ».
+- En conditions réelles, la suite se calcule avec le reste écrit (une erreur ne compte qu'une fois).
+- Tirage : un nombre de 3 chiffres divisé par 2 à 9 ; dans une série, une division où l'on prend 2 chiffres
+  d'abord, une avec un 0 au quotient, une au hasard.
 
 ## Les écrans
 
@@ -152,7 +167,9 @@ dans `subjects.ts` (identifiant à ne jamais changer).
 3. **Orange et rose : les multiplications.** Orange faite le 28/10/2026 (0.35.0) : `PosedMultiplication`.
    Rose faite le 28/10/2026 (0.36.0) : `PosedLongMultiplication` (étapes rangées par ligne, `line`),
    lignes de multiplication communes (`multiplyLine`).
-4. **Vert clair : la division par un nombre à 1 chiffre** (la potence).
+4. **Vert clair : la division par un nombre à 1 chiffre** (la potence). Faite le 28/10/2026 (0.37.0) :
+   `PosedDivision`, `divisionGrid` ; les opérations donnent leur résultat en texte (`resultText`,
+   « 147, reste 3 ») pour les listes et la correction.
 5. **Vert foncé** : additions à trois termes, soustractions avec des 0, multiplications à 2 ou 3 chiffres.
 6. **Bleu clair et violette : les décimaux** (+, −, ×) : la virgule.
 7. **Bleu foncé et marron : les divisions décimales et par 2 chiffres.**

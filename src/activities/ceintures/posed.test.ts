@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CALCUL_POSE, drawAdditionTerms, drawLongMultiplication, drawMultiplication, drawSubtraction, pickOperations } from './calcul-pose';
-import { PosedAddition, PosedLongMultiplication, PosedMultiplication, PosedSubtraction, solve } from './posed';
+import { CALCUL_POSE, drawAdditionTerms, drawDivision, drawLongMultiplication, drawMultiplication, drawSubtraction, pickOperations } from './calcul-pose';
+import { PosedAddition, PosedDivision, PosedLongMultiplication, PosedMultiplication, PosedSubtraction, solve } from './posed';
 import { PosedSession } from './posed-session';
 
 /** Graine fixe pour des tirages reproductibles. */
@@ -160,6 +160,56 @@ describe('PosedLongMultiplication (à 2 chiffres)', () => {
   });
 });
 
+describe('PosedDivision (par un nombre à 1 chiffre)', () => {
+  it('pose 738 : 5 comme la fiche : 7, puis 23, puis 38', () => {
+    const op = solve(new PosedDivision(738, 5)) as PosedDivision;
+    expect(op.steps().map((s) => [s.kind, s.expected])).toEqual([
+      ['first', 7],
+      ['quotient', 1],
+      ['remainder', 2],
+      ['quotient', 4],
+      ['remainder', 3],
+      ['quotient', 7],
+      ['remainder', 3],
+    ]);
+    expect(op.writtenText()).toBe('147, reste 3');
+    expect(op.check).toBe('147 × 5 + 3 = 738');
+    expect(op.steps()[0]!.explain).toBe('On peut diviser 7 par 5 : on commence par 7.');
+    expect(op.steps()[3]!.explain).toBe('5 × 4 = 20 et 5 × 5 = 25, c’est trop : on écrit 4.');
+    expect(op.steps()[2]!.explain).toBe('7 − 5 = 2 : il reste 2. On abaisse le 3 : 23.');
+  });
+
+  it('prend 2 chiffres quand le premier est trop petit : 348 : 7 = 49, reste 5', () => {
+    const op = solve(new PosedDivision(348, 7));
+    expect(op.steps()[0]).toMatchObject({ expected: 34, explain: '3 est plus petit que 7 : on prend 34.' });
+    expect(op.writtenText()).toBe('49, reste 5');
+  });
+
+  it('écrit 0 au quotient : 454 : 3 n’en a pas, 618 : 3 = 206', () => {
+    const op = solve(new PosedDivision(618, 3));
+    expect(op.steps().find((s) => s.kind === 'quotient' && s.expected === 0)!.explain).toBe('1 est plus petit que 3 : on écrit 0 au quotient.');
+    expect(op.writtenText()).toBe('206, reste 0');
+  });
+
+  it('continue avec le reste écrit, même faux', () => {
+    const op = new PosedDivision(738, 5);
+    for (const value of [7, 1, 1]) op.place(value); // reste faux : 1 au lieu de 2
+    expect(op.current()).toMatchObject({ kind: 'quotient', partial: 13, expected: 2 });
+  });
+
+  it('retrouve toutes les divisions tirées', () => {
+    const random = seeded(13);
+    for (let i = 0; i < 300; i++) {
+      const [dividend, divisor] = drawDivision(i % 3, random);
+      const op = solve(new PosedDivision(dividend, divisor)) as PosedDivision;
+      expect(op.written()).toBe(Math.floor(dividend / divisor));
+      expect(op.writtenRemainder()).toBe(dividend % divisor);
+      if (i % 3 === 0) expect(op.firstLength).toBe(2);
+      if (i % 3 === 1) expect(String(op.result)).toContain('0');
+    }
+  });
+});
+
 describe('PosedSession', () => {
   const blanche = CALCUL_POSE[0]!;
 
@@ -184,7 +234,7 @@ describe('PosedSession', () => {
     session.answer(5);
     session.answer(2); // 1 + 2 = 3 attendu
     expect(session.operations[0]!.done).toBe(true);
-    expect(session.operations[0]!.written()).toBe(258);
+    expect(session.operations[0]!.writtenText()).toBe('258');
     expect(session.undo()).toBe(2);
     session.answer(1);
     for (let current = session.current(); current; current = session.current()) session.answer(current.step.expected);
@@ -196,7 +246,7 @@ describe('PosedSession', () => {
     for (const value of [8, 1, 5, 2]) session.answer(value);
     const result = session.result();
     expect(result).toMatchObject({ correct: 3, total: 4, passed: false });
-    expect(result.mistakes.map((m) => [m.operation.text, m.written])).toEqual([['129 + 29', 258]]);
+    expect(result.mistakes.map((m) => [m.operation.text, m.written])).toEqual([['129 + 29', '258']]);
   });
 
   it('l’entraînement ne revient pas en arrière', () => {

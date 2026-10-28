@@ -8,8 +8,8 @@ import { isPassing } from './test-session';
 
 export interface PosedMistake {
   operation: PosedOperation;
-  /** Le résultat écrit par l'enfant. */
-  written: number;
+  /** Le résultat écrit par l'enfant (« 146, reste 8 » pour une division). */
+  written: string;
 }
 
 export interface PosedResult {
@@ -75,8 +75,8 @@ export class PosedSession {
       correct,
       total: all.length,
       passed: isPassing(correct, all.length),
-      toPractice: missed.map((o) => `${o.text} = ${o.result}`),
-      mistakes: missed.map((operation) => ({ operation, written: operation.written() })),
+      toPractice: missed.map((o) => `${o.text} = ${o.resultText}`),
+      mistakes: missed.map((operation) => ({ operation, written: operation.writtenText() })),
     };
   }
 }

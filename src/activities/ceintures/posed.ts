@@ -4,9 +4,12 @@
 // ne compte qu'une fois, la suite se calcule avec elle (comme un maître qui corrige).
 
 export interface PosedStep {
-  /** Un chiffre du résultat, ou une retenue (dans le rond en haut de la colonne). */
-  kind: 'digit' | 'carry';
-  /** 0 pour les unités, 1 pour les dizaines… */
+  /**
+   * Un chiffre du résultat, ou une retenue (dans le rond en haut de la colonne).
+   * Division : le nombre pris d'abord, un chiffre du quotient, un reste.
+   */
+  kind: 'digit' | 'carry' | 'first' | 'quotient' | 'remainder';
+  /** 0 pour les unités, 1 pour les dizaines… Division : le rang du chiffre du quotient, ou du reste. */
   column: number;
   expected: number;
   /** Ce qu'on demande, au-dessus de l'opération. */
@@ -15,6 +18,10 @@ export interface PosedStep {
   explain: string;
   /** Multiplication à 2 chiffres : 0 et 1 pour les deux lignes, 2 pour leur somme (absent : une seule ligne). */
   line?: number;
+  /** Chiffres qu'on peut taper (1 par défaut) : le nombre pris d'abord dans une division en a plusieurs. */
+  digits?: number;
+  /** Division : le nombre en cours (34, puis 68 pour 348 : 7). */
+  partial?: number;
 }
 
 export interface PosedOperation {
@@ -34,6 +41,9 @@ export interface PosedOperation {
   undo(): number | undefined;
   /** Le résultat tel qu'il est écrit. */
   written(): number;
+  /** Le résultat juste et le résultat écrit, pour les listes et la correction (« 147, reste 3 »). */
+  readonly resultText: string;
+  writtenText(): string;
 }
 
 export const COLUMN_NAMES = ['unités', 'dizaines', 'centaines', 'milliers', 'dizaines de milliers'];
@@ -74,6 +84,14 @@ abstract class ColumnBase implements PosedOperation {
 
   written(): number {
     return lineValue(this.steps(), this.values, this.resultLine);
+  }
+
+  get resultText(): string {
+    return String(this.result);
+  }
+
+  writtenText(): string {
+    return String(this.written());
   }
 
   /** La ligne du résultat (la dernière d'une multiplication à 2 chiffres). */
@@ -344,6 +362,117 @@ export class PosedLongMultiplication extends ColumnBase {
 
 /** Une opération posée en colonnes (pas la division). */
 export type ColumnOperation = PosedAddition | PosedSubtraction | PosedMultiplication | PosedLongMultiplication;
+
+/**
+ * Division par un nombre à 1 chiffre, en potence et « à la française », comme sur la fiche :
+ * on prend d'abord assez de chiffres, puis pour chaque nombre en cours le chiffre du quotient et
+ * le reste (les soustractions ne s'écrivent pas), et on abaisse le chiffre suivant.
+ */
+export class PosedDivision implements PosedOperation {
+  readonly id: string;
+  readonly text: string;
+  readonly result: number;
+  readonly remainder: number;
+  readonly digits: readonly number[];
+  /** Chiffres du dividende pris d'abord : 1 pour 738 : 5 (7), 2 pour 348 : 7 (34). */
+  readonly firstLength: number;
+  private readonly values: number[] = [];
+
+  constructor(
+    readonly dividend: number,
+    readonly divisor: number,
+  ) {
+    this.id = `${dividend}:${divisor}`;
+    this.text = `${dividend} : ${divisor}`;
+    this.result = Math.floor(dividend / divisor);
+    this.remainder = dividend % divisor;
+    this.digits = [...String(dividend)].map(Number);
+    const length = this.digits.findIndex((_, i) => Number(String(dividend).slice(0, i + 1)) >= divisor) + 1;
+    this.firstLength = length > 0 ? length : this.digits.length;
+  }
+
+  get placed(): readonly number[] {
+    return this.values;
+  }
+
+  steps(): PosedStep[] {
+    const { divisor: d, digits, firstLength } = this;
+    const walk: Walk = { steps: [], values: this.values, i: 0 };
+    const first = Number(digits.slice(0, firstLength).join(''));
+    const explainFirst =
+      firstLength > 1
+        ? `${digits.slice(0, firstLength - 1).join('')} est plus petit que ${d} : on prend ${first}.`
+        : `On peut diviser ${first} par ${d} : on commence par ${first}.`;
+    const ask = `Quel nombre prends-tu d’abord pour diviser par ${d} ?`;
+    if (!push(walk, { kind: 'first', column: 0, expected: first, ask, explain: explainFirst, digits: digits.length })) return walk.steps;
+    let partial = first;
+    const count = digits.length - firstLength + 1;
+    for (let k = 0; k < count; k++) {
+      const q = Math.floor(partial / d);
+      const explainQ =
+        q === 0
+          ? `${partial} est plus petit que ${d} : on écrit 0 au quotient.`
+          : `${d} × ${q} = ${d * q}${q < 9 ? ` et ${d} × ${q + 1} = ${d * (q + 1)}, c’est trop` : ''} : on écrit ${q}.`;
+      const askQ = `Dans ${partial}, combien de fois ${d} ?`;
+      if (!push(walk, { kind: 'quotient', column: k, expected: q, ask: askQ, explain: explainQ, partial })) return walk.steps;
+      const written = walk.values[walk.i - 1]!;
+      const r = partial - d * written;
+      const next = digits[firstLength + k];
+      const explainR =
+        `${partial} − ${d * written} = ${r} : il reste ${r}.` +
+        (next === undefined ? ' C’est le reste de la division.' : ` On abaisse le ${next} : ${r}${next}.`);
+      const remainder = { kind: 'remainder' as const, column: k, expected: r, ask: 'Combien reste-t-il ?', explain: explainR, digits: 2, partial };
+      if (!push(walk, remainder)) {
+        return walk.steps;
+      }
+      if (next !== undefined) partial = walk.values[walk.i - 1]! * 10 + next;
+    }
+    return walk.steps;
+  }
+
+  current(): PosedStep | undefined {
+    return this.steps()[this.values.length];
+  }
+
+  get done(): boolean {
+    return this.current() === undefined;
+  }
+
+  place(value: number): void {
+    if (this.done) throw new Error('L’opération est finie');
+    this.values.push(value);
+  }
+
+  undo(): number | undefined {
+    return this.values.pop();
+  }
+
+  /** Le quotient écrit. */
+  written(): number {
+    const steps = this.steps();
+    return Number(this.values.filter((_, i) => steps[i]?.kind === 'quotient').join('') || 0);
+  }
+
+  /** Le dernier reste écrit. */
+  writtenRemainder(): number | undefined {
+    const steps = this.steps();
+    const remainders = this.values.filter((_, i) => steps[i]?.kind === 'remainder');
+    return remainders.at(-1);
+  }
+
+  get resultText(): string {
+    return `${this.result}, reste ${this.remainder}`;
+  }
+
+  writtenText(): string {
+    return `${this.written()}, reste ${this.writtenRemainder() ?? '?'}`;
+  }
+
+  /** « 147 × 5 + 3 = 738 », la vérification de la fiche. */
+  get check(): string {
+    return `${this.result} × ${this.divisor} + ${this.remainder} = ${this.dividend}`;
+  }
+}
 
 /** Pose l'opération en entier, juste : pour l'exemple de la leçon. */
 export function solve(operation: PosedOperation): PosedOperation {

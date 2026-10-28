@@ -2,7 +2,7 @@ import { createKeypad } from '../../components/keypad';
 import { soundToggle } from '../../components/sound-toggle';
 import { h } from '../../core/dom';
 import { sounds } from '../../core/sound';
-import { PosedAddition, PosedLongMultiplication, PosedMultiplication, PosedSubtraction, type PosedOperation } from './posed';
+import { PosedAddition, PosedDivision, PosedLongMultiplication, PosedMultiplication, PosedSubtraction, type PosedOperation } from './posed';
 import type { PosedSession } from './posed-session';
 
 /** Temps pendant lequel une étape juste reste en vert avant la suivante. */
@@ -29,6 +29,7 @@ export interface GridOptions {
  * La case en cours est encadrée.
  */
 export function posedGrid(operation: PosedOperation, options: GridOptions = {}): HTMLElement {
+  if (operation instanceof PosedDivision) return divisionGrid(operation, options);
   if (
     !(
       operation instanceof PosedAddition ||
@@ -90,6 +91,61 @@ export function posedGrid(operation: PosedOperation, options: GridOptions = {}):
   return h('div', { class: 'posed', style: `grid-template-columns: repeat(${width}, 1fr)`, 'aria-label': operation.text }, ...cells);
 }
 
+/**
+ * La division en potence, comme sur la fiche : le dividende et le diviseur, le quotient sous le trait,
+ * et sous le dividende les restes avec le chiffre abaissé. Le nombre en cours est mis en avant.
+ */
+function divisionGrid(operation: PosedDivision, options: GridOptions): HTMLElement {
+  const { digits, firstLength } = operation;
+  const n = digits.length;
+  const count = n - firstLength + 1;
+  const bar = n + 1;
+  const cells: HTMLElement[] = [];
+  const cell = (row: number, column: number, text: string, extra = '', span = 1) =>
+    cells.push(h('span', { class: `pc ${extra}`, style: `grid-row: ${row}; grid-column: ${column} / span ${span}` }, text));
+
+  const steps = operation.steps();
+  const placed = operation.placed;
+  const state = (i: number) =>
+    i === placed.length - 1 && options.last ? `is-${options.last}` : options.corrected?.has(i) ? 'is-wrong' : '';
+  const current = options.typed !== undefined ? steps[placed.length] : undefined;
+  // Le nombre en cours : les premiers chiffres, puis un reste et le chiffre abaissé.
+  const focus = current?.partial !== undefined ? current.column : undefined;
+  // Les chiffres pris d'abord, soulignés s'ils sont bien un début du dividende.
+  const took = placed.length > 0 && String(operation.dividend).startsWith(String(placed[0])) ? String(placed[0]).length : 0;
+
+  digits.forEach((digit, j) =>
+    cell(1, j + 1, String(digit), [j < took ? 'pd-took' : '', focus === 0 && j < firstLength ? 'pd-focus' : ''].join(' ')),
+  );
+  cells.push(h('span', { class: 'pd-bar', style: `grid-row: 1 / span ${count + 1}; grid-column: ${bar}` }));
+  cell(1, bar + 1, String(operation.divisor), 'pd-divisor', Math.max(count, 2));
+
+  steps.forEach((step, i) => {
+    const active = step === current;
+    if (i >= placed.length && !active) return;
+    const text = active ? options.typed || '?' : String(placed[i]);
+    const extra = active ? `pc-active${options.typed ? '' : ' is-empty'}` : state(i);
+    if (step.kind === 'first') {
+      if (active) cell(2, 1, text, `pd-first ${extra}`, n);
+    } else if (step.kind === 'quotient') {
+      cell(2, bar + 1 + step.column, text, `pc-result ${extra}`);
+    } else if (step.kind === 'remainder') {
+      const row = step.column + 2;
+      const at = firstLength + step.column;
+      cell(row, at - text.length + 1, text, `pd-rest ${extra} ${focus === step.column + 1 ? 'pd-focus' : ''}`, text.length);
+      // Le chiffre suivant s'abaisse à côté du reste.
+      const next = digits[at];
+      if (!active && next !== undefined) cell(row, at + 1, String(next), `pd-down ${focus === step.column + 1 ? 'pd-focus' : ''}`);
+    }
+  });
+
+  return h(
+    'div',
+    { class: 'posed posed-division', style: `grid-template-columns: repeat(${n}, 1fr) 0.2em repeat(${Math.max(count, 2)}, 1fr)`, 'aria-label': operation.text },
+    ...cells,
+  );
+}
+
 export interface PosedScreenOptions {
   session: PosedSession;
   /** Ex. « Ceinture blanche ». */
@@ -126,13 +182,15 @@ export function renderPosedScreen(root: HTMLElement, options: PosedScreenOptions
   const keypad = createKeypad({
     onDigit(digit) {
       if (state !== 'asking') return;
-      // Une étape, un chiffre : le nouveau remplace l'ancien.
-      typed = String(digit);
+      // En général un chiffre par étape : le nouveau remplace l'ancien. Plusieurs pour le nombre pris
+      // d'abord dans une division (« 34 »), ou un reste.
+      const max = shown.current()?.digits ?? 1;
+      typed = max === 1 ? String(digit) : typed.length >= max ? typed : (typed === '0' ? '' : typed) + digit;
       render();
     },
     onBackspace() {
       if (state !== 'asking') return;
-      typed = '';
+      typed = typed.slice(0, -1);
       render();
     },
     onSubmit,
@@ -179,7 +237,8 @@ export function renderPosedScreen(root: HTMLElement, options: PosedScreenOptions
     window.clearTimeout(timer);
     if (shown.done) {
       state = 'finished';
-      feedback.textContent = session.test ? 'Opération finie.' : `${shown.text} = ${shown.result} ✓`;
+      const check = shown instanceof PosedDivision ? ` · Vérifie : ${shown.check}` : '';
+      feedback.textContent = session.test ? 'Opération finie.' : `${shown.text} = ${shown.resultText} ✓${check}`;
       keypad.setSubmitLabel(session.current() ? '→' : 'Terminer');
       render();
       return;

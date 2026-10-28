@@ -4,7 +4,7 @@
 
 import { shuffle } from '../../core/quiz';
 import type { BeltId } from './belts';
-import { PosedAddition, PosedLongMultiplication, PosedMultiplication, PosedSubtraction, type PosedOperation } from './posed';
+import { PosedAddition, PosedDivision, PosedLongMultiplication, PosedMultiplication, PosedSubtraction, type PosedOperation } from './posed';
 
 export interface PosedBelt {
   belt: BeltId;
@@ -12,7 +12,7 @@ export interface PosedBelt {
   skill: string;
   /** « Objectif de fin de CE2 » dans le classeur. */
   goal?: 'CE2' | 'CM1' | 'CM2';
-  operation: 'addition' | 'soustraction' | 'multiplication';
+  operation: 'addition' | 'soustraction' | 'multiplication' | 'division';
   /** La méthode, pour la leçon. */
   tips: readonly string[];
   /** L'opération posée en entier dans la leçon. */
@@ -77,6 +77,22 @@ export function drawLongMultiplication(random: () => number): [number, number] {
   return [between(100, 999, random), between(2, 9, random) * 10 + between(2, 9, random)];
 }
 
+/**
+ * Vert clair : un nombre de 3 chiffres divisé par un nombre de 2 à 9 (fiche p. 5 : 738 : 5, 348 : 7).
+ * Pour varier : `kind` 0, on prend d'abord 2 chiffres (34 pour 348 : 7) ; 1, un 0 au quotient (618 : 3 = 206) ;
+ * 2, au hasard.
+ */
+export function drawDivision(kind: number, random: () => number): [number, number] {
+  for (;;) {
+    const dividend = between(100, 999, random);
+    const divisor = between(2, 9, random);
+    const division = new PosedDivision(dividend, divisor);
+    if (kind === 0 && division.firstLength !== 2) continue;
+    if (kind === 1 && !String(division.result).includes('0')) continue;
+    return [dividend, divisor];
+  }
+}
+
 export const CALCUL_POSE: readonly PosedBelt[] = [
   {
     belt: 'blanche',
@@ -130,6 +146,20 @@ export const CALCUL_POSE: readonly PosedBelt[] = [
     ],
     example: () => new PosedLongMultiplication(549, 43),
     draw: (random) => new PosedLongMultiplication(...drawLongMultiplication(random)),
+  },
+  {
+    belt: 'vert-clair',
+    skill: 'Division par un nombre à 1 chiffre',
+    operation: 'division',
+    tips: [
+      'Prends d’abord assez de chiffres du dividende pour pouvoir diviser : 348 : 7, 3 est trop petit, on prend 34.',
+      'Cherche dans tes tables combien de fois le diviseur va dans ce nombre, sans dépasser : écris-le au quotient.',
+      'Calcule le reste (sans l’écrire, la soustraction se fait de tête) : il doit être plus petit que le diviseur.',
+      'Abaisse le chiffre suivant à côté du reste, et recommence jusqu’au dernier chiffre.',
+      'Vérifie : quotient × diviseur + reste doit redonner le dividende.',
+    ],
+    example: () => new PosedDivision(738, 5),
+    draw: (random, index) => new PosedDivision(...drawDivision(index % 3, random)),
   },
 ];
 

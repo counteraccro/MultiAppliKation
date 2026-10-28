@@ -452,9 +452,9 @@ function posedCorrections(mistakes: PosedMistake[]): HTMLElement {
           'li',
           {},
           `${operation.text} = `,
-          written === operation.result
-            ? h('mark', {}, String(operation.result))
-            : h('span', { class: 'correction' }, h('s', {}, String(written)), h('mark', {}, String(operation.result))),
+          written === operation.resultText
+            ? h('mark', {}, operation.resultText)
+            : h('span', { class: 'correction' }, h('s', {}, written), h('mark', {}, operation.resultText)),
         ),
       ),
     ),
