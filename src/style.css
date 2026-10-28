@@ -2266,3 +2266,99 @@ button.belt-row:active {
   min-height: 72px;
   font-size: 1.4rem;
 }
+
+/* Calcul posé (ceintures) : l'opération en colonnes, comme sur le cahier. */
+
+.posed {
+  display: grid;
+  width: fit-content;
+  margin: 0 auto;
+  font-size: clamp(2rem, 10vw, 3.4rem);
+  font-weight: 800;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+}
+
+.posed-play .posed {
+  grid-auto-rows: auto;
+}
+
+.pc {
+  min-width: 1em;
+  text-align: center;
+}
+
+.pc-sign {
+  color: var(--text-soft);
+  padding-right: 0.15em;
+}
+
+.pc-line {
+  align-self: start;
+  height: 0;
+  border-top: 0.07em solid var(--text);
+}
+
+/* Le rond de la retenue, en haut de la colonne. */
+.pc-carry {
+  justify-self: center;
+  align-self: end;
+  width: 1.5em;
+  height: 1.5em;
+  margin-bottom: 0.15em;
+  border: 2px solid var(--text-soft);
+  border-radius: 50%;
+  font-size: 0.55em;
+  line-height: calc(1.5em - 4px);
+  color: var(--text-soft);
+}
+
+.pc-active {
+  border-radius: 0.15em;
+  background: var(--surface);
+  box-shadow: 0 0 0 3px var(--primary), var(--shadow);
+}
+
+.pc-carry.pc-active {
+  border-color: var(--primary);
+  color: var(--text);
+}
+
+.pc-active.is-empty {
+  color: var(--border);
+}
+
+.pc.is-correct {
+  border-radius: 0.15em;
+  background: #2ecc71;
+  color: #fff;
+  animation: pop 0.25s ease-out;
+}
+
+.pc.is-wrong {
+  border-radius: 0.15em;
+  background: #fff1d6;
+  color: #b86e00;
+}
+
+.pc-carry.pc-active,
+.pc-carry.is-correct,
+.pc-carry.is-wrong {
+  border-radius: 50%;
+}
+
+.posed-board {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.lesson-card .posed {
+  margin: 8px auto 12px;
+  font-size: 2.2rem;
+}
+
+.lesson-steps {
+  margin: 0;
+  padding-left: 1.4em;
+  line-height: 1.5;
+}

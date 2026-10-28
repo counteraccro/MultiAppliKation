@@ -41,7 +41,7 @@ c'est le principe même des ceintures.
 | Numération | 13 (jusqu'à or) | 20 min | Plus tard : exercices variés (droites graduées…) |
 | Grandeurs et mesures | 8 | 20 min | Plus tard : fiches scannées, à recopier |
 | Grammaire | 11 | 20 min | Plus tard : fiches scannées ; reconnaître des mots dans une phrase |
-| Calcul posé | 11 | 20 min | Plus tard : poser une opération à l'écran, le plus difficile |
+| Calcul posé | 11 | 20 min | **Quatrième matière** (commencée le 28/10/2026 par la blanche) : voir [15-ceintures-calcul-pose.md](15-ceintures-calcul-pose.md) |
 | Lecture oralisée | 7 | 1 min | Pas dans l'app : se juge à l'oral |
 | Littérature | 11 | — | Pas dans l'app : livres lus et questionnaires |
 
@@ -303,7 +303,7 @@ Retours du 25/10/2026 (0.22.1) :
 
 Ensuite, une matière à la fois ; ordre proposé : Conjugaison (clavier déjà fait, commencée le 26/10/2026 :
 voir [12-ceintures-conjugaison.md](12-ceintures-conjugaison.md)),
-Tables (faites le 27/10/2026 sauf les divisions : voir [13-ceintures-tables.md](13-ceintures-tables.md)), puis Calcul mental (pavé déjà fait), Accords, Numération, Grammaire, Mesures, Calcul posé.
+Tables (faites le 27/10/2026 sauf les divisions : voir [13-ceintures-tables.md](13-ceintures-tables.md)), Calcul posé (demandé par la fille de l'utilisateur, commencé le 28/10/2026 : voir [15-ceintures-calcul-pose.md](15-ceintures-calcul-pose.md)), puis Calcul mental (pavé déjà fait), Accords, Numération, Grammaire, Mesures.
 
 ## Réponses du 25/10/2026
 

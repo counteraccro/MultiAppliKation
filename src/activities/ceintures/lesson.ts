@@ -7,7 +7,10 @@ import type { Person } from '../conjugaison/verbs';
 import { TENSES, type ConjugationBelt, type Exercise, type TenseId } from './conjugaison';
 import type { Group } from './homophones';
 import { capitalize, parseSentence, withNbsp } from './sentence';
-import { isHomophoneBelt, isTableBelt, type SubjectBelt } from './subjects';
+import type { PosedBelt } from './calcul-pose';
+import { solve } from './posed';
+import { posedGrid } from './posed-screen';
+import { isHomophoneBelt, isPosedBelt, isTableBelt, type SubjectBelt } from './subjects';
 import { MAX_FACTOR, newTables, type TableBelt } from './tables';
 
 export interface LessonActions {
@@ -20,6 +23,7 @@ export interface LessonActions {
  * ce qu'est chaque mot, l'astuce pour choisir et des exemples, le mot en couleur.
  * Conjugaison : les pièges du classeur, et un verbe conjugué à chaque temps de la ceinture.
  * Tables : les astuces, et les tables de la ceinture qu'aucune ceinture d'avant n'a montrées.
+ * Calcul posé : la méthode, et une opération posée en entier, chaque colonne expliquée.
  */
 export function renderLesson(
   root: HTMLElement,
@@ -40,7 +44,9 @@ export function renderLesson(
         ? belt.groups.map((group) => groupCard(group, belt.groups.length > 1))
         : isTableBelt(belt)
           ? tableCards(belt)
-          : conjugationCards(belt)),
+          : isPosedBelt(belt)
+            ? posedCards(belt)
+            : conjugationCards(belt)),
       h('button', { class: 'button primary lesson-practice', type: 'button', onclick: onPractice }, 'S’entraîner'),
     ),
   );
@@ -138,6 +144,27 @@ function tableCards(belt: TableBelt): HTMLElement[] {
           ),
         ),
       ),
+    ),
+  ];
+}
+
+function posedCards(belt: PosedBelt): HTMLElement[] {
+  const example = solve(belt.example());
+  // Une explication par colonne : la retenue s'explique avec le chiffre qui la donne.
+  const explains = [...new Set(example.steps().map((step) => step.explain))];
+  return [
+    h(
+      'article',
+      { class: 'lesson-card' },
+      h('h2', {}, 'La méthode'),
+      h('ul', { class: 'lesson-rules' }, ...belt.tips.map((tip) => h('li', {}, withNbsp(tip)))),
+    ),
+    h(
+      'article',
+      { class: 'lesson-card' },
+      h('h2', {}, `Exemple : ${example.text}`),
+      posedGrid(example),
+      h('ol', { class: 'lesson-steps' }, ...explains.map((text) => h('li', {}, withNbsp(text)))),
     ),
   ];
 }

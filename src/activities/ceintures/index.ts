@@ -7,6 +7,7 @@ import { dayOf } from '../../core/play-days';
 import type { Sticker } from '../../core/stickers';
 import type { Activity } from '../types';
 import { beltOf, beltTextColor } from './belts';
+import { pickOperations, PRACTICE_SIZE as POSED_PRACTICE_SIZE, TEST_SIZE as POSED_TEST_SIZE, type PosedBelt } from './calcul-pose';
 import { renderClassBelts } from './class-belts';
 import { TENSES, type ConjugationBelt } from './conjugaison';
 import {
@@ -24,11 +25,13 @@ import type { HomophoneBelt } from './homophones';
 import { readyMessage, renderLadder } from './ladder';
 import { renderLesson } from './lesson';
 import { renderProgress } from './progress-screen';
+import { PosedSession, type PosedMistake } from './posed-session';
+import { renderPosedScreen } from './posed-screen';
 import { pickSentences, PracticeSession } from './practice-session';
 import { capitalize, fullSentence, parseSentence, withNbsp } from './sentence';
 import { renderSentenceScreen } from './sentence-screen';
 import { STICKER_SECTIONS, STICKERS, unlockStickers } from './stickers';
-import { isHomophoneBelt, isTableBelt, type Subject, type SubjectBelt } from './subjects';
+import { isHomophoneBelt, isPosedBelt, isTableBelt, type Subject, type SubjectBelt } from './subjects';
 import { factText, pickFacts, PRACTICE_SIZE, TablePracticeSession, TableTestSession, type TableMistake } from './table-practice';
 import { TEST_TIME_MS, type TableBelt } from './tables';
 import { isPassing, pickTestSentences, TestSession, type TestMistake } from './test-session';
@@ -36,7 +39,7 @@ import { pickExercises, VerbPracticeSession } from './verb-practice';
 import { VerbTestSession, type VerbMistake } from './verb-test';
 
 // Voir .ai/analyse/11-ceintures.md : les ceintures de la classe, homophones puis conjugaison (12-ceintures-conjugaison.md)
-// et tables (13-ceintures-tables.md).
+// tables (13-ceintures-tables.md) et calcul posé (15-ceintures-calcul-pose.md).
 // Accueil (les matières), échelle d'une matière, leçon, entraînement et test d'une ceinture,
 // progrès et autocollants.
 export const ceintures: Activity = {
@@ -130,7 +133,9 @@ export const ceintures: Activity = {
         ? practiceSentences(subject, belt)
         : isTableBelt(belt)
           ? practiceTables(subject, belt)
-          : practiceVerb(subject, belt);
+          : isPosedBelt(belt)
+            ? practicePosed(subject, belt)
+            : practiceVerb(subject, belt);
 
     const practiceSentences = (subject: Subject, belt: HomophoneBelt) =>
       show(() => {
@@ -183,6 +188,22 @@ export const ceintures: Activity = {
         });
       });
 
+    /** Calcul posé : 3 opérations posées pas à pas, chaque étape corrigée tout de suite. */
+    const practicePosed = (subject: Subject, belt: PosedBelt) =>
+      show(() => {
+        const seen = progressOf(load(), subject).lastPractice?.[belt.belt];
+        const session = new PosedSession(pickOperations(belt, POSED_PRACTICE_SIZE, seen));
+        return renderPosedScreen(root, {
+          session,
+          label: label(belt),
+          onQuit: () => ladder(subject),
+          onDone: ({ bestStreak }) => {
+            const result = session.result();
+            practiceDone(subject, belt, session.operations.map((o) => o.id), result, result.toPractice, bestStreak);
+          },
+        });
+      });
+
     function practiceDone(subject: Subject, belt: SubjectBelt, ids: string[], result: Score, toPractice: string[], bestStreak: number) {
       const data = load();
       recordPractice(data, subject, belt.belt, ids, result);
@@ -192,7 +213,13 @@ export const ceintures: Activity = {
     }
 
     const test = (subject: Subject, belt: SubjectBelt) =>
-      isHomophoneBelt(belt) ? testSentences(subject, belt) : isTableBelt(belt) ? testTables(subject, belt) : testVerbs(subject, belt);
+      isHomophoneBelt(belt)
+        ? testSentences(subject, belt)
+        : isTableBelt(belt)
+          ? testTables(subject, belt)
+          : isPosedBelt(belt)
+            ? testPosed(subject, belt)
+            : testVerbs(subject, belt);
 
     const testSentences = (subject: Subject, belt: HomophoneBelt) =>
       show(() => {
@@ -242,6 +269,22 @@ export const ceintures: Activity = {
           onDone: () => {
             const result = session.result();
             testDone(subject, belt, result, 'calculs justes', result.mistakes.length > 0 ? tableCorrections(result.mistakes) : undefined);
+          },
+        });
+      });
+
+    /** Calcul posé : 5 opérations, sans aide ; réussi à 90 % des étapes justes. */
+    const testPosed = (subject: Subject, belt: PosedBelt) =>
+      show(() => {
+        const seen = progressOf(load(), subject).lastPractice?.[belt.belt];
+        const session = new PosedSession(pickOperations(belt, POSED_TEST_SIZE, seen), true);
+        return renderPosedScreen(root, {
+          session,
+          label: `En conditions réelles · ${label(belt)}`,
+          onQuit: () => ladder(subject),
+          onDone: () => {
+            const result = session.result();
+            testDone(subject, belt, result, 'étapes justes', result.mistakes.length > 0 ? posedCorrections(result.mistakes) : undefined);
           },
         });
       });
@@ -324,7 +367,7 @@ export const ceintures: Activity = {
               ? 'Tout juste, bravo !'
               : 'Continue, chaque essai te fait progresser !',
           toPractice,
-          practiceAsSentences: !isTableBelt(belt),
+          practiceAsSentences: !isTableBelt(belt) && !isPosedBelt(belt),
           actions: [
             ...(offerTest
               ? [{ label: 'Entraînement en conditions réelles', primary: true, onClick: () => test(subject, belt) }]
@@ -392,6 +435,29 @@ function tableCorrections(mistakes: TableMistake[]): HTMLElement {
       ),
     missing.length > 0 && h('p', { class: 'correction-context' }, 'Pas eu le temps :'),
     missing.length > 0 && h('ul', {}, ...missing.map(({ question }) => h('li', {}, factText(question)))),
+  );
+}
+
+/** La correction d'un test de calcul posé : chaque opération fausse, le résultat écrit barré et le bon surligné. */
+function posedCorrections(mistakes: PosedMistake[]): HTMLElement {
+  return h(
+    'div',
+    { class: 'to-practice test-corrections' },
+    h('h2', {}, 'La correction'),
+    h(
+      'ul',
+      { class: 'table-corrections' },
+      ...mistakes.map(({ operation, written }) =>
+        h(
+          'li',
+          {},
+          `${operation.text} = `,
+          written === operation.result
+            ? h('mark', {}, String(operation.result))
+            : h('span', { class: 'correction' }, h('s', {}, String(written)), h('mark', {}, String(operation.result))),
+        ),
+      ),
+    ),
   );
 }
 

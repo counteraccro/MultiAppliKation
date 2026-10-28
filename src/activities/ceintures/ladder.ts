@@ -4,7 +4,8 @@ import type { ActivityContext } from '../types';
 import { beltOf, beltTextColor } from './belts';
 import { gradeGoal, gradeNote } from './grade';
 import { beltStatuses, formatDay, isReady, mustPracticeFirst, progressOf, type BeltStatus, type CeinturesData, type SubjectProgress } from './data';
-import { isHomophoneBelt, isTableBelt, type Subject, type SubjectBelt } from './subjects';
+import { TEST_SIZE } from './calcul-pose';
+import { isHomophoneBelt, isPosedBelt, isTableBelt, type Subject, type SubjectBelt } from './subjects';
 
 export interface LadderActions {
   onLesson(belt: SubjectBelt): void;
@@ -126,6 +127,7 @@ function beltItem(
 function testHint(belt: SubjectBelt): string {
   if (isHomophoneBelt(belt)) return '10 phrases, sans aide';
   if (isTableBelt(belt)) return `${belt.testSize} calculs en 1 minute`;
+  if (isPosedBelt(belt)) return `${TEST_SIZE} opérations, sans aide`;
   return '3 verbes, sans aide';
 }
 

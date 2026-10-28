@@ -24,3 +24,4 @@ Application en ligne : https://counteraccro.github.io/MultiAppliKation/
 12. [Ceintures : la Conjugaison](12-ceintures-conjugaison.md) — deuxième matière des Ceintures
 13. [Ceintures : les Tables](13-ceintures-tables.md) — troisième matière, 20 calculs en une minute
 14. [Les Additions](14-additions.md) — quatrième activité : les tables d'addition, mêmes modes que les Tables
+15. [Ceintures : le Calcul posé](15-ceintures-calcul-pose.md) — quatrième matière, les opérations posées pas à pas

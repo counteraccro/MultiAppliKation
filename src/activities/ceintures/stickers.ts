@@ -65,14 +65,17 @@ function subjectRules(subject: Subject): Rule[] {
       won: (data) => passed(data) > cm1,
     });
   }
-  rules.push(
-    {
+  // Pas tant que des ceintures sont encore à venir : l'autocollant se gagnerait trop tôt et resterait.
+  if (!subject.unfinished) {
+    rules.push({
       id: `${subject.id}.last-belt`,
       emoji: '🐉',
       name: `Ceinture ${lastLabel}`,
       hint: `Réussis toutes les ceintures, jusqu’à la ${lastLabel}.`,
       won: (data) => passed(data) > last,
-    },
+    });
+  }
+  rules.push(
     {
       id: `${subject.id}.perfect-test`,
       emoji: '💯',
