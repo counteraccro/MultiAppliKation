@@ -4,7 +4,7 @@
 
 import { shuffle } from '../../core/quiz';
 import type { BeltId } from './belts';
-import { PosedAddition, PosedMultiplication, PosedSubtraction, type PosedOperation } from './posed';
+import { PosedAddition, PosedLongMultiplication, PosedMultiplication, PosedSubtraction, type PosedOperation } from './posed';
 
 export interface PosedBelt {
   belt: BeltId;
@@ -72,6 +72,11 @@ export function drawMultiplication(random: () => number): [number, number] {
   }
 }
 
+/** Rose : un nombre de 3 chiffres par un nombre de 2 chiffres sans 0 ni 1 (fiche p. 4 : 549 × 43, 701 × 49). */
+export function drawLongMultiplication(random: () => number): [number, number] {
+  return [between(100, 999, random), between(2, 9, random) * 10 + between(2, 9, random)];
+}
+
 export const CALCUL_POSE: readonly PosedBelt[] = [
   {
     belt: 'blanche',
@@ -111,6 +116,20 @@ export const CALCUL_POSE: readonly PosedBelt[] = [
     ],
     example: () => new PosedMultiplication(723, 8),
     draw: (random) => new PosedMultiplication(...drawMultiplication(random)),
+  },
+  {
+    belt: 'rose',
+    skill: 'Multiplications à 2 chiffres',
+    goal: 'CE2',
+    operation: 'multiplication',
+    tips: [
+      'Commence par multiplier par le chiffre des unités : c’est la première ligne.',
+      'Pour le chiffre des dizaines, écris d’abord un 0 aux unités de la deuxième ligne : tu multiplies par des dizaines.',
+      'Puis multiplie par ce chiffre, comme pour la première ligne. Barre les retenues d’avant pour ne pas te tromper.',
+      'Additionne les deux lignes : c’est le résultat.',
+    ],
+    example: () => new PosedLongMultiplication(549, 43),
+    draw: (random) => new PosedLongMultiplication(...drawLongMultiplication(random)),
   },
 ];
 

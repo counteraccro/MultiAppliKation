@@ -2,7 +2,7 @@ import { createKeypad } from '../../components/keypad';
 import { soundToggle } from '../../components/sound-toggle';
 import { h } from '../../core/dom';
 import { sounds } from '../../core/sound';
-import { PosedAddition, PosedMultiplication, PosedSubtraction, type PosedOperation } from './posed';
+import { PosedAddition, PosedLongMultiplication, PosedMultiplication, PosedSubtraction, type PosedOperation } from './posed';
 import type { PosedSession } from './posed-session';
 
 /** Temps pendant lequel une étape juste reste en vert avant la suivante. */
@@ -24,14 +24,23 @@ export interface GridOptions {
  * L'opération posée, comme sur le cahier : les nombres en colonnes, le trait, puis le résultat.
  * Addition : les retenues dans des ronds en haut. Soustraction (par compensation) : les retenues
  * dans des ronds sous le nombre du bas, et le 10 ajouté en haut (un petit 1 devant le chiffre).
- * Multiplication : les retenues en petit au-dessus du nombre, sans rond, comme sur la fiche.
+ * Multiplication : les retenues en petit au-dessus du nombre, sans rond, comme sur la fiche ; à 2 chiffres,
+ * deux lignes puis leur somme, et seules les retenues de la ligne en cours (les autres sont « barrées »).
  * La case en cours est encadrée.
  */
 export function posedGrid(operation: PosedOperation, options: GridOptions = {}): HTMLElement {
-  if (!(operation instanceof PosedAddition || operation instanceof PosedSubtraction || operation instanceof PosedMultiplication)) {
+  if (
+    !(
+      operation instanceof PosedAddition ||
+      operation instanceof PosedSubtraction ||
+      operation instanceof PosedMultiplication ||
+      operation instanceof PosedLongMultiplication
+    )
+  ) {
     throw new Error('Opération pas encore posée à l’écran');
   }
   const subtraction = operation instanceof PosedSubtraction;
+  const long = operation instanceof PosedLongMultiplication;
   // Une colonne pour le signe, une de plus à gauche pour une dernière retenue (« 1 255 »).
   const width = operation.columns + 2;
   const at = (column: number) => width - column;
@@ -57,10 +66,18 @@ export function posedGrid(operation: PosedOperation, options: GridOptions = {}):
     );
   });
   cells.push(h('span', { class: 'pc-line', style: `grid-row: ${resultRow}; grid-column: 1 / -1` }));
+  if (long) {
+    // Les deux lignes, puis le trait et leur somme.
+    cells.push(h('span', { class: 'pc pc-sign', style: `grid-row: ${resultRow + 1}; grid-column: 1` }, '+'));
+    cells.push(h('span', { class: 'pc-line', style: `grid-row: ${resultRow + 2}; grid-column: 1 / -1` }));
+  }
+  // À 2 chiffres : les retenues de la ligne en cours seulement.
+  const activeLine = (steps[placed.length] ?? steps[placed.length - 1])?.line;
 
   steps.forEach((step, i) => {
-    const row = step.kind === 'carry' ? carryRow : resultRow;
-    const carryKind = subtraction ? ' pc-carry-under' : operation instanceof PosedMultiplication ? ' pc-carry-small' : '';
+    if (long && step.kind === 'carry' && step.line !== activeLine) return;
+    const row = step.kind === 'carry' ? carryRow : resultRow + (step.line ?? 0);
+    const carryKind = subtraction ? ' pc-carry-under' : operation instanceof PosedAddition ? '' : ' pc-carry-small';
     const kind = step.kind === 'carry' ? `pc-carry${carryKind}` : 'pc-result';
     if (i < placed.length) {
       const state = i === placed.length - 1 && options.last ? options.last : options.corrected?.has(i) ? 'wrong' : '';

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CALCUL_POSE, drawAdditionTerms, drawMultiplication, drawSubtraction, pickOperations } from './calcul-pose';
-import { PosedAddition, PosedMultiplication, PosedSubtraction, solve } from './posed';
+import { CALCUL_POSE, drawAdditionTerms, drawLongMultiplication, drawMultiplication, drawSubtraction, pickOperations } from './calcul-pose';
+import { PosedAddition, PosedLongMultiplication, PosedMultiplication, PosedSubtraction, solve } from './posed';
 import { PosedSession } from './posed-session';
 
 /** Graine fixe pour des tirages reproductibles. */
@@ -122,6 +122,40 @@ describe('PosedMultiplication (à 1 chiffre)', () => {
       const [top, factor] = drawMultiplication(random);
       expect(factor).toBeGreaterThanOrEqual(2);
       expect(solve(new PosedMultiplication(top, factor)).written()).toBe(top * factor);
+    }
+  });
+});
+
+describe('PosedLongMultiplication (à 2 chiffres)', () => {
+  it('pose 549 × 43 comme la fiche : 1 647, puis 21 960, puis 23 607', () => {
+    const op = solve(new PosedLongMultiplication(549, 43)) as PosedLongMultiplication;
+    expect(op.lineValue(0)).toBe(1647);
+    expect(op.lineValue(1)).toBe(21960);
+    expect(op.written()).toBe(23607);
+    const zero = op.steps().find((s) => s.line === 1)!;
+    expect(zero).toMatchObject({ column: 0, expected: 0, explain: 'On multiplie par 4 dizaines : on écrit d’abord 0 aux unités.' });
+    expect(op.steps()[0]!.ask).toBe('× 3 : les unités');
+    expect(op.steps().filter((s) => s.line === 2).map((s) => s.expected)).toEqual([7, 0, 6, 3, 2]);
+  });
+
+  it('additionne les lignes telles qu’elles sont écrites', () => {
+    const op = new PosedLongMultiplication(234, 75);
+    // 234 × 5 = 1 170 écrit 1 160 (dizaines fausses) : l'addition se fait avec 1 160.
+    for (let step = op.current(); step && step.line === 0; step = op.current()) {
+      op.place(step.kind === 'digit' && step.column === 1 ? 6 : step.expected);
+    }
+    for (let step = op.current(); step && step.line === 1; step = op.current()) op.place(step.expected);
+    expect(op.lineValue(0)).toBe(1160);
+    solve(op);
+    expect(op.written()).toBe(1160 + 16380);
+  });
+
+  it('retrouve tous les produits tirés', () => {
+    const random = seeded(9);
+    for (let i = 0; i < 300; i++) {
+      const [top, factor] = drawLongMultiplication(random);
+      expect(factor % 10).toBeGreaterThanOrEqual(2);
+      expect(solve(new PosedLongMultiplication(top, factor)).written()).toBe(top * factor);
     }
   });
 });

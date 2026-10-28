@@ -99,10 +99,30 @@ Réponse de l'utilisateur le 28/10/2026 : la classe soustrait **par compensation
   et on retient 1. », et la dernière colonne en entier (« 8 × 7 = 56, + 1 = 57 : … on écrit 57 »).
 - Tirage : un nombre de 3 chiffres par un nombre de 2 à 9, au moins une retenue.
 
-### Multiplication à 2 chiffres, division
+### Multiplication à 2 chiffres (rose, objectif de fin de CE2)
 
-À préciser à leur étape. Points déjà relevés sur les fiches :
-- multiplication à 2 chiffres : la 2ᵉ ligne commence par un 0 (ou un point) sous les unités ;
+```
+        5  4  9
+ ×         4  3
+ ────────────
+     1  6  4  7     ← × 3
+ +  2  1  9  6  0   ← × 40 : d'abord un 0 aux unités
+ ────────────
+    2  3  6  0  7
+```
+
+- Trois temps : la ligne × 3 (comme l'orange, retenues au-dessus), puis la ligne × 40 qui commence par
+  un 0 (« On multiplie par 4 dizaines : on écrit d'abord 0 aux unités. »), puis l'addition des deux lignes.
+- Ce qu'on demande dit la ligne : « × 3 : les unités », « × 40 : la retenue… », « L'addition : les centaines ».
+- Seules les retenues de la ligne en cours restent affichées (en classe, on barre les précédentes).
+- L'addition se fait **avec les lignes telles qu'elles sont écrites** ; ses retenues se gardent en tête
+  (pas de rond à remplir), l'explication les donne.
+- Tirage : un nombre de 3 chiffres par un nombre de 2 chiffres sans 0 ni 1 (22 à 99), comme sur la fiche.
+- Une série est longue (une vingtaine d'étapes par multiplication) : c'est le travail de la ceinture.
+
+### Division
+
+À préciser à son étape. Points déjà relevés sur les fiches :
 - division : potence « à la française », on n'écrit que les restes, on abaisse le chiffre suivant ; on prend
   d'abord assez de chiffres (34 pour 348 : 7) ; vérification à la fin.
 
@@ -130,7 +150,8 @@ dans `subjects.ts` (identifiant à ne jamais changer).
 2. **Jaune : les soustractions**, par compensation. Faite le 28/10/2026 (0.34.0) : `PosedSubtraction`,
    les opérations en colonnes ont une base commune (`ColumnBase`).
 3. **Orange et rose : les multiplications.** Orange faite le 28/10/2026 (0.35.0) : `PosedMultiplication`.
-   Rose (deux lignes puis leur somme) à faire.
+   Rose faite le 28/10/2026 (0.36.0) : `PosedLongMultiplication` (étapes rangées par ligne, `line`),
+   lignes de multiplication communes (`multiplyLine`).
 4. **Vert clair : la division par un nombre à 1 chiffre** (la potence).
 5. **Vert foncé** : additions à trois termes, soustractions avec des 0, multiplications à 2 ou 3 chiffres.
 6. **Bleu clair et violette : les décimaux** (+, −, ×) : la virgule.
