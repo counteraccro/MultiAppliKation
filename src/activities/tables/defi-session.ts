@@ -1,6 +1,6 @@
 import { shuffle } from '../../core/quiz';
 import { Series, type Attempt } from '../../core/series';
-import { ALL_PAIRS, questionFromKey, type Multiplication } from './questions';
+import { ALL_PAIRS, MULTIPLICATION, questionFromKey, type Calculation, type Operation } from './questions';
 
 /** Réglages du défi, à ajuster en la regardant jouer. */
 export const DEFI_SIZE = 20;
@@ -13,20 +13,21 @@ export interface DefiResult {
   /** Temps + pénalités : c'est lui qui fait le record. */
   scoreMs: number;
   total: number;
-  toPractice: Multiplication[];
+  toPractice: Calculation[];
 }
 
 export interface DefiOptions {
+  op?: Operation;
   random?: () => number;
-  onFirstAttempt?: (attempt: Attempt<Multiplication>) => void;
+  onFirstAttempt?: (attempt: Attempt<Calculation>) => void;
 }
 
-/** Défi chronométré : 20 multiplications de toutes les tables ; une erreur coûte 5 s. */
-export class DefiSession extends Series<Multiplication> {
-  constructor({ random = Math.random, onFirstAttempt }: DefiOptions = {}) {
+/** Défi chronométré : 20 calculs de toutes les tables ; une erreur coûte 5 s. */
+export class DefiSession extends Series<Calculation> {
+  constructor({ op = MULTIPLICATION, random = Math.random, onFirstAttempt }: DefiOptions = {}) {
     const keys = shuffle(ALL_PAIRS, random).slice(0, DEFI_SIZE);
     super(
-      keys.map((key) => questionFromKey(key, random)),
+      keys.map((key) => questionFromKey(op, key, random)),
       { onFirstAttempt, retryWrong: false },
     );
   }

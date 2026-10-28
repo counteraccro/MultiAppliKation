@@ -21,3 +21,4 @@ Conjugaison, étape 3 : accueil par temps (onglets, une tuile par verbe) et mode
 Conjugaison, étape 4 : Révision par boîtes de Leitner, seulement sur les formes déjà vues (24/10/2026).
 Conjugaison, étape 5 : Mélange (temps et verbes au choix, 15 questions au plus, dernier choix gardé) (24/10/2026).
 Conjugaison, étape 6 : Mes progrès (20 verbes × 4 temps), album de 16 autocollants, phrase selon la classe (24/10/2026).
+Les Additions : quatrième activité, tables d'addition de 1 à 10 avec tous les modes des Tables, code commun (28/10/2026).

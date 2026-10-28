@@ -3,14 +3,20 @@ import { h } from '../../core/dom';
 import type { ActivityContext } from '../types';
 import type { TablesData } from './data';
 import { MASTERY_LABELS, MASTERY_LEVELS, masteryCounts, masteryOf } from './mastery';
-import { TABLES } from './questions';
+import { TABLES, type Operation } from './questions';
 
 /**
- * Grille des progrès : les 100 cases de la table de Pythagore, colorées selon
- * la boîte de chaque multiplication. Toucher une case la montre en dessous,
+ * Grille des progrès : les 100 cases de la table de Pythagore (ou d'addition), colorées selon
+ * la boîte de chaque calcul. Toucher une case la montre en dessous,
  * avec sa jumelle (3 × 7 et 7 × 3).
  */
-export function renderProgress(root: HTMLElement, ctx: ActivityContext, data: TablesData, onBack: () => void): void {
+export function renderProgress(
+  root: HTMLElement,
+  ctx: ActivityContext,
+  op: Operation,
+  data: TablesData,
+  onBack: () => void,
+): void {
   const counts = masteryCounts(data.leitner);
   const detail = h('p', { class: 'progress-detail', 'aria-live': 'polite' }, 'Touche une case pour la voir.');
   const cells: { a: number; b: number; el: HTMLElement }[] = [];
@@ -21,13 +27,13 @@ export function renderProgress(root: HTMLElement, ctx: ActivityContext, data: Ta
       cell.el.classList.toggle('selected', twin);
       cell.el.setAttribute('aria-pressed', String(twin));
     }
-    detail.textContent = `${a} × ${b} = ${a * b} · ${MASTERY_LABELS[masteryOf(data.leitner, a, b)]}`;
+    detail.textContent = `${a} ${op.symbol} ${b} = ${op.compute(a, b)} · ${MASTERY_LABELS[masteryOf(data.leitner, a, b)]}`;
   }
 
   const header = h(
     'div',
     { class: 'progress-row' },
-    h('span', { class: 'progress-head corner' }, '×'),
+    h('span', { class: 'progress-head corner' }, op.symbol),
     ...TABLES.map((b) => h('span', { class: 'progress-head' }, String(b))),
   );
 
@@ -44,10 +50,10 @@ export function renderProgress(root: HTMLElement, ctx: ActivityContext, data: Ta
             class: `progress-cell m-${level}`,
             type: 'button',
             'aria-pressed': 'false',
-            'aria-label': `${a} × ${b} : ${MASTERY_LABELS[level]}`,
+            'aria-label': `${a} ${op.symbol} ${b} : ${MASTERY_LABELS[level]}`,
             onclick: () => select(a, b),
           },
-          String(a * b),
+          String(op.compute(a, b)),
         );
         cells.push({ a, b, el });
         return el;
@@ -73,10 +79,10 @@ export function renderProgress(root: HTMLElement, ctx: ActivityContext, data: Ta
     h(
       'section',
       { class: 'screen' },
-      topbar('Les tables', onBack, ctx.profile),
+      topbar(op.backLabel, onBack, ctx.profile),
       h('h1', { class: 'title' }, 'Mes progrès'),
       h('p', { class: 'subtitle' }, 'Plus c’est vert, mieux tu la sais.'),
-      h('div', { class: 'progress-grid', role: 'group', 'aria-label': 'Grille des multiplications' }, header, ...rows),
+      h('div', { class: 'progress-grid', role: 'group', 'aria-label': `Grille des ${op.noun}s` }, header, ...rows),
       detail,
       legend,
     ),

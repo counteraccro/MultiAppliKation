@@ -1,7 +1,7 @@
 import { KNOWN_BOX } from '../../core/mastery';
 import { toSticker, unlockRules, type Sticker, type StickerRule } from '../../core/stickers';
 import { starsOf, type TablesData } from './data';
-import { ALL_PAIRS, pairKey, TABLES } from './questions';
+import { ALL_PAIRS, pairKey, TABLES, type Operation } from './questions';
 
 export type { Sticker } from '../../core/stickers';
 
@@ -16,15 +16,13 @@ export interface SeriesEvent {
   defiScoreMs?: number;
 }
 
-const ANIMALS = ['🐣', '🐰', '🐱', '🐶', '🦊', '🐼', '🐨', '🐯', '🦁', '🐲'];
-
-/** Une multiplication est connue à partir de la boîte 4 (comme « N / 55 connues »). */
+/** Un calcul est connu à partir de la boîte 4 (comme « N / 55 connues »). */
 const isKnown = (data: TablesData, key: string) => (data.leitner[key]?.box ?? 0) >= KNOWN_BOX;
 
 type Rule = StickerRule<TablesData, SeriesEvent>;
 
 // L'ordre est celui de l'album. Ne jamais changer un `id` : c'est lui qui est enregistré.
-const RULES: Rule[] = [
+const rules = (op: Operation): Rule[] => [
   {
     id: 'first-star',
     emoji: '🌟',
@@ -56,7 +54,7 @@ const RULES: Rule[] = [
   ...TABLES.map(
     (table, i): Rule => ({
       id: `table-${table}`,
-      emoji: ANIMALS[i]!,
+      emoji: op.tableEmojis[i]!,
       name: `Table de ${table}`,
       hint: `Toute la table de ${table} en vert dans tes progrès.`,
       won: (data) => TABLES.every((k) => isKnown(data, pairKey(table, k))),
@@ -129,17 +127,25 @@ const RULES: Rule[] = [
     id: 'all-green',
     emoji: '🏆',
     name: 'Grille verte',
-    hint: 'Les 55 multiplications connues.',
+    hint: `Les 55 ${op.noun}s connues.`,
     won: (data) => ALL_PAIRS.every((key) => isKnown(data, key)),
   },
 ];
 
-export const STICKERS: readonly Sticker[] = RULES.map(toSticker);
+export interface TablesStickers {
+  stickers: readonly Sticker[];
+  /**
+   * À la fin d'une série (étoiles, boîtes et record déjà enregistrés) :
+   * colle les autocollants gagnés et renvoie les nouveaux, à fêter.
+   */
+  unlock(data: TablesData, event: SeriesEvent, now?: number): Sticker[];
+}
 
-/**
- * À la fin d'une série (étoiles, boîtes et record déjà enregistrés) :
- * colle les autocollants gagnés et renvoie les nouveaux, à fêter.
- */
-export function unlockStickers(data: TablesData, event: SeriesEvent, now = Date.now()): Sticker[] {
-  return unlockRules(RULES, data, event, now);
+/** L'album d'une activité : mêmes autocollants, un emoji par table propre à l'opération. */
+export function tablesStickers(op: Operation): TablesStickers {
+  const all = rules(op);
+  return {
+    stickers: all.map(toSticker),
+    unlock: (data, event, now = Date.now()) => unlockRules(all, data, event, now),
+  };
 }

@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { countStickers } from '../../core/stickers';
 import { dayOf, recordDay } from '../../core/play-days';
 import { readTablesData } from './data';
-import { pairKey, TABLES } from './questions';
-import { STICKERS, unlockStickers, type SeriesEvent } from './stickers';
+import { ADDITION, MULTIPLICATION, pairKey, TABLES } from './questions';
+import { tablesStickers, type SeriesEvent } from './stickers';
+
+const { stickers: STICKERS, unlock: unlockStickers } = tablesStickers(MULTIPLICATION);
 
 const event = (overrides: Partial<SeriesEvent> = {}): SeriesEvent => ({
   mode: 'learn',
@@ -42,6 +44,13 @@ describe('unlockStickers', () => {
 
   it('a des identifiants uniques', () => {
     expect(new Set(STICKERS.map((s) => s.id)).size).toBe(STICKERS.length);
+  });
+
+  it('donne aux additions leur propre emoji par table et leurs propres mots', () => {
+    const additions = tablesStickers(ADDITION).stickers;
+    expect(additions.map((s) => s.id)).toEqual(STICKERS.map((s) => s.id));
+    expect(additions.find((s) => s.id === 'table-1')?.emoji).not.toBe(STICKERS.find((s) => s.id === 'table-1')?.emoji);
+    expect(additions.find((s) => s.id === 'all-green')?.hint).toBe('Les 55 additions connues.');
   });
 });
 

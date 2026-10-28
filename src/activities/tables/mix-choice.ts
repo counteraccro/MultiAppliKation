@@ -2,12 +2,13 @@ import { topbar } from '../../components/topbar';
 import { h } from '../../core/dom';
 import type { ActivityContext } from '../types';
 import { mixSize } from './mix-session';
-import { TABLES } from './questions';
+import { TABLES, type Operation } from './questions';
 
 /** Écran « Mélange » : l'enfant coche les tables à mélanger, puis lance la série. */
 export function renderMixChoice(
   root: HTMLElement,
   ctx: ActivityContext,
+  op: Operation,
   initial: readonly number[],
   { onStart, onBack }: { onStart(tables: number[]): void; onBack(): void },
 ): void {
@@ -21,7 +22,7 @@ export function renderMixChoice(
       'button',
       { class: 'tile table-tile', type: 'button', 'aria-label': `Table de ${table}` },
       h('span', { class: 'check' }, '✓'),
-      h('span', { class: 'table-number' }, `×${table}`),
+      h('span', { class: 'table-number' }, `${op.symbol}${table}`),
     );
     tile.addEventListener('click', () => {
       if (chosen.has(table)) chosen.delete(table);
@@ -44,7 +45,7 @@ export function renderMixChoice(
     h(
       'section',
       { class: 'screen' },
-      topbar('Les tables', onBack, ctx.profile),
+      topbar(op.backLabel, onBack, ctx.profile),
       h('h1', { class: 'title' }, 'Mélange'),
       h('p', { class: 'subtitle' }, 'Touche les tables à mélanger.'),
       h('div', { class: 'table-grid' }, ...tiles.map(({ tile }) => tile)),

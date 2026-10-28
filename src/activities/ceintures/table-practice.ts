@@ -5,7 +5,7 @@
 
 import { isCorrect, shuffle, type QuizSession } from '../../core/quiz';
 import { Series } from '../../core/series';
-import { questionFromKey, type Multiplication } from '../tables/questions';
+import { MULTIPLICATION, questionFromKey, type Calculation } from '../tables/questions';
 import { beltFacts, type TableBelt } from './tables';
 import { isPassing } from './test-session';
 
@@ -29,7 +29,7 @@ export function pickFacts(belt: TableBelt, count: number, seen: readonly string[
 }
 
 /** « 7 × 8 = 56 », pour les listes du résultat. */
-export const factText = (question: Multiplication) => `${question.prompt} = ${question.answer}`;
+export const factText = (question: Calculation) => `${question.prompt} = ${question.answer}`;
 
 export interface TablePracticeResult {
   /** Calculs justes au premier essai. */
@@ -39,10 +39,10 @@ export interface TablePracticeResult {
   toPractice: string[];
 }
 
-export class TablePracticeSession extends Series<Multiplication> {
+export class TablePracticeSession extends Series<Calculation> {
   /** Chaque calcul dans un sens au hasard (3 × 7 ou 7 × 3). */
   constructor(keys: readonly string[], random: () => number = Math.random) {
-    super(keys.map((key) => questionFromKey(key, random)));
+    super(keys.map((key) => questionFromKey(MULTIPLICATION, key, random)));
   }
 
   result(): TablePracticeResult {
@@ -56,7 +56,7 @@ export class TablePracticeSession extends Series<Multiplication> {
 }
 
 export interface TableMistake {
-  question: Multiplication;
+  question: Calculation;
   /** Ce qui a été tapé ; absent si le temps a manqué. */
   typed?: string;
 }
@@ -70,13 +70,13 @@ export interface TableTestResult {
 }
 
 /** Les calculs l'un après l'autre, sans deuxième essai ; le chrono est celui de l'écran. */
-export class TableTestSession implements QuizSession<Multiplication> {
+export class TableTestSession implements QuizSession<Calculation> {
   readonly total: number;
-  private readonly questions: readonly Multiplication[];
+  private readonly questions: readonly Calculation[];
   private readonly typed: string[] = [];
 
   constructor(keys: readonly string[], random: () => number = Math.random) {
-    this.questions = keys.map((key) => questionFromKey(key, random));
+    this.questions = keys.map((key) => questionFromKey(MULTIPLICATION, key, random));
     this.total = this.questions.length;
   }
 
@@ -84,7 +84,7 @@ export class TableTestSession implements QuizSession<Multiplication> {
     return this.typed.length;
   }
 
-  current(): Multiplication | undefined {
+  current(): Calculation | undefined {
     return this.questions[this.typed.length];
   }
 

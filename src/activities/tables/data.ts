@@ -3,13 +3,13 @@ import { cleanPlayDays, recordDay } from '../../core/play-days';
 import { readStickers } from '../../core/stickers';
 import type { Attempt } from '../../core/series';
 import type { Stars } from './learn-session';
-import { FAST_MS, pairKey, type Multiplication } from './questions';
+import { MULTIPLICATION, pairKey, type Calculation, type Operation } from './questions';
 
-/** Progression de l'activité « tables » dans un profil. */
+/** Progression de l'activité « tables » (ou « additions ») dans un profil. */
 export interface TablesData {
   /** Meilleure note par table : { "7": 2 }. */
   stars: Record<string, Stars>;
-  /** Boîte de chaque multiplication : { "3x7": { box, lastSeen } }. */
+  /** Boîte de chaque calcul : { "3x7": { box, lastSeen } }. */
   leitner: LeitnerState;
   /** Meilleur score au défi (ms, pénalités comprises) ; absent avant le premier défi. */
   defiRecordMs?: number;
@@ -58,9 +58,14 @@ export function recordMixTables(data: TablesData, tables: readonly number[]): vo
 }
 
 /** Range une réponse dans les boîtes, quel que soit le mode où elle a été donnée. */
-export function recordAttempt(data: TablesData, attempt: Attempt<Multiplication>, now = Date.now()): void {
+export function recordAttempt(
+  data: TablesData,
+  attempt: Attempt<Calculation>,
+  op: Operation = MULTIPLICATION,
+  now = Date.now(),
+): void {
   const { question, correct, elapsedMs } = attempt;
-  const outcome = !correct ? 'wrong' : elapsedMs < FAST_MS ? 'fast' : 'slow';
+  const outcome = !correct ? 'wrong' : elapsedMs < op.fastMs ? 'fast' : 'slow';
   // D'abord le jour : un ancien profil retrouve ses jours dans les boîtes, avant que celle-ci change de date.
   recordDay(data, now);
   applyOutcome(data.leitner, pairKey(question.a, question.b), outcome, now);

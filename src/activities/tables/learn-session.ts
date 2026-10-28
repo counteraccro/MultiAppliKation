@@ -1,6 +1,6 @@
 import { shuffle } from '../../core/quiz';
 import { Series, type Attempt } from '../../core/series';
-import { FAST_MS, tableQuestions, type Multiplication } from './questions';
+import { MULTIPLICATION, tableQuestions, type Calculation, type Operation } from './questions';
 
 export type Stars = 0 | 1 | 2 | 3;
 
@@ -9,33 +9,37 @@ export interface LearnResult {
   correct: number;
   total: number;
   /** Ratées ou trop lentes au premier essai. */
-  toPractice: Multiplication[];
+  toPractice: Calculation[];
 }
 
 export interface LearnOptions {
+  op?: Operation;
   random?: () => number;
-  onFirstAttempt?: (attempt: Attempt<Multiplication>) => void;
+  onFirstAttempt?: (attempt: Attempt<Calculation>) => void;
 }
 
-/** Mode « Apprendre » : les 10 multiplications d'une table, dans le désordre. */
-export class LearnSession extends Series<Multiplication> {
+/** Mode « Apprendre » : les 10 calculs d'une table, dans le désordre. */
+export class LearnSession extends Series<Calculation> {
+  private readonly fastMs: number;
+
   constructor(
     readonly table: number,
-    { random = Math.random, onFirstAttempt }: LearnOptions = {},
+    { op = MULTIPLICATION, random = Math.random, onFirstAttempt }: LearnOptions = {},
   ) {
-    super(shuffle(tableQuestions(table), random), { onFirstAttempt });
+    super(shuffle(tableQuestions(op, table), random), { onFirstAttempt });
+    this.fastMs = op.fastMs;
   }
 
   result(): LearnResult {
     const attempts = this.attempts();
     const correct = attempts.filter((a) => a.correct).length;
-    const allFast = attempts.every((a) => a.correct && a.elapsedMs < FAST_MS);
+    const allFast = attempts.every((a) => a.correct && a.elapsedMs < this.fastMs);
     return {
       stars: starsFor(correct, this.total, allFast),
       correct,
       total: this.total,
       toPractice: attempts
-        .filter((a) => !a.correct || a.elapsedMs >= FAST_MS)
+        .filter((a) => !a.correct || a.elapsedMs >= this.fastMs)
         .map((a) => a.question)
         .sort((x, y) => x.b - y.b),
     };

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { readTablesData, recordStars, starsOf } from './data';
 import { LearnSession, starsFor } from './learn-session';
-import { FAST_MS } from './questions';
+import { ADDITION, MULTIPLICATION } from './questions';
+
+const FAST_MS = MULTIPLICATION.fastMs;
 
 /** Répond à toute la série ; `respond` décide de la réponse et du temps mis. */
 function play(session: LearnSession, respond: (a: number, b: number, answer: number) => [number, number]) {
@@ -24,6 +26,22 @@ describe('LearnSession', () => {
       return [answer, 1000];
     });
     expect(seen.sort((x, y) => x - y)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  });
+
+  it('pose les additions d’une table : 3 + 1 … 3 + 10', () => {
+    const prompts: string[] = [];
+    const result = play(new LearnSession(3, { op: ADDITION }), (a, b, answer) => {
+      expect(answer).toBe(a + b);
+      prompts.push(`${a} + ${b}`);
+      return [answer, 1000];
+    });
+    expect(prompts.sort()).toEqual(Array.from({ length: 10 }, (_, i) => `3 + ${i + 1}`).sort());
+    expect(result.stars).toBe(3);
+  });
+
+  it('laisse 8 s aux additions pour la 3ᵉ étoile', () => {
+    expect(play(new LearnSession(3, { op: ADDITION }), (_a, _b, answer) => [answer, 7000]).stars).toBe(3);
+    expect(play(new LearnSession(3, { op: ADDITION }), (_a, _b, answer) => [answer, 8000]).stars).toBe(2);
   });
 
   it('donne 3 étoiles si tout est juste et rapide', () => {

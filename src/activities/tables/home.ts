@@ -8,15 +8,15 @@ import type { ActivityContext } from '../types';
 import { starsOf, type TablesData } from './data';
 import { DEFI_SIZE } from './defi-session';
 import { MASTERY_LABELS, masteryCounts } from './mastery';
-import { ALL_PAIRS, SUGGESTED_ORDER, TABLES } from './questions';
-import { STICKERS } from './stickers';
+import { ALL_PAIRS, TABLES, type Operation } from './questions';
+import type { Sticker } from './stickers';
 import { knownCount } from './review-session';
 
 /** Table conseillée : la première, dans l'ordre conseillé, sans étoile (sinon pas encore à 3). */
-export function suggestedTable(data: TablesData): number | undefined {
+export function suggestedTable(data: TablesData, order: readonly number[]): number | undefined {
   return (
-    SUGGESTED_ORDER.find((t) => starsOf(data, t) === 0) ??
-    SUGGESTED_ORDER.find((t) => starsOf(data, t) < 3)
+    order.find((t) => starsOf(data, t) === 0) ??
+    order.find((t) => starsOf(data, t) < 3)
   );
 }
 
@@ -33,10 +33,12 @@ export interface TablesHomeActions {
 export function renderTablesHome(
   root: HTMLElement,
   ctx: ActivityContext,
+  op: Operation,
   data: TablesData,
+  stickers: readonly Sticker[],
   { onLearn, onReview, onDefi, onMix, onHidden, onProgress, onAlbum }: TablesHomeActions,
 ): void {
-  const suggested = suggestedTable(data);
+  const suggested = suggestedTable(data, op.suggestedOrder);
 
   const tiles = TABLES.map((table) => {
     const isSuggested = table === suggested;
@@ -49,7 +51,7 @@ export function renderTablesHome(
         onclick: () => onLearn(table),
       },
       isSuggested && h('span', { class: 'badge' }, 'À toi !'),
-      h('span', { class: 'table-number' }, `×${table}`),
+      h('span', { class: 'table-number' }, `${op.symbol}${table}`),
       stars(starsOf(data, table)),
     );
   });
@@ -59,7 +61,7 @@ export function renderTablesHome(
       'section',
       { class: 'screen' },
       topbar('Activités', ctx.exit, ctx.profile),
-      h('h1', { class: 'title' }, 'Les Tables'),
+      h('h1', { class: 'title' }, op.title),
       h('p', { class: 'subtitle' }, 'Choisis une table pour gagner des étoiles.'),
       h('div', { class: 'table-grid' }, ...tiles),
       h(
@@ -81,7 +83,7 @@ export function renderTablesHome(
           'button',
           { class: 'button mode primary mystery', type: 'button', onclick: onHidden },
           'Nombre caché',
-          h('small', {}, '7 × ? = 56'),
+          h('small', {}, op.hiddenExample),
         ),
         h(
           'button',
@@ -98,7 +100,7 @@ export function renderTablesHome(
         'div',
         { class: 'home-cards' },
         progressCard(masteryCounts(data.leitner), MASTERY_LABELS, onProgress),
-        albumCard(countStickers(data, STICKERS), STICKERS.length, onAlbum),
+        albumCard(countStickers(data, stickers), stickers.length, onAlbum),
       ),
     ),
   );

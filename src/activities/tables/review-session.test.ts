@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { boxOf } from '../../core/leitner';
 import { readTablesData, recordAttempt } from './data';
-import { ALL_PAIRS, FAST_MS, pairKey } from './questions';
+import { ALL_PAIRS, MULTIPLICATION, pairKey } from './questions';
+
+const FAST_MS = MULTIPLICATION.fastMs;
 import { knownCount, REVIEW_SIZE, ReviewSession } from './review-session';
 
 describe('les multiplications à retenir', () => {

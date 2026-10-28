@@ -17,7 +17,7 @@ export function masteryOf(state: LeitnerState, a: number, b: number): Mastery {
   return masteryOfBox(state[pairKey(a, b)]?.box);
 }
 
-/** Nombre de multiplications (sur 55) à chaque niveau. */
+/** Nombre de calculs (sur 55) à chaque niveau. */
 export function masteryCounts(state: LeitnerState): Record<Mastery, number> {
   const counts = emptyCounts();
   for (const key of ALL_PAIRS) {

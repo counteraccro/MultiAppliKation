@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { HIDDEN_PAIRS, HIDDEN_SIZE, hiddenQuestion, HiddenSession } from './hidden-session';
-import { pairKey } from './questions';
+import { HIDDEN_SIZE, hiddenQuestion, HiddenSession } from './hidden-session';
+import { ADDITION, MULTIPLICATION, pairKey } from './questions';
+
+const HIDDEN_PAIRS = MULTIPLICATION.hiddenPairs;
 
 describe('hiddenQuestion', () => {
   it('cache le second facteur', () => {
@@ -10,6 +12,11 @@ describe('hiddenQuestion', () => {
   it('cache le premier facteur', () => {
     expect(hiddenQuestion(7, 8, 'a')).toMatchObject({ prompt: '', suffix: '× 8 = 56', answer: 7 });
   });
+
+  it('cache un nombre d’une addition', () => {
+    expect(hiddenQuestion(3, 4, 'b', ADDITION)).toMatchObject({ prompt: '3 +', suffix: '= 7', answer: 4 });
+    expect(hiddenQuestion(3, 4, 'a', ADDITION)).toMatchObject({ prompt: '', suffix: '+ 4 = 7', answer: 3 });
+  });
 });
 
 describe('HiddenSession', () => {
@@ -17,6 +24,18 @@ describe('HiddenSession', () => {
     expect(HIDDEN_PAIRS).toHaveLength(36);
     expect(HIDDEN_PAIRS).not.toContain('1x7');
     expect(HIDDEN_PAIRS).not.toContain('7x10');
+  });
+
+  it('pose les 45 additions de 1 à 9, jamais 10', () => {
+    expect(ADDITION.hiddenPairs).toHaveLength(45);
+    expect(ADDITION.hiddenPairs).toContain('1x7');
+    expect(ADDITION.hiddenPairs).not.toContain('7x10');
+    const session = new HiddenSession({ op: ADDITION });
+    for (let q = session.current(); q; q = session.current()) {
+      expect(ADDITION.hiddenPairs).toContain(pairKey(q.a, q.b));
+      session.answer(q.answer, 1000);
+    }
+    expect(session.result().correct).toBe(HIDDEN_SIZE);
   });
 
   it('fait 15 questions toutes différentes', () => {
