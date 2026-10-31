@@ -34,7 +34,7 @@ une ceinture (ou deux voisines) à la fois.
 | Vert foncé | Additions à trois termes, soustractions avec des 0, multiplications à deux ou trois chiffres | pas de fiche : nos calculs | étape 5, faite |
 | Bleu clair | Additions et soustractions de nombres décimaux (Cal13) — **objectif de fin de CM1** | p. 6 : virgules alignées, on complète par des 0 (en rouge sur la fiche) | étape 6, faite |
 | Bleu foncé | Divisions décimales (Cal17) | p. 7 : un entier divisé par 1 chiffre, quotient au centième (100 : 7 = 14,28) | étape 7 |
-| Violette | Multiplications de nombres décimaux (Cal16) | p. 8 : décimal × entier ou décimal, la virgule placée au résultat | étape 6 |
+| Violette | Multiplications de nombres décimaux (Cal16) | p. 8 : décimal × entier ou décimal, la virgule placée au résultat | étape 6, faite |
 | Marron | Divisions par un nombre à deux chiffres ; d'un décimal par un entier (Cal17) — **objectif de fin de CM2** | p. 9 : 198 : 15, 4052 : 16, 45,08 : 7… | étape 7 |
 | Noire | Je calcule plus vite | pas de fiche | étape 8, à préciser |
 
@@ -204,6 +204,33 @@ Fiche p. 6 et leçon de la classe Calc 13 (p. 19 des leçons), le 31/10/2026.
   `formatDecimal` (« 60,97 »), étape `pad`.
 - Leçon : la méthode de la classe, les exemples 35,8 + 14,35 (la leçon) et 137 − 53,11 (la fiche).
 
+### Multiplier les nombres décimaux (violette)
+
+Fiche p. 8 et leçon de la classe Calc 16 (p. 22 des leçons), le 31/10/2026.
+
+```
+          2, 5  4
+ ×           1, 3
+ ─────────────
+          7  6  2
+ +     2  5  4  0
+ ─────────────
+       3, 3  0  2     ← 2 + 1 = 3 chiffres après la virgule
+```
+
+- Comme la leçon : « on ne s'occupe pas de la virgule », on calcule comme la rose et la vert foncé (une ligne
+  par chiffre du bas, des 0 au début des lignes, puis la somme), puis une dernière étape : **« Combien de
+  chiffres après la virgule au résultat ? »** (« 2,54 a 2 chiffres après la virgule, 1,3 en a 1 : 2 + 1 = 3.
+  On place la virgule pour avoir 3 chiffres après la virgule : 3,302. »). La virgule se place alors au
+  résultat, là où l'enfant l'a dit ; les chiffres comptés se surlignent en jaune, comme sur la leçon.
+- Une série, comme une fiche : 2 chiffres après la virgule × 1 (2,34 × 11,6), 3 × un entier (1,123 × 25),
+  1 × 2 (11,3 × 2,73). Le nombre du bas n'a pas de 0 (pas de ligne de 0) ; le dernier chiffre du haut n'est
+  pas un 0.
+- Le résultat garde ses 0 à droite (1,904 × 15 = 28,560, comme la correction de la fiche).
+- Code : `PosedLongMultiplication` reçoit `places` ; étape `comma` ; les nombres s'écrivent sans virgule (254).
+- Dans l'échelle, la violette vient juste après la bleu clair tant que la bleu foncé n'est pas faite :
+  la bleu foncé s'insérera avant elle (ordre du classeur).
+
 ## Les écrans
 
 - **Leçon** : la méthode en quelques phrases, et un exemple posé en entier, chaque étape expliquée.
@@ -235,6 +262,6 @@ dans `subjects.ts` (identifiant à ne jamais changer).
    « 147, reste 3 ») pour les listes et la correction.
 5. **Vert foncé** : additions à trois termes, soustractions avec des 0, multiplications à 2 ou 3 chiffres.
    Faite le 31/10/2026 (0.39.0) : `drawMixed`, `PosedLongMultiplication` à N lignes, leçon à plusieurs exemples.
-6. **Bleu clair et violette : les décimaux** (+, −, ×) : la virgule. Bleu clair faite le 31/10/2026 (0.40.0).
+6. **Bleu clair et violette : les décimaux** (+, −, ×) : la virgule. Bleu clair faite le 31/10/2026 (0.40.0), violette aussi (0.41.0).
 7. **Bleu foncé et marron : les divisions décimales et par 2 chiffres.**
 8. **Noire : « je calcule plus vite »** (toutes les opérations, en temps limité ? à préciser).

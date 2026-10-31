@@ -2311,6 +2311,12 @@ button.belt-row:active {
   color: #d64545;
 }
 
+/* Multiplication de décimaux : les chiffres après la virgule, comptés (en jaune, comme la leçon). */
+.pc-after {
+  border-radius: 0.1em;
+  background: #fff1b8;
+}
+
 /* Le rond de la retenue, en haut de la colonne. */
 .pc-carry {
   justify-self: center;

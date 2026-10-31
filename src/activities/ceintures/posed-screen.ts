@@ -66,20 +66,28 @@ export function posedGrid(operation: PosedOperation, options: GridOptions = {}):
   const resultRow = firstTerm + operation.terms.length + (subtraction ? 1 : 0);
   // À 2 ou 3 chiffres : une rangée sous le trait pour les retenues de l'addition, puis les lignes.
   const linesRow = resultRow + (long ? 1 : 0);
-  // Nombres décimaux : la virgule suit le chiffre des unités. Un nombre entier la reçoit quand on le complète.
+  // Nombres décimaux : la virgule suit le chiffre des unités. Addition et soustraction : les virgules sont
+  // alignées, un nombre entier la reçoit quand on le complète. Multiplication : chaque nombre a la sienne,
+  // et celle du résultat se place quand on a compté les chiffres après la virgule (surlignés).
   const decimals = 'decimals' in operation ? operation.decimals : 0;
   const places = 'places' in operation ? operation.places : [];
   const padded = new Set(steps.filter((step, i) => step.kind === 'pad' && i < placed.length).map((step) => step.term));
-  const comma = (column: number, shown = true) => (decimals > 0 && column === decimals && shown ? ' pc-comma' : '');
+  const commaIndex = steps.findIndex((step) => step.kind === 'comma');
+  const counting = commaIndex >= 0 && commaIndex <= placed.length;
+  const resultComma = long ? (commaIndex >= 0 && commaIndex < placed.length ? placed[commaIndex] : undefined) : decimals;
+  const comma = (column: number, at: number | undefined, shown = true) => (at && column === at && shown ? ' pc-comma' : '');
+  const after = (column: number, at: number | undefined, shown: boolean) => (long && shown && at && column < at ? ' pc-after' : '');
   operation.terms.forEach((term, i) => {
     const row = firstTerm + i;
     if (i > 0) cells.push(h('span', { class: 'pc pc-sign', style: `grid-row: ${row}; grid-column: 1` }, operation.sign));
     // Les 0 qui complètent un nombre décimal s'écrivent à l'étape « pad ».
-    const missing = decimals - (places[i] ?? decimals);
+    const missing = long ? 0 : decimals - (places[i] ?? decimals);
+    const at = long ? places[i] : decimals;
+    const shown = long || (places[i] ?? 0) > 0 || padded.has(i);
     [...String(term)].reverse().forEach((digit, column) => {
       if (column < missing) return;
       const text = i === 0 && tens.has(column) ? [h('small', { class: 'pc-ten' }, '1'), digit] : digit;
-      cell(row, column, text, comma(column, (places[i] ?? 0) > 0 || padded.has(i)));
+      cell(row, column, text, comma(column, at, shown) + after(column, at, counting));
     });
   });
   cells.push(h('span', { class: 'pc-line', style: `grid-row: ${resultRow}; grid-column: 1 / -1` }));
@@ -97,11 +105,23 @@ export function posedGrid(operation: PosedOperation, options: GridOptions = {}):
 
   steps.forEach((step, i) => {
     if (long && step.kind === 'carry' && step.line !== activeLine) return;
+    // Le nombre de chiffres après la virgule se tape sous le résultat ; écrit, il devient la virgule.
+    if (step.kind === 'comma') {
+      const row = linesRow + (step.line ?? 0) + 1;
+      if (i >= placed.length && options.typed !== undefined) {
+        cell(row, 0, options.typed || '?', `pc-result pc-active${options.typed ? '' : ' is-empty'}`);
+      }
+      return;
+    }
     const sumCarry = sumLine !== undefined && step.kind === 'carry' && step.line === sumLine;
     const pad = step.kind === 'pad';
     const row = pad ? firstTerm + step.term! : sumCarry ? resultRow : step.kind === 'carry' ? carryRow : linesRow + (step.line ?? 0);
     const carryKind = subtraction ? ' pc-carry-under' : operation instanceof PosedAddition || sumCarry ? '' : ' pc-carry-small';
-    const kind = (step.kind === 'carry' ? `pc-carry${carryKind}` : pad ? 'pc-pad' : 'pc-result') + comma(step.column, step.kind === 'digit');
+    const inResult = step.kind === 'digit' && step.line === sumLine;
+    const kind =
+      (step.kind === 'carry' ? `pc-carry${carryKind}` : pad ? 'pc-pad' : 'pc-result') +
+      comma(step.column, resultComma, inResult) +
+      after(step.column, resultComma, inResult);
     if (i < placed.length) {
       const state = i === placed.length - 1 && options.last ? options.last : options.corrected?.has(i) ? 'wrong' : '';
       // Un 0 ajouté en haut d'une soustraction reçoit lui aussi le 10 de la compensation.

@@ -6,6 +6,7 @@ import {
   drawBigAdditionTerms,
   drawBigMultiplication,
   drawDecimalAddition,
+  drawDecimalMultiplication,
   drawDecimalSubtraction,
   drawDivision,
   drawLongMultiplication,
@@ -312,6 +313,53 @@ describe('Bleu clair : les nombres décimaux', () => {
     const bleuClair = CALCUL_POSE.find((belt) => belt.belt === 'bleu-clair')!;
     const ops = pickOperations(bleuClair, 3, [], seeded(4));
     expect(ops.filter((o) => o instanceof PosedSubtraction).map((o) => (o as PosedSubtraction).places[0]).sort()).toEqual([0, 1]);
+  });
+});
+
+describe('Violette : multiplier les nombres décimaux', () => {
+  it('pose 2,54 × 1,3 comme la leçon : 762, 2540, 3302, puis 3 chiffres après la virgule', () => {
+    const op = solve(new PosedLongMultiplication(254, 13, [2, 1])) as PosedLongMultiplication;
+    expect(op.text).toBe('2,54 × 1,3');
+    expect([0, 1].map((line) => op.lineValue(line))).toEqual([762, 2540]);
+    expect(op.steps().at(-1)).toMatchObject({
+      kind: 'comma',
+      expected: 3,
+      ask: 'Combien de chiffres après la virgule au résultat ?',
+      explain: '2,54 a 2 chiffres après la virgule, 1,3 en a 1 : 2 + 1 = 3. On place la virgule pour avoir 3 chiffres après la virgule : 3,302.',
+    });
+    expect(op.writtenText()).toBe('3,302');
+    expect(op.resultText).toBe('3,302');
+  });
+
+  it('un entier n’a pas de chiffre après la virgule : 1,123 × 25 = 28,075', () => {
+    const op = solve(new PosedLongMultiplication(1123, 25, [3, 0]));
+    expect(op.steps().at(-1)!.explain).toBe(
+      '1,123 a 3 chiffres après la virgule, 25 n’en a pas : 3 + 0 = 3. On place la virgule pour avoir 3 chiffres après la virgule : 28,075.',
+    );
+    expect(op.writtenText()).toBe('28,075');
+  });
+
+  it('écrit la virgule où l’enfant la place, même fausse', () => {
+    const op = new PosedLongMultiplication(254, 13, [2, 1]);
+    for (let step = op.current(); step && step.kind !== 'comma'; step = op.current()) op.place(step.expected);
+    op.place(2);
+    expect(op.writtenText()).toBe('33,02');
+  });
+
+  it('une multiplication d’entiers n’a pas d’étape de virgule', () => {
+    expect(solve(new PosedLongMultiplication(549, 43)).steps().some((s) => s.kind === 'comma')).toBe(false);
+  });
+
+  it('retrouve toutes les opérations tirées', () => {
+    const random = seeded(23);
+    for (let i = 0; i < 300; i++) {
+      const { top, factor, places } = drawDecimalMultiplication(i % 3, random);
+      expect(String(factor)).not.toContain('0');
+      expect(top % 10).not.toBe(0);
+      const op = solve(new PosedLongMultiplication(top, factor, places));
+      expect(op.written()).toBe(top * factor);
+      expect(op.writtenText()).toBe(op.resultText);
+    }
   });
 });
 

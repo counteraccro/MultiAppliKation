@@ -8,9 +8,10 @@ export interface PosedStep {
    * Un chiffre du résultat, ou une retenue (dans le rond en haut de la colonne).
    * Division : le nombre pris d'abord, le nombre de chiffres du quotient, puis pour chaque nombre en cours
    * un chiffre du quotient, le produit écrit dessous et le reste de la soustraction.
-   * Nombres décimaux : un 0 pour compléter un nombre (« pad », 4,3 = 4,30).
+   * Nombres décimaux : un 0 pour compléter un nombre (« pad », 4,3 = 4,30) ; le nombre de chiffres après
+   * la virgule au résultat d'une multiplication (« comma »).
    */
-  kind: 'digit' | 'carry' | 'pad' | 'first' | 'size' | 'quotient' | 'product' | 'remainder';
+  kind: 'digit' | 'carry' | 'pad' | 'comma' | 'first' | 'size' | 'quotient' | 'product' | 'remainder';
   /** 0 pour les unités, 1 pour les dizaines… Division : le rang du chiffre du quotient, ou du reste. */
   column: number;
   expected: number;
@@ -371,11 +372,17 @@ export class PosedMultiplication extends ColumnBase {
   }
 }
 
+/** « a 2 chiffres après la virgule », « n'a pas de chiffre après la virgule ». */
+const afterComma = (n: number) =>
+  n === 0 ? 'n’a pas de chiffre après la virgule' : `a ${n} chiffre${n > 1 ? 's' : ''} après la virgule`;
+
 /**
  * Multiplication par un nombre à 2 ou 3 chiffres, comme sur la fiche : la ligne des unités, puis celle
  * des dizaines (qui commence par un 0 sous les unités), celle des centaines (deux 0), puis leur somme.
  * Les retenues des lignes s'écrivent en petit au-dessus du nombre ; celles de la somme dans des ronds,
  * au-dessus des lignes.
+ * Nombres décimaux (violette), comme la leçon Calc 16 : on calcule sans s'occuper de la virgule, puis on
+ * compte les chiffres après la virgule des deux nombres pour la placer au résultat.
  */
 export class PosedLongMultiplication extends ColumnBase {
   readonly sign = '×';
@@ -386,19 +393,39 @@ export class PosedLongMultiplication extends ColumnBase {
   readonly columns: number;
   /** La ligne de la somme, après une ligne par chiffre du multiplicateur. */
   readonly sumLine: number;
+  /** Chiffres après la virgule du résultat : ceux des deux nombres (0 pour des entiers). */
+  readonly decimals: number;
 
-  constructor(top: number, factor: number) {
+  /** `places` : chiffres après la virgule de chaque nombre (234 et 2 : 2,34). */
+  constructor(
+    top: number,
+    factor: number,
+    readonly places: readonly [number, number] = [0, 0],
+  ) {
     super();
     this.terms = [top, factor];
-    this.id = `${top}x${factor}`;
-    this.text = `${top} × ${factor}`;
+    const [a, b] = this.terms.map((t, i) => formatDecimal(t, places[i]!));
+    this.id = `${a}x${b}`;
+    this.text = `${a} × ${b}`;
     this.result = top * factor;
     this.columns = length(this.result);
     this.sumLine = length(factor);
+    this.decimals = places[0] + places[1];
   }
 
   protected override get resultLine(): number {
     return this.sumLine;
+  }
+
+  override get resultText(): string {
+    return formatDecimal(this.result, this.decimals);
+  }
+
+  /** Le résultat écrit, avec la virgule où l'enfant l'a placée. */
+  override writtenText(): string {
+    const steps = this.steps();
+    const comma = this.values.find((_, i) => steps[i]?.kind === 'comma');
+    return formatDecimal(this.written(), comma ?? this.decimals);
   }
 
   /** Le nombre écrit sur une des lignes (pour l'addition). */
@@ -444,12 +471,22 @@ export class PosedLongMultiplication extends ColumnBase {
         continue;
       }
       if (last) {
-        push(walk, { kind: 'digit', column: column + 1, expected: carry, ask: 'L’addition : on écrit le nombre en entier', explain, line: sum });
-        return walk.steps;
+        const whole = { kind: 'digit' as const, column: column + 1, expected: carry, ask: 'L’addition : on écrit le nombre en entier', explain, line: sum };
+        if (!push(walk, whole)) return walk.steps;
+        break;
       }
       const askCarry = `L’addition : la retenue, en haut des ${COLUMN_NAMES[column + 1]}`;
       if (!push(walk, { kind: 'carry', column: column + 1, expected: carry, ask: askCarry, explain, line: sum })) return walk.steps;
       carryIn = walk.values[walk.i - 1]!;
+    }
+    // Nombres décimaux : on compte les chiffres après la virgule pour la placer au résultat.
+    if (this.decimals > 0) {
+      const [a, b] = this.text.split(' × ');
+      const [p, q] = this.places;
+      const explain =
+        `${a} ${afterComma(p)}, ${b} ${q === 0 ? 'n’en a pas' : `en a ${q}`} : ${p} + ${q} = ${this.decimals}. ` +
+        `On place la virgule pour avoir ${this.decimals} chiffres après la virgule : ${this.resultText}.`;
+      push(walk, { kind: 'comma', column: 0, expected: this.decimals, ask: 'Combien de chiffres après la virgule au résultat ?', explain, line: sum });
     }
     return walk.steps;
   }

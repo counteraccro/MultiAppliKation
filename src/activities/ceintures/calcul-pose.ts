@@ -187,6 +187,25 @@ function drawDecimal(random: () => number, index: number): PosedOperation {
   return new PosedSubtraction(top, bottom, places);
 }
 
+/** Un nombre de `min` à `max` sans 0 : en bas d'une multiplication, un 0 donnerait une ligne de 0. */
+const noZero = (min: number, max: number, random: () => number) => {
+  for (;;) {
+    const n = between(min, max, random);
+    if (!String(n).includes('0')) return n;
+  }
+};
+
+/**
+ * Violette (fiche p. 8) : `kind` 0, 2 chiffres après la virgule × 1 (2,34 × 11,6) ; 1, 3 chiffres après
+ * la virgule × un entier (1,123 × 25) ; 2, 1 chiffre après la virgule × 2 (11,3 × 2,73). Les nombres
+ * s'écrivent sans virgule (234), `places` dit où elle est ; le nombre du bas n'a pas de 0.
+ */
+export function drawDecimalMultiplication(kind: number, random: () => number): { top: number; factor: number; places: [number, number] } {
+  if (kind === 0) return { top: lastNotZero(101, 999, random), factor: noZero(111, 299, random), places: [2, 1] };
+  if (kind === 1) return { top: lastNotZero(1001, 2999, random), factor: noZero(12, 39, random), places: [3, 0] };
+  return { top: lastNotZero(111, 299, random), factor: noZero(111, 399, random), places: [1, 2] };
+}
+
 export const CALCUL_POSE: readonly PosedBelt[] = [
   {
     belt: 'blanche',
@@ -288,6 +307,24 @@ export const CALCUL_POSE: readonly PosedBelt[] = [
     // Les exemples de la leçon de la classe (Calc 13) et de la fiche.
     examples: () => [new PosedAddition([3580, 1435], [1, 2]), new PosedSubtraction(13700, 5311, [0, 2])],
     draw: drawDecimal,
+  },
+  {
+    belt: 'violette',
+    skill: 'Multiplications de nombres décimaux',
+    operation: 'multiplication',
+    tips: [
+      'Quand on pose la multiplication, on ne s’occupe pas de la virgule : on calcule comme avec des nombres entiers.',
+      'Une ligne par chiffre du nombre du bas : la 2ᵉ commence par un 0, la 3ᵉ par deux 0. Puis on additionne les lignes.',
+      'Ensuite, on compte le nombre total de chiffres après la virgule dans les deux nombres : 2,54 × 1,3, c’est 2 + 1 = 3 chiffres.',
+      'On place la virgule au résultat pour avoir autant de chiffres après la virgule : 3,302.',
+      'Pour vérifier, cherche un ordre de grandeur : 7,8 × 9, c’est proche de 8 × 9 = 72.',
+    ],
+    // L'exemple de la leçon de la classe (Calc 16), et un nombre entier comme sur la fiche.
+    examples: () => [new PosedLongMultiplication(254, 13, [2, 1]), new PosedLongMultiplication(1123, 25, [3, 0])],
+    draw: (random, index) => {
+      const { top, factor, places } = drawDecimalMultiplication(index % 3, random);
+      return new PosedLongMultiplication(top, factor, places);
+    },
   },
 ];
 
