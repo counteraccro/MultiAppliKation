@@ -2419,6 +2419,16 @@ button.belt-row:active {
   padding: 0 0.2em;
 }
 
+/* Le produit, souligné : la soustraction se fait dessous. */
+.pd-product {
+  border-bottom: 0.06em solid var(--text);
+}
+
+/* La place d'un chiffre du quotient, une fois comptés. */
+.pd-dot {
+  color: var(--text-soft);
+}
+
 .pc-result,
 .pd-rest {
   min-width: 1em;

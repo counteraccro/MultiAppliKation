@@ -100,17 +100,23 @@ export function posedGrid(operation: PosedOperation, options: GridOptions = {}):
 }
 
 /**
- * La division en potence, comme sur la fiche : le dividende et le diviseur, le quotient sous le trait,
- * et sous le dividende les restes avec le chiffre abaissé. Le nombre en cours est mis en avant.
+ * La division en potence, comme la leçon de la classe : le dividende et le diviseur, le quotient sous
+ * le trait (des points pour ses chiffres, une fois comptés), et sous le dividende chaque produit
+ * (« − 63 », souligné) puis le reste avec le chiffre abaissé. Le nombre en cours est mis en avant.
  */
 function divisionGrid(operation: PosedDivision, options: GridOptions): HTMLElement {
   const { digits, firstLength } = operation;
   const n = digits.length;
   const count = n - firstLength + 1;
-  const bar = n + 1;
+  // Une colonne à gauche pour le signe « − », puis les chiffres du dividende, la potence, le quotient.
+  const col = (j: number) => j + 2;
+  const bar = n + 2;
   const cells: HTMLElement[] = [];
   const cell = (row: number, column: number, text: string, extra = '', span = 1) =>
     cells.push(h('span', { class: `pc ${extra}`, style: `grid-row: ${row}; grid-column: ${column} / span ${span}` }, text));
+  // Un nombre écrit sous le dividende, aligné à droite sur `end` : un chiffre par colonne, sauf la case en cours.
+  const number = (row: number, end: number, text: string, extra: string, active: boolean) =>
+    active ? cell(row, end - text.length + 1, text, extra, text.length) : [...text].forEach((d, j) => cell(row, end - text.length + 1 + j, d, extra));
 
   const steps = operation.steps();
   const placed = operation.placed;
@@ -121,12 +127,20 @@ function divisionGrid(operation: PosedDivision, options: GridOptions): HTMLEleme
   const focus = current?.partial !== undefined ? current.column : undefined;
   // Les chiffres pris d'abord, soulignés s'ils sont bien un début du dividende.
   const took = placed.length > 0 && String(operation.dividend).startsWith(String(placed[0])) ? String(placed[0]).length : 0;
+  // Le dernier chiffre du nombre en cours k : sous lui s'alignent le produit et le reste.
+  const end = (k: number) => col(firstLength - 1 + k);
 
   digits.forEach((digit, j) =>
-    cell(1, j + 1, String(digit), [j < took ? 'pd-took' : '', focus === 0 && j < firstLength ? 'pd-focus' : ''].join(' ')),
+    cell(1, col(j), String(digit), [j < took ? 'pd-took' : '', focus === 0 && j < firstLength ? 'pd-focus' : ''].join(' ')),
   );
-  cells.push(h('span', { class: 'pd-bar', style: `grid-row: 1 / span ${count + 1}; grid-column: ${bar}` }));
+  cells.push(h('span', { class: 'pd-bar', style: `grid-row: 1 / span ${2 * count + 1}; grid-column: ${bar}` }));
   cell(1, bar + 1, String(operation.divisor), 'pd-divisor', Math.max(count, 2));
+
+  // Les points du quotient, une fois ses chiffres comptés.
+  const sizeIndex = steps.findIndex((step) => step.kind === 'size');
+  const size = sizeIndex >= 0 && sizeIndex < placed.length ? Math.min(placed[sizeIndex]!, 4) : 0;
+  const quotients = new Set(steps.flatMap((step, i) => (step.kind === 'quotient' && (i < placed.length || step === current) ? [step.column] : [])));
+  for (let k = 0; k < size; k++) if (!quotients.has(k)) cell(2, bar + 1 + k, '·', 'pd-dot');
 
   steps.forEach((step, i) => {
     const active = step === current;
@@ -134,22 +148,34 @@ function divisionGrid(operation: PosedDivision, options: GridOptions): HTMLEleme
     const text = active ? options.typed || '?' : String(placed[i]);
     const extra = active ? `pc-active${options.typed ? '' : ' is-empty'}` : state(i);
     if (step.kind === 'first') {
-      if (active) cell(2, 1, text, `pd-first ${extra}`, n);
+      if (active) cell(2, col(0), text, `pd-first ${extra}`, n);
+    } else if (step.kind === 'size') {
+      if (active) cell(2, bar + 1, text, `pc-result ${extra}`);
     } else if (step.kind === 'quotient') {
       cell(2, bar + 1 + step.column, text, `pc-result ${extra}`);
+    } else if (step.kind === 'product') {
+      const row = 2 + 2 * step.column;
+      const at = end(step.column) - text.length + 1;
+      cells.push(h('span', { class: 'pc pc-sign', style: `grid-row: ${row}; grid-column: ${at - 1}` }, '−'));
+      number(row, end(step.column), text, `pd-product ${extra}`, active);
     } else if (step.kind === 'remainder') {
-      const row = step.column + 2;
-      const at = firstLength + step.column;
-      cell(row, at - text.length + 1, text, `pd-rest ${extra} ${focus === step.column + 1 ? 'pd-focus' : ''}`, text.length);
+      const row = 3 + 2 * step.column;
+      const at = end(step.column);
+      const highlighted = focus === step.column + 1 ? 'pd-focus' : '';
+      number(row, at, text, `pd-rest ${extra} ${highlighted}`, active);
       // Le chiffre suivant s'abaisse à côté du reste.
-      const next = digits[at];
-      if (!active && next !== undefined) cell(row, at + 1, String(next), `pd-down ${focus === step.column + 1 ? 'pd-focus' : ''}`);
+      const next = digits[firstLength + step.column];
+      if (!active && next !== undefined) cell(row, at + 1, String(next), `pd-down ${highlighted}`);
     }
   });
 
   return h(
     'div',
-    { class: 'posed posed-division', style: `grid-template-columns: repeat(${n}, 1fr) 0.2em repeat(${Math.max(count, 2)}, 1fr)`, 'aria-label': operation.text },
+    {
+      class: 'posed posed-division',
+      style: `grid-template-columns: auto repeat(${n}, 1fr) 0.2em repeat(${Math.max(count, 2)}, 1fr)`,
+      'aria-label': operation.text,
+    },
     ...cells,
   );
 }

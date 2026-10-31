@@ -6,9 +6,10 @@
 export interface PosedStep {
   /**
    * Un chiffre du résultat, ou une retenue (dans le rond en haut de la colonne).
-   * Division : le nombre pris d'abord, un chiffre du quotient, un reste.
+   * Division : le nombre pris d'abord, le nombre de chiffres du quotient, puis pour chaque nombre en cours
+   * un chiffre du quotient, le produit écrit dessous et le reste de la soustraction.
    */
-  kind: 'digit' | 'carry' | 'first' | 'quotient' | 'remainder';
+  kind: 'digit' | 'carry' | 'first' | 'size' | 'quotient' | 'product' | 'remainder';
   /** 0 pour les unités, 1 pour les dizaines… Division : le rang du chiffre du quotient, ou du reste. */
   column: number;
   expected: number;
@@ -18,7 +19,7 @@ export interface PosedStep {
   explain: string;
   /** Multiplication à 2 chiffres : 0 et 1 pour les deux lignes, 2 pour leur somme (absent : une seule ligne). */
   line?: number;
-  /** Chiffres qu'on peut taper (1 par défaut) : le nombre pris d'abord dans une division en a plusieurs. */
+  /** Chiffres qu'on peut taper (1 par défaut) : le nombre pris d'abord dans une division, un produit, un reste. */
   digits?: number;
   /** Division : le nombre en cours (34, puis 68 pour 348 : 7). */
   partial?: number;
@@ -379,9 +380,9 @@ export class PosedLongMultiplication extends ColumnBase {
 export type ColumnOperation = PosedAddition | PosedSubtraction | PosedMultiplication | PosedLongMultiplication;
 
 /**
- * Division par un nombre à 1 chiffre, en potence et « à la française », comme sur la fiche :
- * on prend d'abord assez de chiffres, puis pour chaque nombre en cours le chiffre du quotient et
- * le reste (les soustractions ne s'écrivent pas), et on abaisse le chiffre suivant.
+ * Division par un nombre à 1 chiffre, en potence, comme la leçon de la classe (Calc 8) : on prend d'abord
+ * assez de chiffres et on compte les chiffres du quotient, puis pour chaque nombre en cours le chiffre
+ * du quotient, le produit écrit dessous, le reste de la soustraction, et on abaisse le chiffre suivant.
  */
 export class PosedDivision implements PosedOperation {
   readonly id: string;
@@ -420,8 +421,16 @@ export class PosedDivision implements PosedOperation {
         : `On peut diviser ${first} par ${d} : on commence par ${first}.`;
     const ask = `Quel nombre prends-tu d’abord pour diviser par ${d} ?`;
     if (!push(walk, { kind: 'first', column: 0, expected: first, ask, explain: explainFirst, digits: digits.length })) return walk.steps;
-    let partial = first;
     const count = digits.length - firstLength + 1;
+    const lowered = digits.slice(firstLength);
+    const explainSize =
+      lowered.length === 0
+        ? `On ne prend que ${first} : le quotient aura 1 chiffre.`
+        : `Un chiffre au quotient pour ${first}, puis un pour chaque chiffre qu’on abaisse (${lowered.join(' et ')}) : ` +
+          `le quotient aura ${count} chiffres.`;
+    const size = { kind: 'size' as const, column: 0, expected: count, ask: 'Combien de chiffres aura le quotient ?', explain: explainSize };
+    if (!push(walk, size)) return walk.steps;
+    let partial = first;
     for (let k = 0; k < count; k++) {
       const q = Math.floor(partial / d);
       const explainQ =
@@ -431,12 +440,21 @@ export class PosedDivision implements PosedOperation {
       const askQ = `Dans ${partial}, combien de fois ${d} ?`;
       if (!push(walk, { kind: 'quotient', column: k, expected: q, ask: askQ, explain: explainQ, partial })) return walk.steps;
       const written = walk.values[walk.i - 1]!;
-      const r = partial - d * written;
+      // Le produit s'écrit sous le nombre en cours (pas pour un 0 au quotient : il ne s'enlève rien).
+      let product = 0;
+      if (written > 0) {
+        const explainP = `${written} fois ${d} font ${d * written} : on l’écrit sous ${partial}.`;
+        const step = { kind: 'product' as const, column: k, expected: d * written, ask: `${written} fois ${d}, ça fait ?`, explain: explainP, digits: 2, partial };
+        if (!push(walk, step)) return walk.steps;
+        product = walk.values[walk.i - 1]!;
+      }
+      const r = partial - product;
       const next = digits[firstLength + k];
       const explainR =
-        `${partial} − ${d * written} = ${r} : il reste ${r}.` +
+        (product > 0 ? `${partial} − ${product} = ${r} : il reste ${r}.` : `Il reste ${r}.`) +
         (next === undefined ? ' C’est le reste de la division.' : ` On abaisse le ${next} : ${r}${next}.`);
-      const remainder = { kind: 'remainder' as const, column: k, expected: r, ask: 'Combien reste-t-il ?', explain: explainR, digits: 2, partial };
+      const askR = product > 0 ? `La soustraction : ${partial} − ${product}` : 'Combien reste-t-il ?';
+      const remainder = { kind: 'remainder' as const, column: k, expected: r, ask: askR, explain: explainR, digits: 2, partial };
       if (!push(walk, remainder)) {
         return walk.steps;
       }

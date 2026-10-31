@@ -129,20 +129,31 @@ Réponse de l'utilisateur le 28/10/2026 : la classe soustrait **par compensation
 
 ```
    7  3  8 │ 5
-   ‾        ├───────
-   2  3     │ 1  4  7
-      3  8  │
-         3  │
+ − 5        ├───────
+   ‾        │ 1  4  7
+   2  3     │
+ − 2  0     │
+   ‾‾‾‾
+      3  8
+    − 3  5
+      ‾‾‾‾
+         3
 ```
 
-- Potence « à la française », comme la fiche : on n'écrit que les restes, pas les soustractions.
+- Comme la leçon de la classe (Calc 8, p. 14 des leçons ; 0.38.0, demande de l'utilisateur) : les
+  **soustractions s'écrivent**. Avant, comme la fiche d'entraînement, on n'écrivait que les restes.
 - D'abord, **le nombre pris** : l'enfant le tape (7, ou 34 pour 348 : 7), il se souligne sous le dividende.
   « 3 est plus petit que 7 : on prend 34. »
+- Puis **le nombre de chiffres du quotient** (la carte mentale de la leçon : « Chercher le nombre de chiffres
+  du quotient ») : « Un chiffre au quotient pour 7, puis un pour chaque chiffre qu'on abaisse (3 et 8) : le
+  quotient aura 3 chiffres. » Des points marquent ensuite la place des chiffres du quotient.
 - Puis, pour chaque nombre en cours (surligné) : **le chiffre du quotient** (« Dans 34, combien de fois 7 ? » ;
-  « 7 × 4 = 28 et 7 × 5 = 35, c'est trop : on écrit 4. »), **le reste** (« 34 − 28 = 6 : il reste 6. On abaisse
-  le 8 : 68. »). Le chiffre suivant s'abaisse tout seul à côté du reste ; un nombre trop petit donne un 0 au quotient.
+  « 7 × 4 = 28 et 7 × 5 = 35, c'est trop : on écrit 4. »), **le produit**, écrit dessous avec « − » et
+  souligné (« 4 fois 7 font 28 : on l'écrit sous 34. »), **le reste** (« La soustraction : 34 − 28 » ;
+  « 34 − 28 = 6 : il reste 6. On abaisse le 8 : 68. »). Le chiffre suivant s'abaisse tout seul à côté du
+  reste. Un nombre trop petit donne un 0 au quotient, sans produit à écrire (« Il reste 1. On abaisse le 8 »).
 - À la fin : « 738 : 5 = 147, reste 3 ✓ · Vérifie : 147 × 5 + 3 = 738 ».
-- En conditions réelles, la suite se calcule avec le reste écrit (une erreur ne compte qu'une fois).
+- En conditions réelles, la suite se calcule avec le produit et le reste écrits (une erreur ne compte qu'une fois).
 - Tirage : un nombre de 3 chiffres divisé par 2 à 9 ; dans une série, une division où l'on prend 2 chiffres
   d'abord, une avec un 0 au quotient, une au hasard.
 

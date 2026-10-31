@@ -154,9 +154,11 @@ export const CALCUL_POSE: readonly PosedBelt[] = [
     skill: 'Division par un nombre à 1 chiffre',
     operation: 'division',
     tips: [
+      'Diviser, c’est partager équitablement. Le nombre qu’on partage est le dividende, le nombre de parts le diviseur, le résultat le quotient.',
       'Prends d’abord assez de chiffres du dividende pour pouvoir diviser : 348 : 7, 3 est trop petit, on prend 34.',
+      'Cherche le nombre de chiffres du quotient : un pour le nombre pris, puis un pour chaque chiffre qu’on abaisse.',
       'Cherche dans tes tables combien de fois le diviseur va dans ce nombre, sans dépasser : écris-le au quotient.',
-      'Calcule le reste (sans l’écrire, la soustraction se fait de tête) : il doit être plus petit que le diviseur.',
+      'Écris le produit sous le nombre, et soustrais : le reste doit être plus petit que le diviseur.',
       'Abaisse le chiffre suivant à côté du reste, et recommence jusqu’au dernier chiffre.',
       'Vérifie : quotient × diviseur + reste doit redonner le dividende.',
     ],

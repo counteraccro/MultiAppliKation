@@ -181,40 +181,57 @@ describe('PosedLongMultiplication (à 2 chiffres)', () => {
 });
 
 describe('PosedDivision (par un nombre à 1 chiffre)', () => {
-  it('pose 738 : 5 comme la fiche : 7, puis 23, puis 38', () => {
+  it('pose 738 : 5 comme la leçon : 7, puis 23, puis 38, les produits écrits', () => {
     const op = solve(new PosedDivision(738, 5)) as PosedDivision;
     expect(op.steps().map((s) => [s.kind, s.expected])).toEqual([
       ['first', 7],
+      ['size', 3],
       ['quotient', 1],
+      ['product', 5],
       ['remainder', 2],
       ['quotient', 4],
+      ['product', 20],
       ['remainder', 3],
       ['quotient', 7],
+      ['product', 35],
       ['remainder', 3],
     ]);
     expect(op.writtenText()).toBe('147, reste 3');
     expect(op.check).toBe('147 × 5 + 3 = 738');
     expect(op.steps()[0]!.explain).toBe('On peut diviser 7 par 5 : on commence par 7.');
-    expect(op.steps()[3]!.explain).toBe('5 × 4 = 20 et 5 × 5 = 25, c’est trop : on écrit 4.');
-    expect(op.steps()[2]!.explain).toBe('7 − 5 = 2 : il reste 2. On abaisse le 3 : 23.');
+    expect(op.steps()[1]!.explain).toBe('Un chiffre au quotient pour 7, puis un pour chaque chiffre qu’on abaisse (3 et 8) : le quotient aura 3 chiffres.');
+    expect(op.steps()[5]!.explain).toBe('5 × 4 = 20 et 5 × 5 = 25, c’est trop : on écrit 4.');
+    expect(op.steps()[6]!.explain).toBe('4 fois 5 font 20 : on l’écrit sous 23.');
+    expect(op.steps()[4]!).toMatchObject({ ask: 'La soustraction : 7 − 5', explain: '7 − 5 = 2 : il reste 2. On abaisse le 3 : 23.' });
   });
 
   it('prend 2 chiffres quand le premier est trop petit : 348 : 7 = 49, reste 5', () => {
     const op = solve(new PosedDivision(348, 7));
     expect(op.steps()[0]).toMatchObject({ expected: 34, explain: '3 est plus petit que 7 : on prend 34.' });
+    expect(op.steps()[1]).toMatchObject({ kind: 'size', expected: 2 });
     expect(op.writtenText()).toBe('49, reste 5');
   });
 
   it('écrit 0 au quotient : 454 : 3 n’en a pas, 618 : 3 = 206', () => {
     const op = solve(new PosedDivision(618, 3));
-    expect(op.steps().find((s) => s.kind === 'quotient' && s.expected === 0)!.explain).toBe('1 est plus petit que 3 : on écrit 0 au quotient.');
+    const steps = op.steps();
+    const zero = steps.findIndex((s) => s.kind === 'quotient' && s.expected === 0);
+    expect(steps[zero]!.explain).toBe('1 est plus petit que 3 : on écrit 0 au quotient.');
+    // Pas de produit pour un 0 : il reste 1, on abaisse le 8.
+    expect(steps[zero + 1]).toMatchObject({ kind: 'remainder', expected: 1, explain: 'Il reste 1. On abaisse le 8 : 18.' });
     expect(op.writtenText()).toBe('206, reste 0');
   });
 
   it('continue avec le reste écrit, même faux', () => {
     const op = new PosedDivision(738, 5);
-    for (const value of [7, 1, 1]) op.place(value); // reste faux : 1 au lieu de 2
+    for (const value of [7, 3, 1, 5, 1]) op.place(value); // reste faux : 1 au lieu de 2
     expect(op.current()).toMatchObject({ kind: 'quotient', partial: 13, expected: 2 });
+  });
+
+  it('soustrait le produit écrit, même faux', () => {
+    const op = new PosedDivision(738, 5);
+    for (const value of [7, 3, 1, 6]) op.place(value); // produit faux : 6 au lieu de 5
+    expect(op.current()).toMatchObject({ kind: 'remainder', expected: 1 });
   });
 
   it('retrouve toutes les divisions tirées', () => {
