@@ -17,7 +17,10 @@ export interface PosedStep {
   ask: string;
   /** L'explication, après une erreur ou dans la leçon. */
   explain: string;
-  /** Multiplication à 2 chiffres : 0 et 1 pour les deux lignes, 2 pour leur somme (absent : une seule ligne). */
+  /**
+   * Multiplication à 2 ou 3 chiffres : 0, 1 (et 2) pour les lignes, une par chiffre du multiplicateur,
+   * puis la ligne de leur somme (`sumLine`). Absent : une seule ligne.
+   */
   line?: number;
   /** Chiffres qu'on peut taper (1 par défaut) : le nombre pris d'abord dans une division, un produit, un reste. */
   digits?: number;
@@ -187,7 +190,7 @@ export class PosedAddition extends ColumnBase {
       const name = COLUMN_NAMES[column]!;
       const explain =
         carry === 0
-          ? `${parts.join(' + ')} = ${sum} : on écrit ${sum}.`
+          ? `${parts.length > 1 ? `${parts.join(' + ')} = ` : 'Il n’y a que '}${sum} : on écrit ${sum}.`
           : last
             ? `${parts.join(' + ')} = ${sum} : c’est la dernière colonne, on écrit ${sum}.`
             : `${parts.join(' + ')} = ${sum} : on écrit ${sum % 10} et on retient ${carry}.`;
@@ -297,9 +300,10 @@ export class PosedMultiplication extends ColumnBase {
 }
 
 /**
- * Multiplication par un nombre à 2 chiffres, comme sur la fiche : la ligne des unités, puis celle
- * des dizaines (qui commence par un 0 sous les unités), puis leur somme. Les retenues des deux lignes
- * s'écrivent en petit au-dessus du nombre ; celles de la somme dans des ronds, au-dessus des deux lignes.
+ * Multiplication par un nombre à 2 ou 3 chiffres, comme sur la fiche : la ligne des unités, puis celle
+ * des dizaines (qui commence par un 0 sous les unités), celle des centaines (deux 0), puis leur somme.
+ * Les retenues des lignes s'écrivent en petit au-dessus du nombre ; celles de la somme dans des ronds,
+ * au-dessus des lignes.
  */
 export class PosedLongMultiplication extends ColumnBase {
   readonly sign = '×';
@@ -308,6 +312,8 @@ export class PosedLongMultiplication extends ColumnBase {
   readonly result: number;
   readonly terms: readonly [number, number];
   readonly columns: number;
+  /** La ligne de la somme, après une ligne par chiffre du multiplicateur. */
+  readonly sumLine: number;
 
   constructor(top: number, factor: number) {
     super();
@@ -316,60 +322,61 @@ export class PosedLongMultiplication extends ColumnBase {
     this.text = `${top} × ${factor}`;
     this.result = top * factor;
     this.columns = length(this.result);
+    this.sumLine = length(factor);
   }
 
   protected override get resultLine(): number {
-    return 2;
+    return this.sumLine;
   }
 
-  /** Le nombre écrit sur la ligne 0 ou 1 (pour l'addition). */
+  /** Le nombre écrit sur une des lignes (pour l'addition). */
   lineValue(line: number): number {
     return lineValue(this.steps(), this.values, line);
   }
 
   steps(): PosedStep[] {
     const [top, factor] = this.terms;
-    const units = factor % 10;
-    const tens = Math.floor(factor / 10);
     const walk: Walk = { steps: [], values: this.values, i: 0 };
-    if (!multiplyLine(walk, top, units, 0, 0, `× ${units} : `)) return walk.steps;
-    const zero = {
-      kind: 'digit' as const,
-      column: 0,
-      expected: 0,
-      ask: `× ${tens}0 : les unités`,
-      explain: `On multiplie par ${tens} dizaines : on écrit d’abord 0 aux unités.`,
-      line: 1,
-    };
-    if (!push(walk, zero)) return walk.steps;
-    if (!multiplyLine(walk, top, tens, 1, 1, `× ${tens}0 : `)) return walk.steps;
-    // L'addition des deux lignes, telles qu'elles sont écrites ; ses retenues dans des ronds.
-    const lines = [lineValue(walk.steps, walk.values, 0), lineValue(walk.steps, walk.values, 1)];
+    for (let line = 0; line < this.sumLine; line++) {
+      const digit = digitAt(factor, line);
+      const prefix = `× ${digit}${'0'.repeat(line)} : `;
+      // On multiplie par des dizaines (ou des centaines) : d'abord un 0 (ou deux) à droite.
+      const zeros = line === 1 ? '0 aux unités' : '0 aux unités et aux dizaines';
+      const explain = `On multiplie par ${digit} ${COLUMN_NAMES[line]} : on écrit d’abord ${zeros}.`;
+      for (let column = 0; column < line; column++) {
+        const zero = { kind: 'digit' as const, column, expected: 0, ask: `${prefix}les ${COLUMN_NAMES[column]}`, explain, line };
+        if (!push(walk, zero)) return walk.steps;
+      }
+      if (!multiplyLine(walk, top, digit, line, line, prefix)) return walk.steps;
+    }
+    // L'addition des lignes, telles qu'elles sont écrites ; ses retenues dans des ronds.
+    const sum = this.sumLine;
+    const lines = Array.from({ length: sum }, (_, line) => lineValue(walk.steps, walk.values, line));
     const columns = Math.max(...lines.map(length));
     let carryIn = 0;
     for (let column = 0; column < columns; column++) {
       const parts = [...(carryIn > 0 ? [carryIn] : []), ...lines.filter((n) => length(n) > column).map((n) => digitAt(n, column))];
-      const sum = parts.reduce((a, b) => a + b, 0);
-      const carry = Math.floor(sum / 10);
+      const total = parts.reduce((a, b) => a + b, 0);
+      const carry = Math.floor(total / 10);
       const last = column === columns - 1;
       const explain =
         carry === 0
-          ? `${parts.join(' + ')} = ${sum} : on écrit ${sum}.`
+          ? `${parts.length > 1 ? `${parts.join(' + ')} = ` : 'Il n’y a que '}${total} : on écrit ${total}.`
           : last
-            ? `${parts.join(' + ')} = ${sum} : c’est la dernière colonne, on écrit ${sum}.`
-            : `${parts.join(' + ')} = ${sum} : on écrit ${sum % 10} et on retient ${carry}.`;
+            ? `${parts.join(' + ')} = ${total} : c’est la dernière colonne, on écrit ${total}.`
+            : `${parts.join(' + ')} = ${total} : on écrit ${total % 10} et on retient ${carry}.`;
       const ask = `L’addition : les ${COLUMN_NAMES[column]}`;
-      if (!push(walk, { kind: 'digit', column, expected: sum % 10, ask, explain, line: 2 })) return walk.steps;
+      if (!push(walk, { kind: 'digit', column, expected: total % 10, ask, explain, line: sum })) return walk.steps;
       if (carry === 0) {
         carryIn = 0;
         continue;
       }
       if (last) {
-        push(walk, { kind: 'digit', column: column + 1, expected: carry, ask: 'L’addition : on écrit le nombre en entier', explain, line: 2 });
+        push(walk, { kind: 'digit', column: column + 1, expected: carry, ask: 'L’addition : on écrit le nombre en entier', explain, line: sum });
         return walk.steps;
       }
       const askCarry = `L’addition : la retenue, en haut des ${COLUMN_NAMES[column + 1]}`;
-      if (!push(walk, { kind: 'carry', column: column + 1, expected: carry, ask: askCarry, explain, line: 2 })) return walk.steps;
+      if (!push(walk, { kind: 'carry', column: column + 1, expected: carry, ask: askCarry, explain, line: sum })) return walk.steps;
       carryIn = walk.values[walk.i - 1]!;
     }
     return walk.steps;

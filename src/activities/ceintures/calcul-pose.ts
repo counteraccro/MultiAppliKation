@@ -12,11 +12,12 @@ export interface PosedBelt {
   skill: string;
   /** « Objectif de fin de CE2 » dans le classeur. */
   goal?: 'CE2' | 'CM1' | 'CM2';
-  operation: 'addition' | 'soustraction' | 'multiplication' | 'division';
+  /** « mélange » : une série avec plusieurs sortes d'opérations (vert foncé). */
+  operation: 'addition' | 'soustraction' | 'multiplication' | 'division' | 'mélange';
   /** La méthode, pour la leçon. */
   tips: readonly string[];
-  /** L'opération posée en entier dans la leçon. */
-  example: () => PosedOperation;
+  /** Les opérations posées en entier dans la leçon (une par sorte d'opération). */
+  examples: () => PosedOperation[];
   /** Une opération de la ceinture ; `index` dans la série, pour varier (2 ou 3 nombres…). */
   draw(random: () => number, index: number): PosedOperation;
 }
@@ -93,6 +94,55 @@ export function drawDivision(kind: number, random: () => number): [number, numbe
   }
 }
 
+/** Vert foncé : 3 nombres, dont un de 4 chiffres, un de 3 et un de 2 ou 3 (« additions à trois termes »). */
+export function drawBigAdditionTerms(random: () => number): number[] {
+  for (;;) {
+    const terms = [between(1000, 9999, random), between(100, 999, random), between(10, 999, random)];
+    if (hasCarry(terms)) return shuffle(terms, random);
+  }
+}
+
+/** Une retenue qui tombe sur un 0 du haut (4005 − 1287 : aux dizaines, 0 devient 10). */
+export function borrowsOnZero(top: number, bottom: number): boolean {
+  let carryIn = 0;
+  for (let unit = 1; unit <= top; unit *= 10) {
+    const a = Math.floor(top / unit) % 10;
+    const under = (Math.floor(bottom / unit) % 10) + carryIn;
+    if (a === 0 && under > 0) return true;
+    carryIn = a < under ? 1 : 0;
+  }
+  return false;
+}
+
+/**
+ * Vert foncé : un nombre de 4 chiffres avec des 0 (4005, 3020…) moins un de 3 ou 4 chiffres ;
+ * une retenue tombe sur un 0, le résultat a encore 4 chiffres.
+ */
+export function drawSubtractionWithZeros(random: () => number): [number, number] {
+  for (;;) {
+    const digits = [between(2, 9, random), ...Array.from({ length: 3 }, () => (random() < 0.5 ? 0 : between(1, 9, random)))];
+    const top = Number(digits.join(''));
+    if (!digits.slice(1).includes(0)) continue;
+    const bottom = between(100, top - 1000, random);
+    if (borrowsOnZero(top, bottom)) return [top, bottom];
+  }
+}
+
+/** Vert foncé : 4 chiffres × 2 chiffres, ou 3 chiffres × 3 chiffres ; le multiplicateur sans 0 ni 1. */
+export function drawBigMultiplication(random: () => number): [number, number] {
+  const digit = () => between(2, 9, random);
+  return random() < 0.5
+    ? [between(1000, 9999, random), digit() * 10 + digit()]
+    : [between(100, 999, random), digit() * 100 + digit() * 10 + digit()];
+}
+
+/** Vert foncé : une addition, une soustraction, une multiplication, et on recommence. */
+function drawMixed(random: () => number, index: number): PosedOperation {
+  if (index % 3 === 0) return new PosedAddition(drawBigAdditionTerms(random));
+  if (index % 3 === 1) return new PosedSubtraction(...drawSubtractionWithZeros(random));
+  return new PosedLongMultiplication(...drawBigMultiplication(random));
+}
+
 export const CALCUL_POSE: readonly PosedBelt[] = [
   {
     belt: 'blanche',
@@ -104,7 +154,7 @@ export const CALCUL_POSE: readonly PosedBelt[] = [
       'Si une colonne fait 10 ou plus, écris le chiffre des unités en bas et la retenue en haut de la colonne suivante.',
       'N’oublie pas d’ajouter la retenue avec les chiffres de la colonne.',
     ],
-    example: () => new PosedAddition([437, 76, 209]),
+    examples: () => [new PosedAddition([437, 76, 209])],
     draw: (random, index) => new PosedAddition(drawAdditionTerms(index % 2 === 0 ? 2 : 3, random)),
   },
   {
@@ -119,7 +169,7 @@ export const CALCUL_POSE: readonly PosedBelt[] = [
       'Continue avec les dizaines, avec la même méthode. N’oublie pas d’ajouter la retenue au chiffre du bas : 2 + 1 = 3.',
     ],
     // L'exemple de la leçon de la classe.
-    example: () => new PosedSubtraction(56, 28),
+    examples: () => [new PosedSubtraction(56, 28)],
     draw: (random, index) => new PosedSubtraction(...drawSubtraction(index % 2 === 0 ? 3 : 2, random)),
   },
   {
@@ -132,7 +182,7 @@ export const CALCUL_POSE: readonly PosedBelt[] = [
       'Si le résultat fait 10 ou plus, écris les unités en bas et la retenue en petit au-dessus du chiffre suivant.',
       'Multiplie d’abord, puis ajoute la retenue. À la dernière colonne, écris le nombre en entier.',
     ],
-    example: () => new PosedMultiplication(723, 8),
+    examples: () => [new PosedMultiplication(723, 8)],
     draw: (random) => new PosedMultiplication(...drawMultiplication(random)),
   },
   {
@@ -146,7 +196,7 @@ export const CALCUL_POSE: readonly PosedBelt[] = [
       'Puis multiplie par ce chiffre, comme pour la première ligne. Barre les retenues d’avant pour ne pas te tromper.',
       'Additionne les deux lignes : c’est le résultat.',
     ],
-    example: () => new PosedLongMultiplication(549, 43),
+    examples: () => [new PosedLongMultiplication(549, 43)],
     draw: (random) => new PosedLongMultiplication(...drawLongMultiplication(random)),
   },
   {
@@ -162,8 +212,22 @@ export const CALCUL_POSE: readonly PosedBelt[] = [
       'Abaisse le chiffre suivant à côté du reste, et recommence jusqu’au dernier chiffre.',
       'Vérifie : quotient × diviseur + reste doit redonner le dividende.',
     ],
-    example: () => new PosedDivision(738, 5),
+    examples: () => [new PosedDivision(738, 5)],
     draw: (random, index) => new PosedDivision(...drawDivision(index % 3, random)),
+  },
+  {
+    belt: 'vert-fonce',
+    skill: 'Additions à trois nombres, soustractions avec des 0, multiplications à 2 ou 3 chiffres',
+    operation: 'mélange',
+    tips: [
+      'Les trois opérations, avec de plus grands nombres : la méthode ne change pas. Colonne par colonne, en commençant par les unités.',
+      'Addition de trois nombres : aligne bien les unités sous les unités, surtout sous un nombre de 4 chiffres. La retenue peut être 2.',
+      'Soustraction avec des 0 : 0 est plus petit que le chiffre du bas. Alors ajoute 10 en haut (0 devient 10) et compense en bas, comme d’habitude.',
+      'Multiplication par 3 chiffres : une ligne par chiffre. La 2ᵉ ligne commence par un 0, la 3ᵉ par deux 0 : tu multiplies par des centaines.',
+      'Additionne toutes les lignes : c’est le résultat.',
+    ],
+    examples: () => [new PosedAddition([2487, 365, 79]), new PosedSubtraction(4005, 1287), new PosedLongMultiplication(427, 356)],
+    draw: drawMixed,
   },
 ];
 

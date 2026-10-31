@@ -1,5 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { CALCUL_POSE, drawAdditionTerms, drawDivision, drawLongMultiplication, drawMultiplication, drawSubtraction, pickOperations } from './calcul-pose';
+import {
+  borrowsOnZero,
+  CALCUL_POSE,
+  drawAdditionTerms,
+  drawBigAdditionTerms,
+  drawBigMultiplication,
+  drawDivision,
+  drawLongMultiplication,
+  drawMultiplication,
+  drawSubtraction,
+  drawSubtractionWithZeros,
+  pickOperations,
+} from './calcul-pose';
 import { PosedAddition, PosedDivision, PosedLongMultiplication, PosedMultiplication, PosedSubtraction, solve } from './posed';
 import { PosedSession } from './posed-session';
 
@@ -177,6 +189,62 @@ describe('PosedLongMultiplication (à 2 chiffres)', () => {
       expect(factor % 10).toBeGreaterThanOrEqual(2);
       expect(solve(new PosedLongMultiplication(top, factor)).written()).toBe(top * factor);
     }
+  });
+});
+
+describe('Vert foncé : les trois opérations, plus grandes', () => {
+  it('pose 427 × 356 en trois lignes, la 3ᵉ commence par deux 0', () => {
+    const op = solve(new PosedLongMultiplication(427, 356)) as PosedLongMultiplication;
+    expect(op.sumLine).toBe(3);
+    expect([0, 1, 2].map((line) => op.lineValue(line))).toEqual([2562, 21350, 128100]);
+    expect(op.written()).toBe(152012);
+    const third = op.steps().filter((s) => s.line === 2);
+    expect(third.slice(0, 2).map((s) => [s.column, s.expected, s.ask])).toEqual([
+      [0, 0, '× 300 : les unités'],
+      [1, 0, '× 300 : les dizaines'],
+    ]);
+    expect(third[0]!.explain).toBe('On multiplie par 3 centaines : on écrit d’abord 0 aux unités et aux dizaines.');
+  });
+
+  it('soustrait avec des 0 : 4005 − 1287 = 2718', () => {
+    const op = solve(new PosedSubtraction(4005, 1287));
+    expect(op.written()).toBe(2718);
+    expect(op.steps().filter((s) => s.kind === 'carry')).toHaveLength(3);
+    expect(op.steps()[2]!.explain).toBe(
+      'En bas, j’ai 8 + 1 = 9. 0 est plus petit que 9 : je ne peux pas calculer 0 − 9. J’ajoute 1 centaine en haut : 0 devient 10. ' +
+        'Pour compenser, j’ajoute aussitôt 1 centaine en bas, dans le rond. Je calcule 10 − 9 = 1.',
+    );
+    expect(borrowsOnZero(4005, 1287)).toBe(true);
+    expect(borrowsOnZero(4095, 1083)).toBe(false); // 0 − 0 : pas de retenue sur le 0
+  });
+
+  it('additionne trois nombres avec une retenue de 2 : 2487 + 365 + 79 = 2931', () => {
+    const op = solve(new PosedAddition([2487, 365, 79]));
+    expect(op.written()).toBe(2931);
+    expect(op.steps()[1]).toMatchObject({ kind: 'carry', expected: 2 });
+  });
+
+  it('retrouve toutes les opérations tirées', () => {
+    const random = seeded(17);
+    for (let i = 0; i < 300; i++) {
+      const terms = drawBigAdditionTerms(random);
+      expect(terms.map((t) => String(t).length).sort()).toEqual(expect.arrayContaining([3, 4]));
+      expect(solve(new PosedAddition(terms)).written()).toBe(terms[0]! + terms[1]! + terms[2]!);
+      const [top, bottom] = drawSubtractionWithZeros(random);
+      expect(borrowsOnZero(top, bottom)).toBe(true);
+      expect(top - bottom).toBeGreaterThanOrEqual(1000);
+      expect(solve(new PosedSubtraction(top, bottom)).written()).toBe(top - bottom);
+      const [a, b] = drawBigMultiplication(random);
+      expect(String(a).length + String(b).length).toBe(6);
+      expect(String(b)).not.toMatch(/[01]/);
+      expect(solve(new PosedLongMultiplication(a, b)).written()).toBe(a * b);
+    }
+  });
+
+  it('une série mélange les trois opérations', () => {
+    const vertFonce = CALCUL_POSE.find((belt) => belt.belt === 'vert-fonce')!;
+    const ops = pickOperations(vertFonce, 3, [], seeded(4));
+    expect(new Set(ops.map((o) => o.constructor.name)).size).toBe(3);
   });
 });
 

@@ -31,7 +31,7 @@ une ceinture (ou deux voisines) à la fois.
 | Orange | Multiplications à 1 chiffre (Cal7) | p. 3 : 3 chiffres × 1 chiffre, retenues en petit au-dessus | étape 3 |
 | Rose | Multiplications à 2 chiffres (Cal7) — **objectif de fin de CE2** | p. 4 : 3 chiffres × 2 chiffres, deux lignes (la 2ᵉ finit par 0) puis leur somme | étape 3 |
 | Vert clair | Division par un nombre à 1 chiffre (Cal8) | p. 5 : 3 chiffres : 1 chiffre, potence, sans écrire les soustractions, puis « 738 = 147 × 5 + 3 » | étape 4 |
-| Vert foncé | Additions à trois termes, soustractions avec des 0, multiplications à deux ou trois chiffres | pas de fiche : nos calculs | étape 5 |
+| Vert foncé | Additions à trois termes, soustractions avec des 0, multiplications à deux ou trois chiffres | pas de fiche : nos calculs | étape 5, faite |
 | Bleu clair | Additions et soustractions de nombres décimaux (Cal13) — **objectif de fin de CM1** | p. 6 : virgules alignées, on complète par des 0 (en rouge sur la fiche) | étape 6 |
 | Bleu foncé | Divisions décimales (Cal17) | p. 7 : un entier divisé par 1 chiffre, quotient au centième (100 : 7 = 14,28) | étape 7 |
 | Violette | Multiplications de nombres décimaux (Cal16) | p. 8 : décimal × entier ou décimal, la virgule placée au résultat | étape 6 |
@@ -157,6 +157,24 @@ Réponse de l'utilisateur le 28/10/2026 : la classe soustrait **par compensation
 - Tirage : un nombre de 3 chiffres divisé par 2 à 9 ; dans une série, une division où l'on prend 2 chiffres
   d'abord, une avec un 0 au quotient, une au hasard.
 
+### Vert foncé : les trois opérations, plus grandes
+
+Pas de fiche : nos calculs (31/10/2026). Une série **mélange** les opérations, dans cet ordre puis
+mélangées : une addition, une soustraction, une multiplication (entraînement de 3 : une de chaque ;
+conditions réelles de 5 : deux additions, deux soustractions, une multiplication).
+
+- **Addition à trois nombres** : un de 4 chiffres, un de 3, un de 2 ou 3, au moins une retenue
+  (comme la blanche ; la retenue peut être 2 : 2487 + 365 + 79).
+- **Soustraction avec des 0** : un nombre de 4 chiffres avec au moins un 0 parmi ses trois derniers
+  chiffres (4005, 3020…), moins un nombre de 3 ou 4 chiffres ; une retenue tombe sur un 0 (`borrowsOnZero`),
+  le résultat a encore 4 chiffres. Même méthode que la jaune : « 0 est plus petit que 9 : … 0 devient 10 ».
+- **Multiplication à 2 ou 3 chiffres** : 4 chiffres × 2 chiffres, ou 3 chiffres × 3 chiffres, le
+  multiplicateur sans 0 ni 1. `PosedLongMultiplication` a une ligne par chiffre du multiplicateur
+  (`sumLine` : la ligne de la somme) ; la 3ᵉ commence par deux 0 (« On multiplie par 3 centaines : on écrit
+  d'abord 0 aux unités et aux dizaines. »), puis on additionne les trois lignes (retenues dans les ronds).
+- **Leçon** : la méthode, puis un exemple posé par sorte d'opération (2487 + 365 + 79, 4005 − 1287,
+  427 × 356) ; les ceintures ont maintenant une liste d'exemples (`examples`).
+
 ## Les écrans
 
 - **Leçon** : la méthode en quelques phrases, et un exemple posé en entier, chaque étape expliquée.
@@ -187,6 +205,7 @@ dans `subjects.ts` (identifiant à ne jamais changer).
    `PosedDivision`, `divisionGrid` ; les opérations donnent leur résultat en texte (`resultText`,
    « 147, reste 3 ») pour les listes et la correction.
 5. **Vert foncé** : additions à trois termes, soustractions avec des 0, multiplications à 2 ou 3 chiffres.
+   Faite le 31/10/2026 (0.39.0) : `drawMixed`, `PosedLongMultiplication` à N lignes, leçon à plusieurs exemples.
 6. **Bleu clair et violette : les décimaux** (+, −, ×) : la virgule.
 7. **Bleu foncé et marron : les divisions décimales et par 2 chiffres.**
 8. **Noire : « je calcule plus vite »** (toutes les opérations, en temps limité ? à préciser).
