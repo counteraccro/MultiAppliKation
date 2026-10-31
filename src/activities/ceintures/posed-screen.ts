@@ -25,7 +25,8 @@ export interface GridOptions {
  * Addition : les retenues dans des ronds en haut. Soustraction (par compensation) : les retenues
  * dans des ronds sous le nombre du bas, et le 10 ajouté en haut (un petit 1 devant le chiffre).
  * Multiplication : les retenues en petit au-dessus du nombre, sans rond, comme sur la fiche ; à 2 chiffres,
- * deux lignes puis leur somme, et seules les retenues de la ligne en cours (les autres sont « barrées »).
+ * deux lignes puis leur somme, et seules les retenues de la ligne en cours (les autres sont « barrées ») ;
+ * celles de l'addition dans des ronds, sous le premier trait.
  * La case en cours est encadrée.
  */
 export function posedGrid(operation: PosedOperation, options: GridOptions = {}): HTMLElement {
@@ -59,6 +60,8 @@ export function posedGrid(operation: PosedOperation, options: GridOptions = {}):
   const firstTerm = subtraction ? 1 : 2;
   const carryRow = subtraction ? 3 : 1;
   const resultRow = firstTerm + operation.terms.length + (subtraction ? 1 : 0);
+  // À 2 chiffres : une rangée sous le trait pour les retenues de l'addition, puis les deux lignes.
+  const linesRow = resultRow + (long ? 1 : 0);
   operation.terms.forEach((term, i) => {
     const row = firstTerm + i;
     if (i > 0) cells.push(h('span', { class: 'pc pc-sign', style: `grid-row: ${row}; grid-column: 1` }, operation.sign));
@@ -69,16 +72,21 @@ export function posedGrid(operation: PosedOperation, options: GridOptions = {}):
   cells.push(h('span', { class: 'pc-line', style: `grid-row: ${resultRow}; grid-column: 1 / -1` }));
   if (long) {
     // Les deux lignes, puis le trait et leur somme.
-    cells.push(h('span', { class: 'pc pc-sign', style: `grid-row: ${resultRow + 1}; grid-column: 1` }, '+'));
-    cells.push(h('span', { class: 'pc-line', style: `grid-row: ${resultRow + 2}; grid-column: 1 / -1` }));
+    cells.push(h('span', { class: 'pc pc-sign', style: `grid-row: ${linesRow + 1}; grid-column: 1` }, '+'));
+    cells.push(h('span', { class: 'pc-line', style: `grid-row: ${linesRow + 2}; grid-column: 1 / -1` }));
   }
   // À 2 chiffres : les retenues de la ligne en cours seulement.
   const activeLine = (steps[placed.length] ?? steps[placed.length - 1])?.line;
+  // Pendant l'addition, la rangée de ses retenues garde sa place, même vide.
+  if (long && activeLine === 2) {
+    cells.push(h('span', { class: 'pc pc-carry', style: `grid-row: ${resultRow}; grid-column: ${at(0)}; visibility: hidden`, 'aria-hidden': 'true' }));
+  }
 
   steps.forEach((step, i) => {
     if (long && step.kind === 'carry' && step.line !== activeLine) return;
-    const row = step.kind === 'carry' ? carryRow : resultRow + (step.line ?? 0);
-    const carryKind = subtraction ? ' pc-carry-under' : operation instanceof PosedAddition ? '' : ' pc-carry-small';
+    const sumCarry = step.kind === 'carry' && step.line === 2;
+    const row = sumCarry ? resultRow : step.kind === 'carry' ? carryRow : linesRow + (step.line ?? 0);
+    const carryKind = subtraction ? ' pc-carry-under' : operation instanceof PosedAddition || sumCarry ? '' : ' pc-carry-small';
     const kind = step.kind === 'carry' ? `pc-carry${carryKind}` : 'pc-result';
     if (i < placed.length) {
       const state = i === placed.length - 1 && options.last ? options.last : options.corrected?.has(i) ? 'wrong' : '';

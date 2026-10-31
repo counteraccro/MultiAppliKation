@@ -80,8 +80,12 @@ Réponse de l'utilisateur le 28/10/2026 : la classe soustrait **par compensation
 - Si le chiffre du haut est trop petit, on ajoute 10 en haut et 1 en bas de la colonne suivante :
   l'enfant tape la retenue (1) dans le rond sous le nombre du bas ; le petit 1 devant le chiffre du haut
   s'affiche quand la retenue est écrite.
-- Explication : « 2 < 6 : on ajoute 10 en haut (12) et 1 en bas des dizaines. 12 − 6 = 6 : on écrit 6. »,
-  puis « 6 + 1 = 7 ; 9 − 7 = 2 : on écrit 2. »
+- Explication en phrases, comme la leçon de la classe (Calc 6, p. 12 des leçons) : « 2 est plus petit que 6 :
+  je ne peux pas calculer 2 − 6. J'ajoute 1 dizaine en haut : 2 devient 12. Pour compenser, j'ajoute
+  aussitôt 1 dizaine en bas, dans le rond. Je calcule 12 − 6 = 6. », puis « En bas, j'ai 6 + 1 = 7. 9 est
+  plus grand que 7 : je calcule 9 − 7 = 2. »
+- Leçon (0.37.1, « pas très compréhensible par un enfant ») : les consignes de la classe et son exemple,
+  56 − 28 ; dans l'exemple, chaque explication dit sa colonne (« Les unités », « Les dizaines »).
 - Tirage : un nombre de 3 chiffres moins un de 2 ou 3 chiffres (en alternance), au moins une retenue,
   un résultat d'au moins 100 (pas de 0 à gauche à écrire).
 
@@ -115,8 +119,9 @@ Réponse de l'utilisateur le 28/10/2026 : la classe soustrait **par compensation
   un 0 (« On multiplie par 4 dizaines : on écrit d'abord 0 aux unités. »), puis l'addition des deux lignes.
 - Ce qu'on demande dit la ligne : « × 3 : les unités », « × 40 : la retenue… », « L'addition : les centaines ».
 - Seules les retenues de la ligne en cours restent affichées (en classe, on barre les précédentes).
-- L'addition se fait **avec les lignes telles qu'elles sont écrites** ; ses retenues se gardent en tête
-  (pas de rond à remplir), l'explication les donne.
+- L'addition se fait **avec les lignes telles qu'elles sont écrites** ; ses retenues s'écrivent dans des
+  ronds, sous le premier trait (au-dessus des deux lignes), comme pour la blanche (0.37.1, demande de
+  l'utilisateur : « il manque l'endroit pour faire la retenue »).
 - Tirage : un nombre de 3 chiffres par un nombre de 2 chiffres sans 0 ni 1 (22 à 99), comme sur la fiche.
 - Une série est longue (une vingtaine d'étapes par multiplication) : c'est le travail de la ceinture.
 

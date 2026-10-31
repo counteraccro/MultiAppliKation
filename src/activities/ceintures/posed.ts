@@ -47,6 +47,8 @@ export interface PosedOperation {
 }
 
 export const COLUMN_NAMES = ['unités', 'dizaines', 'centaines', 'milliers', 'dizaines de milliers'];
+/** « 1 dizaine », « 1 centaine »… : ce que vaut 1 dans une colonne. */
+const UNIT_NAMES = ['unité', 'dizaine', 'centaine', 'millier', 'dizaine de milliers'];
 
 export const digitAt = (n: number, column: number) => Math.floor(n / 10 ** column) % 10;
 const length = (n: number) => String(n).length;
@@ -240,10 +242,16 @@ export class PosedSubtraction extends ColumnBase {
       const last = column === this.columns - 1;
       const borrow = a < under && !last;
       const up = borrow ? a + 10 : a;
-      const counted = carryIn > 0 ? `${b} + ${carryIn} = ${under} ; ` : '';
+      // En phrases, comme la leçon de la classe : « 6 est plus petit que 8, je ne peux pas calculer 6 − 8… ».
+      const counted = carryIn > 0 ? `En bas, j’ai ${b} + ${carryIn} = ${under}. ` : '';
+      const one = `1 ${UNIT_NAMES[column + 1]}`;
       const explain = borrow
-        ? `${counted}${a} < ${under} : on ajoute 10 en haut (${up}) et 1 en bas des ${COLUMN_NAMES[column + 1]}. ${up} − ${under} = ${up - under} : on écrit ${up - under}.`
-        : `${counted}${a} − ${under} = ${a - under} : on écrit ${a - under}.`;
+        ? `${counted}${a} est plus petit que ${under} : je ne peux pas calculer ${a} − ${under}. ` +
+          `J’ajoute ${one} en haut : ${a} devient ${up}. Pour compenser, j’ajoute aussitôt ${one} en bas, dans le rond. ` +
+          `Je calcule ${up} − ${under} = ${up - under}.`
+        : a === under
+          ? `${counted}${a} − ${under} = 0.`
+          : `${counted}${a} est plus grand que ${under} : je calcule ${a} − ${under} = ${a - under}.`;
       steps.push({ kind: 'digit', column, expected: up - under, ask: `Les ${COLUMN_NAMES[column]}`, explain });
       if (i++ >= this.values.length) return steps;
       if (!borrow) {
@@ -290,7 +298,7 @@ export class PosedMultiplication extends ColumnBase {
 /**
  * Multiplication par un nombre à 2 chiffres, comme sur la fiche : la ligne des unités, puis celle
  * des dizaines (qui commence par un 0 sous les unités), puis leur somme. Les retenues des deux lignes
- * s'écrivent en petit au-dessus du nombre ; celles de la somme se gardent en tête.
+ * s'écrivent en petit au-dessus du nombre ; celles de la somme dans des ronds, au-dessus des deux lignes.
  */
 export class PosedLongMultiplication extends ColumnBase {
   readonly sign = '×';
@@ -334,7 +342,7 @@ export class PosedLongMultiplication extends ColumnBase {
     };
     if (!push(walk, zero)) return walk.steps;
     if (!multiplyLine(walk, top, tens, 1, 1, `× ${tens}0 : `)) return walk.steps;
-    // L'addition des deux lignes, telles qu'elles sont écrites ; la retenue se garde en tête.
+    // L'addition des deux lignes, telles qu'elles sont écrites ; ses retenues dans des ronds.
     const lines = [lineValue(walk.steps, walk.values, 0), lineValue(walk.steps, walk.values, 1)];
     const columns = Math.max(...lines.map(length));
     let carryIn = 0;
@@ -348,13 +356,20 @@ export class PosedLongMultiplication extends ColumnBase {
           ? `${parts.join(' + ')} = ${sum} : on écrit ${sum}.`
           : last
             ? `${parts.join(' + ')} = ${sum} : c’est la dernière colonne, on écrit ${sum}.`
-            : `${parts.join(' + ')} = ${sum} : on écrit ${sum % 10} et on retient ${carry} dans sa tête.`;
+            : `${parts.join(' + ')} = ${sum} : on écrit ${sum % 10} et on retient ${carry}.`;
       const ask = `L’addition : les ${COLUMN_NAMES[column]}`;
       if (!push(walk, { kind: 'digit', column, expected: sum % 10, ask, explain, line: 2 })) return walk.steps;
-      if (last && carry > 0) {
-        push(walk, { kind: 'digit', column: column + 1, expected: carry, ask: 'L’addition : on écrit le nombre en entier', explain, line: 2 });
+      if (carry === 0) {
+        carryIn = 0;
+        continue;
       }
-      carryIn = carry;
+      if (last) {
+        push(walk, { kind: 'digit', column: column + 1, expected: carry, ask: 'L’addition : on écrit le nombre en entier', explain, line: 2 });
+        return walk.steps;
+      }
+      const askCarry = `L’addition : la retenue, en haut des ${COLUMN_NAMES[column + 1]}`;
+      if (!push(walk, { kind: 'carry', column: column + 1, expected: carry, ask: askCarry, explain, line: 2 })) return walk.steps;
+      carryIn = walk.values[walk.i - 1]!;
     }
     return walk.steps;
   }

@@ -112,12 +112,14 @@ export const CALCUL_POSE: readonly PosedBelt[] = [
     skill: 'Soustractions',
     operation: 'soustraction',
     tips: [
-      'Écris le plus grand nombre en haut, bien en colonnes, et commence par les unités.',
-      'Si le chiffre du haut est trop petit, ajoute 10 en haut : écris un petit 1 devant lui.',
-      'Pour compenser, ajoute aussi 1 en bas de la colonne suivante : c’est la retenue.',
-      'Dans la colonne suivante, ajoute la retenue au chiffre du bas avant de soustraire.',
+      'La soustraction calcule l’écart entre deux nombres. Pose le plus grand nombre en haut, les unités sous les unités.',
+      'Commence par soustraire les unités, à droite.',
+      'Si le chiffre du haut est plus petit que celui du bas, tu ne peux pas calculer. Alors ajoute 1 dizaine en haut : un petit 1 devant le chiffre, 6 devient 16.',
+      'Pour compenser, ajoute aussitôt 1 dizaine en bas : écris 1 dans le rond, sous la colonne des dizaines. C’est la retenue.',
+      'Continue avec les dizaines, avec la même méthode. N’oublie pas d’ajouter la retenue au chiffre du bas : 2 + 1 = 3.',
     ],
-    example: () => new PosedSubtraction(492, 166),
+    // L'exemple de la leçon de la classe.
+    example: () => new PosedSubtraction(56, 28),
     draw: (random, index) => new PosedSubtraction(...drawSubtraction(index % 2 === 0 ? 3 : 2, random)),
   },
   {

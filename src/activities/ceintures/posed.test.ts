@@ -68,8 +68,11 @@ describe('PosedSubtraction (par compensation)', () => {
       ['digit', 2, 3],
     ]);
     expect(op.written()).toBe(326);
-    expect(op.steps()[0]!.explain).toBe('2 < 6 : on ajoute 10 en haut (12) et 1 en bas des dizaines. 12 − 6 = 6 : on écrit 6.');
-    expect(op.steps()[2]!.explain).toBe('6 + 1 = 7 ; 9 − 7 = 2 : on écrit 2.');
+    expect(op.steps()[0]!.explain).toBe(
+      '2 est plus petit que 6 : je ne peux pas calculer 2 − 6. J’ajoute 1 dizaine en haut : 2 devient 12. ' +
+        'Pour compenser, j’ajoute aussitôt 1 dizaine en bas, dans le rond. Je calcule 12 − 6 = 6.',
+    );
+    expect(op.steps()[2]!.explain).toBe('En bas, j’ai 6 + 1 = 7. 9 est plus grand que 7 : je calcule 9 − 7 = 2.');
   });
 
   it('enchaîne les retenues : 405 − 206 = 199', () => {
@@ -135,7 +138,16 @@ describe('PosedLongMultiplication (à 2 chiffres)', () => {
     const zero = op.steps().find((s) => s.line === 1)!;
     expect(zero).toMatchObject({ column: 0, expected: 0, explain: 'On multiplie par 4 dizaines : on écrit d’abord 0 aux unités.' });
     expect(op.steps()[0]!.ask).toBe('× 3 : les unités');
-    expect(op.steps().filter((s) => s.line === 2).map((s) => s.expected)).toEqual([7, 0, 6, 3, 2]);
+    // L'addition : 4 + 6 = 10 et 1 + 6 + 9 = 16, deux retenues dans les ronds.
+    expect(op.steps().filter((s) => s.line === 2).map((s) => [s.kind, s.column, s.expected])).toEqual([
+      ['digit', 0, 7],
+      ['digit', 1, 0],
+      ['carry', 2, 1],
+      ['digit', 2, 6],
+      ['carry', 3, 1],
+      ['digit', 3, 3],
+      ['digit', 4, 2],
+    ]);
   });
 
   it('additionne les lignes telles qu’elles sont écrites', () => {
@@ -148,6 +160,14 @@ describe('PosedLongMultiplication (à 2 chiffres)', () => {
     expect(op.lineValue(0)).toBe(1160);
     solve(op);
     expect(op.written()).toBe(1160 + 16380);
+  });
+
+  it('additionne avec la retenue écrite, même fausse', () => {
+    const op = new PosedLongMultiplication(549, 43);
+    for (let step = op.current(); step && !(step.kind === 'carry' && step.line === 2); step = op.current()) op.place(step.expected);
+    op.place(2); // 4 + 6 = 10 : retenue 1, écrite 2 ; les centaines font 2 + 6 + 9 = 17
+    solve(op);
+    expect(op.written()).toBe(23607 + 100);
   });
 
   it('retrouve tous les produits tirés', () => {

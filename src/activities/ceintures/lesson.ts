@@ -8,7 +8,7 @@ import { TENSES, type ConjugationBelt, type Exercise, type TenseId } from './con
 import type { Group } from './homophones';
 import { capitalize, parseSentence, withNbsp } from './sentence';
 import type { PosedBelt } from './calcul-pose';
-import { solve } from './posed';
+import { PosedDivision, solve } from './posed';
 import { posedGrid } from './posed-screen';
 import { isHomophoneBelt, isPosedBelt, isTableBelt, type SubjectBelt } from './subjects';
 import { MAX_FACTOR, newTables, type TableBelt } from './tables';
@@ -151,7 +151,9 @@ function tableCards(belt: TableBelt): HTMLElement[] {
 function posedCards(belt: PosedBelt): HTMLElement[] {
   const example = solve(belt.example());
   // Une explication par colonne : la retenue s'explique avec le chiffre qui la donne.
-  const explains = [...new Set(example.steps().map((step) => step.explain))];
+  // En colonnes, chacune dit ce qu'elle calcule (« Les unités »).
+  const steps = example.steps().filter((step, i, all) => all.findIndex((s) => s.explain === step.explain) === i);
+  const labelled = !(example instanceof PosedDivision);
   return [
     h(
       'article',
@@ -164,7 +166,11 @@ function posedCards(belt: PosedBelt): HTMLElement[] {
       { class: 'lesson-card' },
       h('h2', {}, `Exemple : ${example.text}`),
       posedGrid(example),
-      h('ol', { class: 'lesson-steps' }, ...explains.map((text) => h('li', {}, withNbsp(text)))),
+      h(
+        'ol',
+        { class: 'lesson-steps' },
+        ...steps.map((step) => h('li', {}, ...(labelled ? [h('strong', {}, step.ask), h('br')] : []), withNbsp(step.explain))),
+      ),
     ),
   ];
 }
