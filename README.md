@@ -25,6 +25,31 @@ au futur et au passé composé, soit 480 formes, chacune vérifiée par un test.
 - La réponse se tape sur un clavier de lettres dessiné dans l'app, avec les accents ;
   une faute d'accent compte faux, et la partie fausse est surlignée.
 
+### Les Additions (tables d'addition de 1 à 10)
+
+Les mêmes modes que les Tables (Apprendre, Révision, Mélange, Nombre caché « 3 + ? = 7 », Défi),
+pour les 55 additions à retenir, résultats jusqu'à 20.
+
+### Ceintures (CM1)
+
+Les ceintures de compétences du classeur de la classe, comme au judo : on passe la blanche,
+puis la jaune… Une matière à la fois, d'autres viendront.
+
+| Matière | Ceintures | Ce qu'on fait |
+| --- | --- | --- |
+| Homophones | blanche → noire | choisir le bon mot dans une phrase (a / à, et / est…) |
+| Conjugaison | blanche → marron | taper les formes d'un verbe, du présent au plus-que-parfait |
+| Tables | blanche → bleu foncé, noire, brillante | 20 multiplications en 1 minute (les divisions viendront plus tard) |
+| Calcul posé | blanche → marron | poser l'opération à l'écran, un chiffre à la fois, comme en classe : additions, soustractions, multiplications, divisions, nombres décimaux |
+| Calcul mental | blanche → violette | calculer de tête avec les astuces de la classe (les décimaux et les fractions viendront ensuite) |
+
+- Pour chaque ceinture : **la leçon**, **l'entraînement** (corrigé tout de suite, avec l'explication)
+  et **l'entraînement en conditions réelles**, comme le jour du passage (sans aide, corrigé à la fin).
+- Toutes les ceintures sont ouvertes ; l'app montre la prochaine à faire. Réussir en conditions
+  réelles dit « tu peux la passer en classe » : la vraie ceinture se passe en classe, et seul un adulte
+  la note obtenue (avec sa date).
+- Les repères du classeur (objectifs de fin de CE2, de CM1, de CM2) sont mis en avant.
+
 ### Dans chaque activité
 
 - **Mes progrès** : une grille colorée, du gris (pas encore vu) au vert (bravo).
@@ -68,9 +93,11 @@ Organisation du code (`src/`) :
 - `core/` : profils et sauvegarde, séries de questions, boîtes de Leitner, autocollants, niveaux de progrès ;
 - `components/` : écrans et pièces communs (question, résultat, pavé et clavier, album…) ;
 - `screens/` : « Qui joue ? », profils, choix de l'activité ;
-- `activities/` : une activité par dossier (`tables/`, `conjugaison/`). Pour en ajouter une,
+- `activities/` : une activité par dossier (`tables/`, `additions/`, `conjugaison/`, `ceintures/`). Pour en ajouter une,
   créer son dossier puis l'ajouter à `activities/index.ts` ; son identifiant est la clé
   de ses données dans le profil et ne change jamais.
+- `activities/ceintures/` : une matière par fichier (`homophones.ts`, `conjugaison.ts`, `tables.ts`,
+  `calcul-pose.ts`, `calcul-mental.ts`), listées dans `subjects.ts`.
 
 ## Versions
 
