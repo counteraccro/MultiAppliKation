@@ -75,6 +75,12 @@ ont chacun leur stockage (les profils de l'un ne se voient pas dans l'autre).
 
 Une fois ouverte une première fois, l'app fonctionne **hors ligne**.
 
+## Mesure d'audience
+
+L'appli compte ses visites avec [GoatCounter](https://www.goatcounter.com), sans cookie et de façon anonyme :
+l'écran ouvert, l'activité et la classe. Aucun prénom, aucun résultat ne quitte l'appareil.
+Pour ne pas être compté, ouvrir l'appli avec `#ne-pas-compter` à la fin du lien (`#compter` pour annuler).
+
 ## Développement
 
 ```sh

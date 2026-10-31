@@ -18,6 +18,7 @@
 
 - GitHub Pages (gratuit, HTTPS, obligatoire pour le service worker),
   depuis le dépôt counteraccro/MultiAppliKation.
+- Mesure d'audience : GoatCounter, sans cookie (voir 17-mesure-audience.md).
 
 ## Limites iOS
 
