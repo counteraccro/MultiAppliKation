@@ -27,6 +27,8 @@ export interface GridOptions {
  * Multiplication : les retenues en petit au-dessus du nombre, sans rond, comme sur la fiche ; à 2 ou 3 chiffres,
  * une ligne par chiffre puis leur somme, et seules les retenues de la ligne en cours (les autres sont « barrées ») ;
  * celles de l'addition dans des ronds, sous le premier trait.
+ * Nombres décimaux (bleu clair) : la virgule dans sa colonne, les 0 qui complètent un nombre en rouge,
+ * comme sur la fiche.
  * La case en cours est encadrée.
  */
 export function posedGrid(operation: PosedOperation, options: GridOptions = {}): HTMLElement {
@@ -64,12 +66,21 @@ export function posedGrid(operation: PosedOperation, options: GridOptions = {}):
   const resultRow = firstTerm + operation.terms.length + (subtraction ? 1 : 0);
   // À 2 ou 3 chiffres : une rangée sous le trait pour les retenues de l'addition, puis les lignes.
   const linesRow = resultRow + (long ? 1 : 0);
+  // Nombres décimaux : la virgule suit le chiffre des unités. Un nombre entier la reçoit quand on le complète.
+  const decimals = 'decimals' in operation ? operation.decimals : 0;
+  const places = 'places' in operation ? operation.places : [];
+  const padded = new Set(steps.filter((step, i) => step.kind === 'pad' && i < placed.length).map((step) => step.term));
+  const comma = (column: number, shown = true) => (decimals > 0 && column === decimals && shown ? ' pc-comma' : '');
   operation.terms.forEach((term, i) => {
     const row = firstTerm + i;
     if (i > 0) cells.push(h('span', { class: 'pc pc-sign', style: `grid-row: ${row}; grid-column: 1` }, operation.sign));
-    [...String(term)].reverse().forEach((digit, column) =>
-      cell(row, column, i === 0 && tens.has(column) ? [h('small', { class: 'pc-ten' }, '1'), digit] : digit),
-    );
+    // Les 0 qui complètent un nombre décimal s'écrivent à l'étape « pad ».
+    const missing = decimals - (places[i] ?? decimals);
+    [...String(term)].reverse().forEach((digit, column) => {
+      if (column < missing) return;
+      const text = i === 0 && tens.has(column) ? [h('small', { class: 'pc-ten' }, '1'), digit] : digit;
+      cell(row, column, text, comma(column, (places[i] ?? 0) > 0 || padded.has(i)));
+    });
   });
   cells.push(h('span', { class: 'pc-line', style: `grid-row: ${resultRow}; grid-column: 1 / -1` }));
   if (sumLine !== undefined) {
@@ -87,12 +98,16 @@ export function posedGrid(operation: PosedOperation, options: GridOptions = {}):
   steps.forEach((step, i) => {
     if (long && step.kind === 'carry' && step.line !== activeLine) return;
     const sumCarry = sumLine !== undefined && step.kind === 'carry' && step.line === sumLine;
-    const row = sumCarry ? resultRow : step.kind === 'carry' ? carryRow : linesRow + (step.line ?? 0);
+    const pad = step.kind === 'pad';
+    const row = pad ? firstTerm + step.term! : sumCarry ? resultRow : step.kind === 'carry' ? carryRow : linesRow + (step.line ?? 0);
     const carryKind = subtraction ? ' pc-carry-under' : operation instanceof PosedAddition || sumCarry ? '' : ' pc-carry-small';
-    const kind = step.kind === 'carry' ? `pc-carry${carryKind}` : 'pc-result';
+    const kind = (step.kind === 'carry' ? `pc-carry${carryKind}` : pad ? 'pc-pad' : 'pc-result') + comma(step.column, step.kind === 'digit');
     if (i < placed.length) {
       const state = i === placed.length - 1 && options.last ? options.last : options.corrected?.has(i) ? 'wrong' : '';
-      cell(row, step.column, String(placed[i]), `${kind} ${state && `is-${state}`}`);
+      // Un 0 ajouté en haut d'une soustraction reçoit lui aussi le 10 de la compensation.
+      const ten = pad && step.term === 0 && tens.has(step.column);
+      const text = ten ? [h('small', { class: 'pc-ten' }, '1'), String(placed[i])] : String(placed[i]);
+      cell(row, step.column, text, `${kind} ${state && `is-${state}`}`);
     } else if (options.typed !== undefined) {
       cell(row, step.column, options.typed || '?', `${kind} pc-active${options.typed ? '' : ' is-empty'}`);
     }

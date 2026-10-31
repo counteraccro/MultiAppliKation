@@ -2299,6 +2299,18 @@ button.belt-row:active {
   border-top: 0.07em solid var(--text);
 }
 
+/* Nombres décimaux : la virgule après le chiffre des unités, les 0 ajoutés en rouge (comme la fiche). */
+.pc-comma::after {
+  content: ',';
+  position: absolute;
+  right: -0.12em;
+  bottom: 0;
+}
+
+.pc-pad {
+  color: #d64545;
+}
+
 /* Le rond de la retenue, en haut de la colonne. */
 .pc-carry {
   justify-self: center;

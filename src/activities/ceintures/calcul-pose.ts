@@ -143,6 +143,50 @@ function drawMixed(random: () => number, index: number): PosedOperation {
   return new PosedLongMultiplication(...drawBigMultiplication(random));
 }
 
+/** Un nombre de `min` à `max` (en centièmes) dont le dernier chiffre écrit n'est pas 0. */
+const lastNotZero = (min: number, max: number, random: () => number) => {
+  for (;;) {
+    const n = between(min, max, random);
+    if (n % 10 !== 0) return n;
+  }
+};
+
+/**
+ * Bleu clair, addition (fiche p. 6 : 60,97 + 4,3 + 22) : un nombre à 2 chiffres après la virgule, un à 1,
+ * un entier, au moins une retenue. Les nombres sont comptés en centièmes ; `places` dit comment ils s'écrivent.
+ */
+export function drawDecimalAddition(random: () => number): { terms: number[]; places: number[] } {
+  for (;;) {
+    const terms = [lastNotZero(1000, 9999, random), lastNotZero(11, 99, random) * 10, between(10, 99, random) * 100];
+    if (!hasCarry(terms)) continue;
+    const order = shuffle([0, 1, 2], random);
+    return { terms: order.map((i) => terms[i]!), places: order.map((i) => [2, 1, 0][i]!) };
+  }
+}
+
+/**
+ * Bleu clair, soustraction (fiche p. 6 : 137 − 53,11, 147,8 − 63,54) : un entier (`kind` 0) ou un nombre à
+ * 1 chiffre après la virgule (`kind` 1), moins un nombre à 2 chiffres après la virgule. On complète le haut
+ * par des 0 ; le résultat vaut au moins 1 (90 − 85,61 = 4,39, comme la fiche).
+ */
+export function drawDecimalSubtraction(kind: number, random: () => number): { top: number; bottom: number; places: [number, number] } {
+  for (;;) {
+    const top = kind === 0 ? between(30, 199, random) * 100 : lastNotZero(300, 1999, random) * 10;
+    const bottom = lastNotZero(1000, top - 1, random);
+    if (top - bottom >= 100) return { top, bottom, places: [kind, 2] };
+  }
+}
+
+/** Bleu clair : une addition, puis les deux sortes de soustractions, et on recommence. */
+function drawDecimal(random: () => number, index: number): PosedOperation {
+  if (index % 3 === 0) {
+    const { terms, places } = drawDecimalAddition(random);
+    return new PosedAddition(terms, places);
+  }
+  const { top, bottom, places } = drawDecimalSubtraction((index % 3) - 1, random);
+  return new PosedSubtraction(top, bottom, places);
+}
+
 export const CALCUL_POSE: readonly PosedBelt[] = [
   {
     belt: 'blanche',
@@ -228,6 +272,22 @@ export const CALCUL_POSE: readonly PosedBelt[] = [
     ],
     examples: () => [new PosedAddition([2487, 365, 79]), new PosedSubtraction(4005, 1287), new PosedLongMultiplication(427, 356)],
     draw: drawMixed,
+  },
+  {
+    belt: 'bleu-clair',
+    skill: 'Additions et soustractions de nombres décimaux',
+    goal: 'CM1',
+    operation: 'mélange',
+    tips: [
+      'On aligne les unités sous les unités, les dixièmes sous les dixièmes… : les virgules sont toutes dans la même colonne.',
+      'On complète les rangs vides avec des 0 (et la virgule pour un nombre entier) : tous les nombres ont autant de chiffres après la virgule. 22 = 22,00.',
+      'Puis on calcule comme avec les nombres entiers : on commence par la droite, et on n’oublie pas les retenues.',
+      'Il ne faut pas oublier de mettre la virgule au résultat, dans la colonne de la virgule !',
+      'Pour vérifier, cherche un ordre de grandeur : 583,76 + 233,5, c’est proche de 600 + 200 = 800.',
+    ],
+    // Les exemples de la leçon de la classe (Calc 13) et de la fiche.
+    examples: () => [new PosedAddition([3580, 1435], [1, 2]), new PosedSubtraction(13700, 5311, [0, 2])],
+    draw: drawDecimal,
   },
 ];
 

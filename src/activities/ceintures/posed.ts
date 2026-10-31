@@ -8,8 +8,9 @@ export interface PosedStep {
    * Un chiffre du résultat, ou une retenue (dans le rond en haut de la colonne).
    * Division : le nombre pris d'abord, le nombre de chiffres du quotient, puis pour chaque nombre en cours
    * un chiffre du quotient, le produit écrit dessous et le reste de la soustraction.
+   * Nombres décimaux : un 0 pour compléter un nombre (« pad », 4,3 = 4,30).
    */
-  kind: 'digit' | 'carry' | 'first' | 'size' | 'quotient' | 'product' | 'remainder';
+  kind: 'digit' | 'carry' | 'pad' | 'first' | 'size' | 'quotient' | 'product' | 'remainder';
   /** 0 pour les unités, 1 pour les dizaines… Division : le rang du chiffre du quotient, ou du reste. */
   column: number;
   expected: number;
@@ -22,6 +23,8 @@ export interface PosedStep {
    * puis la ligne de leur somme (`sumLine`). Absent : une seule ligne.
    */
   line?: number;
+  /** Nombres décimaux : le nombre à compléter par un 0 (son rang dans l'opération). */
+  term?: number;
   /** Chiffres qu'on peut taper (1 par défaut) : le nombre pris d'abord dans une division, un produit, un reste. */
   digits?: number;
   /** Division : le nombre en cours (34, puis 68 pour 348 : 7). */
@@ -53,6 +56,42 @@ export interface PosedOperation {
 export const COLUMN_NAMES = ['unités', 'dizaines', 'centaines', 'milliers', 'dizaines de milliers'];
 /** « 1 dizaine », « 1 centaine »… : ce que vaut 1 dans une colonne. */
 const UNIT_NAMES = ['unité', 'dizaine', 'centaine', 'millier', 'dizaine de milliers'];
+/** Avec les chiffres après la virgule : la colonne 0 est celle des centièmes s'il y a 2 décimales. */
+const PLACE_NAMES = ['centièmes', 'dixièmes', ...COLUMN_NAMES];
+const PLACE_UNITS = ['centième', 'dixième', ...UNIT_NAMES];
+const placeName = (column: number, decimals: number) => PLACE_NAMES[column + 2 - decimals]!;
+const placeUnit = (column: number, decimals: number) => PLACE_UNITS[column + 2 - decimals]!;
+
+/**
+ * Un nombre compté avec `decimals` chiffres après la virgule (6097 et 2 : 60,97), écrit avec `places`
+ * chiffres après la virgule (430, 2 et 1 : « 4,3 » ; 2200, 2 et 0 : « 22 »).
+ */
+export function formatDecimal(value: number, decimals: number, places = decimals): string {
+  const whole = Math.floor(value / 10 ** decimals);
+  const fraction = String(value % 10 ** decimals).padStart(decimals, '0').slice(0, places);
+  return places > 0 ? `${whole},${fraction}` : String(whole);
+}
+
+/**
+ * Nombres décimaux : chaque nombre qui a moins de chiffres après la virgule se complète par des 0,
+ * du dixième vers la droite, avant de calculer (« 22 » devient « 22,00 »). Renvoie false si ce n'est pas fini.
+ */
+function padSteps(walk: Walk, terms: readonly number[], places: readonly number[], decimals: number): boolean {
+  for (let term = 0; term < terms.length; term++) {
+    const text = formatDecimal(terms[term]!, decimals, places[term]);
+    const full = formatDecimal(terms[term]!, decimals);
+    for (let column = decimals - 1 - places[term]!; column >= 0; column--) {
+      const name = placeName(column, decimals);
+      const explain =
+        places[term] === 0
+          ? `${text} n’a pas de chiffres après la virgule : on écrit la virgule et des 0 (${text} = ${full}).`
+          : `${text} n’a pas de ${name} : on écrit 0 (${text} = ${full}).`;
+      const ask = `Complète ${text} avec un 0 : les ${name}`;
+      if (!push(walk, { kind: 'pad', column, expected: 0, ask, explain, term })) return false;
+    }
+  }
+  return true;
+}
 
 export const digitAt = (n: number, column: number) => Math.floor(n / 10 ** column) % 10;
 const length = (n: number) => String(n).length;
@@ -169,48 +208,62 @@ export class PosedAddition extends ColumnBase {
   readonly result: number;
   /** Colonnes des nombres à additionner (le résultat peut en avoir une de plus). */
   readonly columns: number;
+  /** Chiffres après la virgule de l'opération (0 pour des entiers) ; les nombres sont comptés ainsi. */
+  readonly decimals: number;
 
-  constructor(readonly terms: readonly number[]) {
+  /** `places` : chiffres après la virgule de chaque nombre, tel qu'il est écrit (bleu clair). */
+  constructor(
+    readonly terms: readonly number[],
+    readonly places: readonly number[] = terms.map(() => 0),
+  ) {
     super();
-    this.id = terms.join('+');
-    this.text = terms.join(' + ');
+    this.decimals = Math.max(...places);
+    const texts = terms.map((t, i) => formatDecimal(t, this.decimals, places[i]));
+    this.id = texts.join('+');
+    this.text = texts.join(' + ');
     this.result = terms.reduce((a, b) => a + b, 0);
-    this.columns = Math.max(...terms.map(length));
+    this.columns = Math.max(...terms.map(length), this.decimals + 1);
+  }
+
+  override get resultText(): string {
+    return formatDecimal(this.result, this.decimals);
+  }
+
+  override writtenText(): string {
+    return formatDecimal(this.written(), this.decimals);
   }
 
   steps(): PosedStep[] {
-    const steps: PosedStep[] = [];
-    let i = 0;
+    const walk: Walk = { steps: [], values: this.values, i: 0 };
+    const { decimals } = this;
+    if (!padSteps(walk, this.terms, this.places, decimals)) return walk.steps;
     let carryIn = 0;
     for (let column = 0; column < this.columns; column++) {
       const parts = [...(carryIn > 0 ? [carryIn] : []), ...this.terms.filter((t) => length(t) > column).map((t) => digitAt(t, column))];
       const sum = parts.reduce((a, b) => a + b, 0);
       const carry = Math.floor(sum / 10);
       const last = column === this.columns - 1;
-      const name = COLUMN_NAMES[column]!;
       const explain =
         carry === 0
           ? `${parts.length > 1 ? `${parts.join(' + ')} = ` : 'Il n’y a que '}${sum} : on écrit ${sum}.`
           : last
             ? `${parts.join(' + ')} = ${sum} : c’est la dernière colonne, on écrit ${sum}.`
             : `${parts.join(' + ')} = ${sum} : on écrit ${sum % 10} et on retient ${carry}.`;
-      steps.push({ kind: 'digit', column, expected: sum % 10, ask: `Les ${name}`, explain });
-      if (i++ >= this.values.length) return steps;
+      if (!push(walk, { kind: 'digit', column, expected: sum % 10, ask: `Les ${placeName(column, decimals)}`, explain })) return walk.steps;
       if (carry === 0) {
         carryIn = 0;
         continue;
       }
       if (last) {
-        steps.push({ kind: 'digit', column: column + 1, expected: carry, ask: 'On écrit le nombre en entier', explain });
-        return steps;
+        push(walk, { kind: 'digit', column: column + 1, expected: carry, ask: 'On écrit le nombre en entier', explain });
+        return walk.steps;
       }
-      steps.push({ kind: 'carry', column: column + 1, expected: carry, ask: `La retenue, en haut des ${COLUMN_NAMES[column + 1]}`, explain });
-      if (i >= this.values.length) return steps;
-      carryIn = this.values[i++]!;
+      const ask = `La retenue, en haut des ${placeName(column + 1, decimals)}`;
+      if (!push(walk, { kind: 'carry', column: column + 1, expected: carry, ask, explain })) return walk.steps;
+      carryIn = walk.values[walk.i - 1]!;
     }
-    return steps;
+    return walk.steps;
   }
-
 }
 
 /**
@@ -224,20 +277,40 @@ export class PosedSubtraction extends ColumnBase {
   readonly result: number;
   readonly terms: readonly [number, number];
   readonly columns: number;
+  /** Chiffres après la virgule de l'opération (0 pour des entiers) ; les nombres sont comptés ainsi. */
+  readonly decimals: number;
 
-  constructor(top: number, bottom: number) {
+  /** `places` : chiffres après la virgule de chaque nombre, tel qu'il est écrit (bleu clair). */
+  constructor(
+    top: number,
+    bottom: number,
+    readonly places: readonly [number, number] = [0, 0],
+  ) {
     super();
     this.terms = [top, bottom];
-    this.id = `${top}-${bottom}`;
-    this.text = `${top} − ${bottom}`;
+    this.decimals = Math.max(...places);
+    const [a, b] = this.terms.map((t, i) => formatDecimal(t, this.decimals, places[i]));
+    this.id = `${a}-${b}`;
+    this.text = `${a} − ${b}`;
     this.result = top - bottom;
     this.columns = length(top);
   }
 
+  override get resultText(): string {
+    return formatDecimal(this.result, this.decimals);
+  }
+
+  override writtenText(): string {
+    return formatDecimal(this.written(), this.decimals);
+  }
+
   steps(): PosedStep[] {
     const [top, bottom] = this.terms;
-    const steps: PosedStep[] = [];
-    let i = 0;
+    const { decimals } = this;
+    const walk: Walk = { steps: [], values: this.values, i: 0 };
+    if (!padSteps(walk, this.terms, this.places, decimals)) return walk.steps;
+    // Pas de 0 à gauche du résultat (147,80 − 63,54 = 84,26) : ces colonnes-là ne s'écrivent pas.
+    const written = Math.max(length(this.result), decimals + 1);
     let carryIn = 0;
     for (let column = 0; column < this.columns; column++) {
       const a = digitAt(top, column);
@@ -248,7 +321,7 @@ export class PosedSubtraction extends ColumnBase {
       const up = borrow ? a + 10 : a;
       // En phrases, comme la leçon de la classe : « 6 est plus petit que 8, je ne peux pas calculer 6 − 8… ».
       const counted = carryIn > 0 ? `En bas, j’ai ${b} + ${carryIn} = ${under}. ` : '';
-      const one = `1 ${UNIT_NAMES[column + 1]}`;
+      const one = `1 ${placeUnit(column + 1, decimals)}`;
       const explain = borrow
         ? `${counted}${a} est plus petit que ${under} : je ne peux pas calculer ${a} − ${under}. ` +
           `J’ajoute ${one} en haut : ${a} devient ${up}. Pour compenser, j’ajoute aussitôt ${one} en bas, dans le rond. ` +
@@ -256,19 +329,18 @@ export class PosedSubtraction extends ColumnBase {
         : a === under
           ? `${counted}${a} − ${under} = 0.`
           : `${counted}${a} est plus grand que ${under} : je calcule ${a} − ${under} = ${a - under}.`;
-      steps.push({ kind: 'digit', column, expected: up - under, ask: `Les ${COLUMN_NAMES[column]}`, explain });
-      if (i++ >= this.values.length) return steps;
+      if (column >= written) return walk.steps;
+      if (!push(walk, { kind: 'digit', column, expected: up - under, ask: `Les ${placeName(column, decimals)}`, explain })) return walk.steps;
       if (!borrow) {
         carryIn = 0;
         continue;
       }
-      steps.push({ kind: 'carry', column: column + 1, expected: 1, ask: `La retenue, en bas des ${COLUMN_NAMES[column + 1]}`, explain });
-      if (i >= this.values.length) return steps;
-      carryIn = this.values[i++]!;
+      const ask = `La retenue, en bas des ${placeName(column + 1, decimals)}`;
+      if (!push(walk, { kind: 'carry', column: column + 1, expected: 1, ask, explain })) return walk.steps;
+      carryIn = walk.values[walk.i - 1]!;
     }
-    return steps;
+    return walk.steps;
   }
-
 }
 
 /**

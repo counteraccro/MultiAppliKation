@@ -5,6 +5,8 @@ import {
   drawAdditionTerms,
   drawBigAdditionTerms,
   drawBigMultiplication,
+  drawDecimalAddition,
+  drawDecimalSubtraction,
   drawDivision,
   drawLongMultiplication,
   drawMultiplication,
@@ -12,7 +14,7 @@ import {
   drawSubtractionWithZeros,
   pickOperations,
 } from './calcul-pose';
-import { PosedAddition, PosedDivision, PosedLongMultiplication, PosedMultiplication, PosedSubtraction, solve } from './posed';
+import { formatDecimal, PosedAddition, PosedDivision, PosedLongMultiplication, PosedMultiplication, PosedSubtraction, solve } from './posed';
 import { PosedSession } from './posed-session';
 
 /** Graine fixe pour des tirages reproductibles. */
@@ -245,6 +247,71 @@ describe('Vert foncé : les trois opérations, plus grandes', () => {
     const vertFonce = CALCUL_POSE.find((belt) => belt.belt === 'vert-fonce')!;
     const ops = pickOperations(vertFonce, 3, [], seeded(4));
     expect(new Set(ops.map((o) => o.constructor.name)).size).toBe(3);
+  });
+});
+
+describe('Bleu clair : les nombres décimaux', () => {
+  it('écrit les nombres avec leur virgule', () => {
+    expect(formatDecimal(6097, 2)).toBe('60,97');
+    expect(formatDecimal(430, 2, 1)).toBe('4,3');
+    expect(formatDecimal(2200, 2, 0)).toBe('22');
+    expect(formatDecimal(5015, 2)).toBe('50,15');
+  });
+
+  it('pose 60,97 + 4,3 + 22 comme la fiche : on complète par des 0, puis on additionne', () => {
+    const op = solve(new PosedAddition([6097, 430, 2200], [2, 1, 0]));
+    expect(op.text).toBe('60,97 + 4,3 + 22');
+    expect(op.steps().filter((s) => s.kind === 'pad').map((s) => [s.term, s.column, s.ask])).toEqual([
+      [1, 0, 'Complète 4,3 avec un 0 : les centièmes'],
+      [2, 1, 'Complète 22 avec un 0 : les dixièmes'],
+      [2, 0, 'Complète 22 avec un 0 : les centièmes'],
+    ]);
+    expect(op.steps()[1]!.explain).toBe('22 n’a pas de chiffres après la virgule : on écrit la virgule et des 0 (22 = 22,00).');
+    expect(op.steps()[3]).toMatchObject({ kind: 'digit', column: 0, ask: 'Les centièmes', explain: '7 + 0 + 0 = 7 : on écrit 7.' });
+    expect(op.writtenText()).toBe('87,27');
+    expect(op.resultText).toBe('87,27');
+  });
+
+  it('pose 137 − 53,11 : 137,00, et la retenue en bas des dixièmes', () => {
+    const op = solve(new PosedSubtraction(13700, 5311, [0, 2]));
+    expect(op.text).toBe('137 − 53,11');
+    expect(op.steps().slice(0, 2).map((s) => s.kind)).toEqual(['pad', 'pad']);
+    expect(op.steps()[2]!.explain).toBe(
+      '0 est plus petit que 1 : je ne peux pas calculer 0 − 1. J’ajoute 1 dixième en haut : 0 devient 10. ' +
+        'Pour compenser, j’ajoute aussitôt 1 dixième en bas, dans le rond. Je calcule 10 − 1 = 9.',
+    );
+    expect(op.steps()[3]!.ask).toBe('La retenue, en bas des dixièmes');
+    expect(op.writtenText()).toBe('83,89');
+  });
+
+  it('n’écrit pas de 0 à gauche : 147,8 − 63,54 = 84,26, 90 − 85,61 = 4,39', () => {
+    const op = solve(new PosedSubtraction(14780, 6354, [1, 2]));
+    expect(op.writtenText()).toBe('84,26');
+    // La retenue des centaines s'écrit (1 − 1 = 0), mais pas le 0.
+    expect(op.steps().at(-1)).toMatchObject({ kind: 'carry', column: 4 });
+    expect(op.steps().filter((s) => s.kind === 'digit').map((s) => s.column)).toEqual([0, 1, 2, 3]);
+    expect(solve(new PosedSubtraction(9000, 8561, [0, 2])).writtenText()).toBe('4,39');
+  });
+
+  it('retrouve toutes les opérations tirées', () => {
+    const random = seeded(19);
+    for (let i = 0; i < 300; i++) {
+      const { terms, places } = drawDecimalAddition(random);
+      expect([...places].sort()).toEqual([0, 1, 2]);
+      expect(solve(new PosedAddition(terms, places)).written()).toBe(terms[0]! + terms[1]! + terms[2]!);
+      const { top, bottom, places: p } = drawDecimalSubtraction(i % 2, random);
+      expect(p).toEqual([i % 2, 2]);
+      expect(bottom % 10).not.toBe(0);
+      const op = solve(new PosedSubtraction(top, bottom, p));
+      expect(op.written()).toBe(top - bottom);
+      expect(op.result).toBeGreaterThanOrEqual(100);
+    }
+  });
+
+  it('une série mélange une addition et les deux sortes de soustractions', () => {
+    const bleuClair = CALCUL_POSE.find((belt) => belt.belt === 'bleu-clair')!;
+    const ops = pickOperations(bleuClair, 3, [], seeded(4));
+    expect(ops.filter((o) => o instanceof PosedSubtraction).map((o) => (o as PosedSubtraction).places[0]).sort()).toEqual([0, 1]);
   });
 });
 

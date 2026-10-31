@@ -32,7 +32,7 @@ une ceinture (ou deux voisines) à la fois.
 | Rose | Multiplications à 2 chiffres (Cal7) — **objectif de fin de CE2** | p. 4 : 3 chiffres × 2 chiffres, deux lignes (la 2ᵉ finit par 0) puis leur somme | étape 3 |
 | Vert clair | Division par un nombre à 1 chiffre (Cal8) | p. 5 : 3 chiffres : 1 chiffre, potence, sans écrire les soustractions, puis « 738 = 147 × 5 + 3 » | étape 4 |
 | Vert foncé | Additions à trois termes, soustractions avec des 0, multiplications à deux ou trois chiffres | pas de fiche : nos calculs | étape 5, faite |
-| Bleu clair | Additions et soustractions de nombres décimaux (Cal13) — **objectif de fin de CM1** | p. 6 : virgules alignées, on complète par des 0 (en rouge sur la fiche) | étape 6 |
+| Bleu clair | Additions et soustractions de nombres décimaux (Cal13) — **objectif de fin de CM1** | p. 6 : virgules alignées, on complète par des 0 (en rouge sur la fiche) | étape 6, faite |
 | Bleu foncé | Divisions décimales (Cal17) | p. 7 : un entier divisé par 1 chiffre, quotient au centième (100 : 7 = 14,28) | étape 7 |
 | Violette | Multiplications de nombres décimaux (Cal16) | p. 8 : décimal × entier ou décimal, la virgule placée au résultat | étape 6 |
 | Marron | Divisions par un nombre à deux chiffres ; d'un décimal par un entier (Cal17) — **objectif de fin de CM2** | p. 9 : 198 : 15, 4052 : 16, 45,08 : 7… | étape 7 |
@@ -175,6 +175,35 @@ conditions réelles de 5 : deux additions, deux soustractions, une multiplicatio
 - **Leçon** : la méthode, puis un exemple posé par sorte d'opération (2487 + 365 + 79, 4005 − 1287,
   427 × 356) ; les ceintures ont maintenant une liste d'exemples (`examples`).
 
+### Nombres décimaux, addition et soustraction (bleu clair, objectif de fin de CM1)
+
+Fiche p. 6 et leçon de la classe Calc 13 (p. 19 des leçons), le 31/10/2026.
+
+```
+   6  0, 9  7
+ +    4, 3  0     ← les 0 ajoutés, en rouge
+ + 2  2, 0  0
+ ─────────────
+   8  7, 2  7
+```
+
+- Une série, comme une fiche : une **addition de trois nombres** (un à 2 chiffres après la virgule, un à 1,
+  un entier, dans le désordre : 60,97 + 4,3 + 22), une **soustraction d'un entier** (137 − 53,11) et une
+  **soustraction d'un nombre à 1 chiffre après la virgule** (147,8 − 63,54), toujours moins un nombre à
+  2 chiffres après la virgule.
+- D'abord, **on complète par des 0** : une étape par 0 (« Complète 22 avec un 0 : les dixièmes » ; « 22 n'a
+  pas de chiffres après la virgule : on écrit la virgule et des 0 (22 = 22,00). »). Un entier reçoit sa
+  virgule quand on le complète. Les 0 s'écrivent en rouge, comme sur la fiche.
+- Puis le calcul, comme avec les entiers : les colonnes s'appellent « les centièmes », « les dixièmes »… ;
+  une retenue de soustraction « en bas des dixièmes » (« J'ajoute 1 dixième en haut : 0 devient 10 »).
+- La virgule du résultat se place toute seule, dans la colonne de la virgule, quand on écrit les unités.
+- Pas de 0 à gauche du résultat : 147,8 − 63,54 = 84,26 et 90 − 85,61 = 4,39, comme sur la fiche. La
+  retenue qui y mène s'écrit (compensation), mais le 0 (1 − 1) ne se demande pas. Vaut pour toutes les
+  soustractions ; le résultat d'un tirage vaut au moins 1.
+- Code : les nombres sont comptés en centièmes (`decimals`), `places` dit comment chacun s'écrit ;
+  `formatDecimal` (« 60,97 »), étape `pad`.
+- Leçon : la méthode de la classe, les exemples 35,8 + 14,35 (la leçon) et 137 − 53,11 (la fiche).
+
 ## Les écrans
 
 - **Leçon** : la méthode en quelques phrases, et un exemple posé en entier, chaque étape expliquée.
@@ -206,6 +235,6 @@ dans `subjects.ts` (identifiant à ne jamais changer).
    « 147, reste 3 ») pour les listes et la correction.
 5. **Vert foncé** : additions à trois termes, soustractions avec des 0, multiplications à 2 ou 3 chiffres.
    Faite le 31/10/2026 (0.39.0) : `drawMixed`, `PosedLongMultiplication` à N lignes, leçon à plusieurs exemples.
-6. **Bleu clair et violette : les décimaux** (+, −, ×) : la virgule.
+6. **Bleu clair et violette : les décimaux** (+, −, ×) : la virgule. Bleu clair faite le 31/10/2026 (0.40.0).
 7. **Bleu foncé et marron : les divisions décimales et par 2 chiffres.**
 8. **Noire : « je calcule plus vite »** (toutes les opérations, en temps limité ? à préciser).
