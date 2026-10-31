@@ -496,41 +496,69 @@ export class PosedLongMultiplication extends ColumnBase {
 /** Une opération posée en colonnes (pas la division). */
 export type ColumnOperation = PosedAddition | PosedSubtraction | PosedMultiplication | PosedLongMultiplication;
 
+/** Division décimale : jusqu'où continuer après la virgule, et comment s'écrit le dividende. */
+export interface DivisionOptions {
+  /** Chiffres du quotient après la virgule, au plus (2 : au centième, 100 : 7 = 14,28). */
+  decimals?: number;
+  /** Chiffres après la virgule du dividende (4508 et 2 : 45,08). */
+  places?: number;
+  /** On s'arrête dès que le reste est 0 (marron : 198 : 15 = 13,2) ; sinon, on va jusqu'à `decimals` (28 : 5 = 5,60). */
+  stopWhenExact?: boolean;
+}
+
+/** « dixièmes », « centièmes » : le rang après la virgule (0 pour les dixièmes). */
+const DECIMAL_NAMES = ['dixièmes', 'centièmes', 'millièmes'];
+
 /**
- * Division par un nombre à 1 chiffre, en potence, comme la leçon de la classe (Calc 8) : on prend d'abord
- * assez de chiffres et on compte les chiffres du quotient, puis pour chaque nombre en cours le chiffre
- * du quotient, le produit écrit dessous, le reste de la soustraction, et on abaisse le chiffre suivant.
- * Division décimale (bleu foncé, leçon Calc 17) : s'il reste quelque chose, on continue après la virgule ;
- * on complète le dividende par un 0 (100 = 100,0), on l'abaisse, et la virgule s'écrit au quotient.
+ * Division en potence, comme la leçon de la classe (Calc 8) : on prend d'abord assez de chiffres et on
+ * compte les chiffres du quotient, puis pour chaque nombre en cours le chiffre du quotient, le produit
+ * écrit dessous, le reste de la soustraction, et on abaisse le chiffre suivant. Le diviseur peut avoir
+ * 2 chiffres (marron, 758 : 21 dans la leçon).
+ * Division décimale (bleu foncé, marron, leçon Calc 17) : on divise d'abord la partie entière ; la virgule
+ * s'écrit au quotient dès qu'on abaisse le chiffre des dixièmes. Quand le dividende n'a plus de chiffres et
+ * qu'il reste quelque chose, on le complète par un 0 (100 = 100,0) et on l'abaisse.
  */
 export class PosedDivision implements PosedOperation {
   readonly id: string;
   readonly text: string;
-  /** Le quotient, compté avec `decimals` chiffres après la virgule (1428 pour 100 : 7 = 14,28). */
+  /** Le quotient, compté avec `resultDecimals` chiffres après la virgule (1428 pour 100 : 7 = 14,28). */
   readonly result: number;
   /** Le dernier reste (4 pour 100 : 7, qui vaut 0,04). */
   readonly remainder: number;
+  /** Les chiffres du dividende, tels qu'ils sont écrits (4, 5, 0, 8 pour 45,08). */
   readonly digits: readonly number[];
   /** Chiffres du dividende pris d'abord : 1 pour 738 : 5 (7), 2 pour 348 : 7 (34). */
   readonly firstLength: number;
   /** Chiffres du quotient avant la virgule. */
   readonly size: number;
+  readonly decimals: number;
+  readonly places: number;
+  readonly stopWhenExact: boolean;
+  /** Chiffres du quotient après la virgule, une fois la division finie (1 pour 198 : 15 = 13,2). */
+  readonly resultDecimals: number;
   private readonly values: number[] = [];
 
-  /** `decimals` : chiffres du quotient après la virgule (2 : au centième, 100 : 7 = 14,28). */
   constructor(
     readonly dividend: number,
     readonly divisor: number,
-    readonly decimals = 0,
+    { decimals = 0, places = 0, stopWhenExact = false }: DivisionOptions = {},
   ) {
-    this.id = `${dividend}:${divisor}`;
-    this.text = `${dividend} : ${divisor}`;
-    this.result = Math.floor((dividend * 10 ** decimals) / divisor);
-    this.remainder = (dividend * 10 ** decimals) % divisor;
+    this.decimals = Math.max(decimals, places);
+    this.places = places;
+    this.stopWhenExact = stopWhenExact;
+    const written = formatDecimal(dividend, places);
+    this.id = `${written}:${divisor}`;
+    this.text = `${written} : ${divisor}`;
     this.digits = [...String(dividend)].map(Number);
     const length = this.digits.findIndex((_, i) => Number(String(dividend).slice(0, i + 1)) >= divisor) + 1;
     this.firstLength = length > 0 ? length : this.digits.length;
-    this.size = this.digits.length - this.firstLength + 1;
+    this.size = this.digits.length - places - this.firstLength + 1;
+    // On abaisse tous les chiffres du dividende ; ensuite, un 0 à la fois tant qu'il reste quelque chose.
+    let used = places;
+    while (used < this.decimals && !(stopWhenExact && (dividend * 10 ** (used - places)) % divisor === 0)) used++;
+    this.resultDecimals = used;
+    this.result = Math.floor((dividend * 10 ** (used - places)) / divisor);
+    this.remainder = (dividend * 10 ** (used - places)) % divisor;
   }
 
   get placed(): readonly number[] {
@@ -538,7 +566,7 @@ export class PosedDivision implements PosedOperation {
   }
 
   steps(): PosedStep[] {
-    const { divisor: d, digits, firstLength, decimals, size: count } = this;
+    const { divisor: d, digits, firstLength, decimals, places, size: count } = this;
     const walk: Walk = { steps: [], values: this.values, i: 0 };
     const first = Number(digits.slice(0, firstLength).join(''));
     const explainFirst =
@@ -547,7 +575,7 @@ export class PosedDivision implements PosedOperation {
         : `On peut diviser ${first} par ${d} : on commence par ${first}.`;
     const ask = `Quel nombre prends-tu d’abord pour diviser par ${d} ?`;
     if (!push(walk, { kind: 'first', column: 0, expected: first, ask, explain: explainFirst, digits: digits.length })) return walk.steps;
-    const lowered = digits.slice(firstLength);
+    const lowered = digits.slice(firstLength, digits.length - places);
     const before = decimals > 0 ? ' avant la virgule' : '';
     const explainSize =
       lowered.length === 0
@@ -556,8 +584,13 @@ export class PosedDivision implements PosedOperation {
           `le quotient aura ${count} chiffres${before}.`;
     const askSize = `Combien de chiffres aura le quotient${before} ?`;
     if (!push(walk, { kind: 'size', column: 0, expected: count, ask: askSize, explain: explainSize })) return walk.steps;
+    // Un produit peut avoir 3 chiffres avec un diviseur de 2 chiffres (16 × 9 = 144).
+    const width = String(d * 9).length;
+    // Le dividende tel qu'il est écrit, avec les 0 ajoutés : sa valeur et ses chiffres après la virgule.
+    let padded = this.dividend;
+    let written = places;
     let partial = first;
-    for (let k = 0; k < count + decimals; k++) {
+    for (let k = 0; ; k++) {
       const q = Math.floor(partial / d);
       const explainQ =
         q === 0
@@ -565,48 +598,59 @@ export class PosedDivision implements PosedOperation {
           : `${d} × ${q} = ${d * q}${q < 9 ? ` et ${d} × ${q + 1} = ${d * (q + 1)}, c’est trop` : ''} : on écrit ${q}.`;
       const askQ = `Dans ${partial}, combien de fois ${d} ?`;
       if (!push(walk, { kind: 'quotient', column: k, expected: q, ask: askQ, explain: explainQ, partial })) return walk.steps;
-      const written = walk.values[walk.i - 1]!;
+      const quotient = walk.values[walk.i - 1]!;
       // Le produit s'écrit sous le nombre en cours (pas pour un 0 au quotient : il ne s'enlève rien).
       let product = 0;
-      if (written > 0) {
-        const explainP = `${written} fois ${d} font ${d * written} : on l’écrit sous ${partial}.`;
-        const step = { kind: 'product' as const, column: k, expected: d * written, ask: `${written} fois ${d}, ça fait ?`, explain: explainP, digits: 2, partial };
+      if (quotient > 0) {
+        const explainP = `${quotient} fois ${d} font ${d * quotient} : on l’écrit sous ${partial}.`;
+        const step = { kind: 'product' as const, column: k, expected: d * quotient, ask: `${quotient} fois ${d}, ça fait ?`, explain: explainP, digits: width, partial };
         if (!push(walk, step)) return walk.steps;
         product = walk.values[walk.i - 1]!;
       }
       const r = partial - product;
       const next = digits[firstLength + k];
-      // Après la partie entière, on continue après la virgule jusqu'aux centièmes (`decimals`).
-      const more = next === undefined && k + 1 < count + decimals;
+      // Rang après la virgule du prochain chiffre du quotient (négatif : encore la partie entière).
+      const rank = k + 1 - count;
+      // Après le dividende, on continue avec des 0, jusqu'aux centièmes (`decimals`) ou jusqu'à un reste nul.
+      const more = next === undefined && rank < decimals && !(this.stopWhenExact && r === 0);
+      const unit = DECIMAL_NAMES[decimals - 1];
       const end =
         next !== undefined
-          ? ` On abaisse le ${next} : ${r}${next}.`
+          ? rank === 0
+            ? ` On abaisse le ${next}, le chiffre des dixièmes : ${r}${next}. On écrit la virgule au quotient.`
+            : ` On abaisse le ${next} : ${r}${next}.`
           : more
             ? ' On continue après la virgule.'
-            : decimals > 0
-              ? ` On s’arrête aux ${decimals === 1 ? 'dixièmes' : 'centièmes'} : le quotient est ${this.resultText}.`
-              : ' C’est le reste de la division.';
+            : decimals === 0
+              ? ' C’est le reste de la division.'
+              : r === 0
+                ? ` La division tombe juste : le quotient est ${this.resultText}.`
+                : ` On s’arrête aux ${unit} : le quotient est ${this.resultText}.`;
       const explainR = (product > 0 ? `${partial} − ${product} = ${r} : il reste ${r}.` : `Il reste ${r}.`) + end;
       const askR = product > 0 ? `La soustraction : ${partial} − ${product}` : 'Combien reste-t-il ?';
       const remainder = { kind: 'remainder' as const, column: k, expected: r, ask: askR, explain: explainR, digits: 2, partial };
       if (!push(walk, remainder)) return walk.steps;
       const rest = walk.values[walk.i - 1]!;
-      if (next !== undefined) partial = rest * 10 + next;
-      if (!more) continue;
+      if (next !== undefined) {
+        partial = rest * 10 + next;
+        continue;
+      }
+      if (!more) return walk.steps;
       // Le dividende se complète par un 0 (100 = 100,0), qu'on abaisse ; la virgule s'écrit au quotient.
-      const place = k + 1 - count;
-      const name = place === 0 ? 'dixièmes' : 'centièmes';
-      const text = formatDecimal(this.dividend * 10 ** place, place);
-      const full = formatDecimal(this.dividend * 10 ** (place + 1), place + 1);
+      const text = formatDecimal(padded, written);
+      const full = formatDecimal(padded * 10, written + 1);
+      const name = DECIMAL_NAMES[written]!;
       const explainPad =
-        place === 0
+        written === 0
           ? `${text} = ${full} : on écrit la virgule et un 0 aux dixièmes. On abaisse le 0 : ${rest}0. On écrit aussi la virgule au quotient.`
           : `${text} = ${full} : on écrit un 0 aux ${name}. On abaisse le 0 : ${rest}0.`;
       const pad = { kind: 'pad' as const, column: k + 1, expected: 0, ask: `Complète ${text} avec un 0 : les ${name}`, explain: explainPad };
       if (!push(walk, pad)) return walk.steps;
-      partial = rest * 10 + walk.values[walk.i - 1]!;
+      const zero = walk.values[walk.i - 1]!;
+      padded = padded * 10 + zero;
+      written++;
+      partial = rest * 10 + zero;
     }
-    return walk.steps;
   }
 
   current(): PosedStep | undefined {
@@ -626,10 +670,16 @@ export class PosedDivision implements PosedOperation {
     return this.values.pop();
   }
 
-  /** Le quotient écrit (compté avec `decimals` chiffres après la virgule). */
+  /** Le quotient écrit (compté avec `writtenDecimals()` chiffres après la virgule). */
   written(): number {
     const steps = this.steps();
     return Number(this.values.filter((_, i) => steps[i]?.kind === 'quotient').join('') || 0);
+  }
+
+  /** Chiffres écrits au quotient après la virgule. */
+  writtenDecimals(): number {
+    const steps = this.steps();
+    return this.values.filter((_, i) => steps[i]?.kind === 'quotient' && steps[i]!.column >= this.size).length;
   }
 
   /** Le dernier reste écrit. */
@@ -646,19 +696,20 @@ export class PosedDivision implements PosedOperation {
   }
 
   get resultText(): string {
-    return this.decimals > 0 ? formatDecimal(this.result, this.decimals) : `${this.result}, reste ${this.remainder}`;
+    return this.decimals > 0 ? formatDecimal(this.result, this.resultDecimals) : `${this.result}, reste ${this.remainder}`;
   }
 
   writtenText(): string {
-    if (this.decimals > 0) return formatDecimal(this.written(), this.decimals);
+    if (this.decimals > 0) return formatDecimal(this.written(), this.writtenDecimals());
     return `${this.written()}, reste ${this.writtenRemainder() ?? '?'}`;
   }
 
   /** « 147 × 5 + 3 = 738 », la vérification de la fiche ; « 14,28 × 7 = 99,96, presque 100 » après la virgule. */
   get check(): string {
     if (this.decimals === 0) return `${this.result} × ${this.divisor} + ${this.remainder} = ${this.dividend}`;
-    const product = formatDecimal(this.result * this.divisor, this.decimals);
-    return `${this.resultText} × ${this.divisor} = ${product}${this.remainder > 0 ? `, presque ${this.dividend}` : ''}`;
+    const product = formatDecimal(this.result * this.divisor, this.resultDecimals);
+    const dividend = formatDecimal(this.dividend, this.places);
+    return `${this.resultText} × ${this.divisor} = ${product}${this.remainder > 0 ? `, presque ${dividend}` : ''}`;
   }
 }
 

@@ -8,6 +8,7 @@ import {
   drawDecimalAddition,
   drawDecimalMultiplication,
   drawDecimalSubtraction,
+  drawBigDivision,
   drawDecimalDivision,
   drawDivision,
   drawLongMultiplication,
@@ -433,7 +434,7 @@ describe('PosedDivision (par un nombre à 1 chiffre)', () => {
 
 describe('PosedDivision décimale (bleu foncé)', () => {
   it('pose 100 : 7 comme la fiche : 14,28, les 0 écrits au dividende', () => {
-    const op = solve(new PosedDivision(100, 7, 2)) as PosedDivision;
+    const op = solve(new PosedDivision(100, 7, { decimals: 2 })) as PosedDivision;
     expect(op.steps().map((s) => [s.kind, s.expected])).toEqual([
       ['first', 10],
       ['size', 2],
@@ -468,19 +469,19 @@ describe('PosedDivision décimale (bleu foncé)', () => {
   });
 
   it('écrit les 0 au quotient quand la division tombe juste : 28 : 5 = 5,60', () => {
-    const op = solve(new PosedDivision(28, 5, 2)) as PosedDivision;
+    const op = solve(new PosedDivision(28, 5, { decimals: 2 })) as PosedDivision;
     expect(op.writtenText()).toBe('5,60');
     expect(op.check).toBe('5,60 × 5 = 28,00');
   });
 
   it('suit la leçon : 15 : 2 = 7,5', () => {
-    const op = solve(new PosedDivision(15, 2, 1)) as PosedDivision;
+    const op = solve(new PosedDivision(15, 2, { decimals: 1 })) as PosedDivision;
     expect(op.steps().map((s) => s.kind)).toEqual(['first', 'size', 'quotient', 'product', 'remainder', 'pad', 'quotient', 'product', 'remainder']);
     expect(op.writtenText()).toBe('7,5');
   });
 
   it('abaisse le 0 tel qu’il est écrit, même faux', () => {
-    const op = new PosedDivision(100, 7, 2);
+    const op = new PosedDivision(100, 7, { decimals: 2 });
     for (const value of [10, 2, 1, 7, 3, 4, 28, 2, 5]) op.place(value); // 5 au lieu de 0
     expect(op.current()).toMatchObject({ kind: 'quotient', partial: 25 });
   });
@@ -489,12 +490,74 @@ describe('PosedDivision décimale (bleu foncé)', () => {
     const random = seeded(17);
     for (let i = 0; i < 300; i++) {
       const [dividend, divisor] = drawDecimalDivision(i % 3, random);
-      const op = solve(new PosedDivision(dividend, divisor, 2)) as PosedDivision;
+      const op = solve(new PosedDivision(dividend, divisor, { decimals: 2 })) as PosedDivision;
       expect(op.written()).toBe(Math.floor((dividend * 100) / divisor));
       expect(dividend % divisor).not.toBe(0);
       if (i % 3 === 0) expect(dividend).toBeLessThan(100);
       if (i % 3 === 1) expect(dividend).toBeGreaterThanOrEqual(100);
       expect(op.remainder === 0).toBe(i % 3 === 2);
+    }
+  });
+});
+
+describe('PosedDivision marron (par 2 chiffres, décimal par un entier)', () => {
+  const marron = { decimals: 2, stopWhenExact: true };
+
+  it('pose 758 : 21 comme la leçon : 75, 3 fois 21 font 63, puis 128', () => {
+    const op = solve(new PosedDivision(758, 21, marron)) as PosedDivision;
+    const steps = op.steps();
+    expect(steps.slice(0, 8).map((s) => [s.kind, s.expected])).toEqual([
+      ['first', 75],
+      ['size', 2],
+      ['quotient', 3],
+      ['product', 63],
+      ['remainder', 12],
+      ['quotient', 6],
+      ['product', 126],
+      ['remainder', 2],
+    ]);
+    expect(steps[0]!.explain).toBe('7 est plus petit que 21 : on prend 75.');
+    expect(steps[6]).toMatchObject({ digits: 3, explain: '6 fois 21 font 126 : on l’écrit sous 128.' });
+    expect(op.writtenText()).toBe('36,09');
+  });
+
+  it('s’arrête quand la division tombe juste : 198 : 15 = 13,2, 663 : 13 = 51', () => {
+    const op = solve(new PosedDivision(198, 15, marron)) as PosedDivision;
+    expect(op.writtenText()).toBe('13,2');
+    expect(op.steps().at(-1)!.explain).toBe('30 − 30 = 0 : il reste 0. La division tombe juste : le quotient est 13,2.');
+    expect(solve(new PosedDivision(663, 13, marron)).writtenText()).toBe('51');
+    expect(solve(new PosedDivision(490, 16, marron)).writtenText()).toBe('30,62');
+    expect(solve(new PosedDivision(4052, 16, marron)).writtenText()).toBe('253,25');
+  });
+
+  it('divise un nombre décimal : la virgule au quotient quand on abaisse les dixièmes', () => {
+    const op = solve(new PosedDivision(4508, 7, { ...marron, places: 2 })) as PosedDivision;
+    expect(op.text).toBe('45,08 : 7');
+    expect(op.steps().map((s) => s.kind)).not.toContain('pad');
+    expect(op.steps()[1]).toMatchObject({ expected: 1, ask: 'Combien de chiffres aura le quotient avant la virgule ?' });
+    expect(op.steps()[4]!.explain).toBe('45 − 42 = 3 : il reste 3. On abaisse le 0, le chiffre des dixièmes : 30. On écrit la virgule au quotient.');
+    expect(op.writtenText()).toBe('6,44');
+    expect(op.check).toBe('6,44 × 7 = 45,08');
+  });
+
+  it('complète un nombre décimal par un 0 : 103,1 : 6 = 17,18', () => {
+    const op = solve(new PosedDivision(1031, 6, { ...marron, places: 1 })) as PosedDivision;
+    const pad = op.steps().find((s) => s.kind === 'pad')!;
+    expect(pad).toMatchObject({ ask: 'Complète 103,1 avec un 0 : les centièmes', explain: '103,1 = 103,10 : on écrit un 0 aux centièmes. On abaisse le 0 : 50.' });
+    expect(op.writtenText()).toBe('17,18');
+    expect(op.check).toBe('17,18 × 6 = 103,08, presque 103,1');
+    expect(solve(new PosedDivision(198, 15, { ...marron, places: 1 })).writtenText()).toBe('1,32');
+  });
+
+  it('retrouve toutes les divisions tirées', () => {
+    const random = seeded(23);
+    for (let i = 0; i < 300; i++) {
+      const { dividend, divisor, places } = drawBigDivision(i % 3, random);
+      const op = solve(new PosedDivision(dividend, divisor, { ...marron, places })) as PosedDivision;
+      expect(op.size).toBeGreaterThan(0);
+      const exact = dividend / 10 ** places / divisor;
+      expect(Math.abs(Number(op.writtenText().replace(',', '.')) - exact)).toBeLessThan(0.01);
+      expect(divisor >= 10).toBe(i % 3 !== 1);
     }
   });
 });

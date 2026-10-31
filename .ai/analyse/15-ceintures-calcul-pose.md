@@ -35,7 +35,7 @@ une ceinture (ou deux voisines) à la fois.
 | Bleu clair | Additions et soustractions de nombres décimaux (Cal13) — **objectif de fin de CM1** | p. 6 : virgules alignées, on complète par des 0 (en rouge sur la fiche) | étape 6, faite |
 | Bleu foncé | Divisions décimales (Cal17) | p. 7 : un entier divisé par 1 chiffre, quotient au centième (100 : 7 = 14,28) | étape 7, faite |
 | Violette | Multiplications de nombres décimaux (Cal16) | p. 8 : décimal × entier ou décimal, la virgule placée au résultat | étape 6, faite |
-| Marron | Divisions par un nombre à deux chiffres ; d'un décimal par un entier (Cal17) — **objectif de fin de CM2** | p. 9 : 198 : 15, 4052 : 16, 45,08 : 7… | étape 7 |
+| Marron | Divisions par un nombre à deux chiffres ; d'un décimal par un entier (Cal17) — **objectif de fin de CM2** | p. 9 : 198 : 15, 4052 : 16, 45,08 : 7… | étape 7, faite |
 | Noire | Je calcule plus vite | pas de fiche | étape 8, à préciser |
 
 La violette (× décimaux) vient avant la marron dans le classeur, après la bleu foncé : l'ordre de
@@ -266,6 +266,26 @@ Fiche p. 7 et leçon de la classe Calc 17 (p. 23 des leçons), le 31/10/2026.
   en centièmes (`result` 1428), `resultText` « 14,28 ».
 - Leçon : la méthode de la classe, les exemples 15 : 2 = 7,5 (la leçon) et 100 : 7 = 14,28 (la fiche).
 
+### Divisions par 2 chiffres, et d'un décimal par un entier (marron, objectif de fin de CM2)
+
+Fiche p. 9, leçons Calc 8 (« Pour bien effectuer une division à deux chiffres », 758 : 21) et Calc 17
+(« Lorsque le dividende est un nombre décimal »), le 31/10/2026.
+
+- Même potence, mêmes étapes que la vert clair et la bleu foncé. Par 2 chiffres : « 7 est plus petit que 21 :
+  on prend 75 », « 21 × 3 = 63 et 21 × 4 = 84, c'est trop : on écrit 3 » ; un produit peut avoir 3 chiffres.
+- Dividende décimal : la virgule est écrite dès le début ; on compte les chiffres du quotient **avant la virgule** ;
+  quand on abaisse le chiffre des dixièmes, « On écrit la virgule au quotient ».
+- **On s'arrête quand la division tombe juste**, comme la fiche (198 : 15 = 13,2 ; 663 : 13 = 51, sans virgule),
+  sinon aux centièmes (490 : 16 = 30,62). S'il n'y a plus de chiffres à abaisser et qu'il reste quelque chose,
+  on complète le dividende par un 0 (103,1 = 103,10), comme la bleu foncé.
+- Une série, comme une fiche : un entier de 3 ou 4 chiffres par 12 à 19 (4052 : 16), un nombre à 1 ou 2 chiffres
+  après la virgule par 3 à 9 (45,08 : 7), un nombre à 1 chiffre après la virgule par 12 à 19 (19,8 : 15). La
+  partie entière est au moins le diviseur (pas de 4,90 : 16 = 0,30 : le quotient commence avant la virgule).
+- Code : `PosedDivision(dividende, diviseur, { decimals, places, stopWhenExact })` ; `resultDecimals` (chiffres
+  après la virgule une fois fini), `writtenDecimals()` pour le résultat écrit. La virgule du quotient apparaît
+  quand on demande le chiffre des dixièmes.
+- Leçon : la méthode, les exemples 758 : 21 = 36,09 (la leçon Calc 8, continuée) et 45,08 : 7 = 6,44 (la fiche).
+
 ## Les écrans
 
 - **Leçon** : la méthode en quelques phrases, et un exemple posé en entier, chaque étape expliquée.
@@ -298,5 +318,5 @@ dans `subjects.ts` (identifiant à ne jamais changer).
 5. **Vert foncé** : additions à trois termes, soustractions avec des 0, multiplications à 2 ou 3 chiffres.
    Faite le 31/10/2026 (0.39.0) : `drawMixed`, `PosedLongMultiplication` à N lignes, leçon à plusieurs exemples.
 6. **Bleu clair et violette : les décimaux** (+, −, ×) : la virgule. Bleu clair faite le 31/10/2026 (0.40.0), violette aussi (0.41.0).
-7. **Bleu foncé et marron : les divisions décimales et par 2 chiffres.** Bleu foncé faite le 31/10/2026 (0.42.0).
+7. **Bleu foncé et marron : les divisions décimales et par 2 chiffres.** Bleu foncé faite le 31/10/2026 (0.42.0), marron aussi (0.43.0).
 8. **Noire : « je calcule plus vite »** (toutes les opérations, en temps limité ? à préciser).

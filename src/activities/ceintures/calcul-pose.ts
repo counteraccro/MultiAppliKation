@@ -204,6 +204,23 @@ export function drawDecimalDivision(kind: number, random: () => number): [number
   }
 }
 
+/**
+ * Marron (fiche p. 9) : `kind` 0, un entier de 3 ou 4 chiffres par un nombre de 2 chiffres (198 : 15, 4052 : 16) ;
+ * 1, un nombre à 1 ou 2 chiffres après la virgule par un nombre à 1 chiffre (170,4 : 4, 45,08 : 7) ;
+ * 2, un nombre à 1 chiffre après la virgule par un nombre de 2 chiffres (19,8 : 15). La partie entière est
+ * au moins le diviseur : le quotient commence avant la virgule. `places` : chiffres après la virgule du dividende.
+ */
+export function drawBigDivision(kind: number, random: () => number): { dividend: number; divisor: number; places: number } {
+  if (kind === 0) {
+    const dividend = random() < 0.5 ? between(150, 999, random) : between(1000, 4999, random);
+    return { dividend, divisor: between(12, 19, random), places: 0 };
+  }
+  const divisor = kind === 1 ? between(3, 9, random) : between(12, 19, random);
+  const places = kind === 1 && random() < 0.5 ? 2 : 1;
+  const whole = kind === 1 ? between(Math.max(10, divisor), 699, random) : between(divisor, 99, random);
+  return { dividend: whole * 10 ** places + lastNotZero(1, 10 ** places - 1, random), divisor, places };
+}
+
 /** Un nombre de `min` à `max` sans 0 : en bas d'une multiplication, un 0 donnerait une ligne de 0. */
 const noZero = (min: number, max: number, random: () => number) => {
   for (;;) {
@@ -338,8 +355,8 @@ export const CALCUL_POSE: readonly PosedBelt[] = [
       'Pour vérifier : quotient × diviseur doit redonner le dividende, ou presque.',
     ],
     // L'exemple de la leçon de la classe (Calc 17), et le premier de la fiche.
-    examples: () => [new PosedDivision(15, 2, 1), new PosedDivision(100, 7, 2)],
-    draw: (random, index) => new PosedDivision(...drawDecimalDivision(index % 3, random), 2),
+    examples: () => [new PosedDivision(15, 2, { decimals: 1 }), new PosedDivision(100, 7, { decimals: 2 })],
+    draw: (random, index) => new PosedDivision(...drawDecimalDivision(index % 3, random), { decimals: 2 }),
   },
   {
     belt: 'violette',
@@ -357,6 +374,29 @@ export const CALCUL_POSE: readonly PosedBelt[] = [
     draw: (random, index) => {
       const { top, factor, places } = drawDecimalMultiplication(index % 3, random);
       return new PosedLongMultiplication(top, factor, places);
+    },
+  },
+  {
+    belt: 'marron',
+    skill: 'Divisions par un nombre à 2 chiffres ; d’un nombre décimal par un entier',
+    goal: 'CM2',
+    operation: 'division',
+    tips: [
+      'Par un nombre à 2 chiffres : prends assez de chiffres pour pouvoir diviser. 758 : 21, 7 est trop petit, on prend 75.',
+      'Pour trouver le chiffre du quotient, essaie : dans 75, combien de fois 21 ? 21 × 3 = 63, 21 × 4 = 84, c’est trop : on écrit 3.',
+      'Écris le produit, soustrais, abaisse le chiffre suivant, comme d’habitude.',
+      'Quand le dividende est un nombre décimal, on divise d’abord la partie entière.',
+      'On écrit la virgule au quotient dès qu’on abaisse le chiffre des dixièmes.',
+      'Il reste quelque chose à la fin ? On continue avec des 0, jusqu’aux centièmes. Le reste est 0 ? La division tombe juste : on s’arrête.',
+    ],
+    // L'exemple de la leçon de la classe (Calc 8), et un nombre décimal de la fiche.
+    examples: () => [
+      new PosedDivision(758, 21, { decimals: 2, stopWhenExact: true }),
+      new PosedDivision(4508, 7, { decimals: 2, places: 2, stopWhenExact: true }),
+    ],
+    draw: (random, index) => {
+      const { dividend, divisor, places } = drawBigDivision(index % 3, random);
+      return new PosedDivision(dividend, divisor, { decimals: 2, places, stopWhenExact: true });
     },
   },
 ];
