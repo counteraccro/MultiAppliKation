@@ -187,6 +187,23 @@ function drawDecimal(random: () => number, index: number): PosedOperation {
   return new PosedSubtraction(top, bottom, places);
 }
 
+/**
+ * Bleu foncé (fiche p. 7) : un entier divisé par un nombre à 1 chiffre, le quotient au centième.
+ * `kind` 0, un nombre de 2 chiffres (69 : 7 = 9,85) ; 1, un nombre de 3 chiffres (275 : 8 = 34,37) ;
+ * 2, une division qui tombe juste après la virgule (28 : 5 = 5,60, 31 : 2 = 15,50). Il reste toujours
+ * quelque chose avant la virgule : sinon, on n'aurait pas à continuer.
+ */
+export function drawDecimalDivision(kind: number, random: () => number): [number, number] {
+  for (;;) {
+    const dividend = kind === 1 ? between(100, 399, random) : between(10, 199, random);
+    const divisor = kind === 2 ? [2, 4, 5][between(0, 2, random)]! : between(3, 9, random);
+    if (dividend < divisor || dividend % divisor === 0) continue;
+    if (kind === 0 && (dividend > 99 || dividend < 2 * divisor)) continue;
+    if ((kind === 2) !== ((dividend * 100) % divisor === 0)) continue;
+    return [dividend, divisor];
+  }
+}
+
 /** Un nombre de `min` à `max` sans 0 : en bas d'une multiplication, un 0 donnerait une ligne de 0. */
 const noZero = (min: number, max: number, random: () => number) => {
   for (;;) {
@@ -307,6 +324,22 @@ export const CALCUL_POSE: readonly PosedBelt[] = [
     // Les exemples de la leçon de la classe (Calc 13) et de la fiche.
     examples: () => [new PosedAddition([3580, 1435], [1, 2]), new PosedSubtraction(13700, 5311, [0, 2])],
     draw: drawDecimal,
+  },
+  {
+    belt: 'bleu-fonce',
+    skill: 'Divisions décimales',
+    operation: 'division',
+    tips: [
+      'Quand une division a un reste, on peut la continuer pour avoir un résultat plus précis.',
+      'On divise d’abord la partie entière, comme d’habitude.',
+      'Il reste quelque chose ? On écrit la virgule et un 0 au dividende : 15 = 15,0. Puis on abaisse le 0.',
+      'On écrit la virgule au quotient dès qu’on abaisse le chiffre des dixièmes.',
+      'On continue chiffre par chiffre : les dixièmes, puis les centièmes. On s’arrête aux centièmes.',
+      'Pour vérifier : quotient × diviseur doit redonner le dividende, ou presque.',
+    ],
+    // L'exemple de la leçon de la classe (Calc 17), et le premier de la fiche.
+    examples: () => [new PosedDivision(15, 2, 1), new PosedDivision(100, 7, 2)],
+    draw: (random, index) => new PosedDivision(...drawDecimalDivision(index % 3, random), 2),
   },
   {
     belt: 'violette',

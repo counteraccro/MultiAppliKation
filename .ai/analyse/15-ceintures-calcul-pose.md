@@ -33,7 +33,7 @@ une ceinture (ou deux voisines) à la fois.
 | Vert clair | Division par un nombre à 1 chiffre (Cal8) | p. 5 : 3 chiffres : 1 chiffre, potence, sans écrire les soustractions, puis « 738 = 147 × 5 + 3 » | étape 4 |
 | Vert foncé | Additions à trois termes, soustractions avec des 0, multiplications à deux ou trois chiffres | pas de fiche : nos calculs | étape 5, faite |
 | Bleu clair | Additions et soustractions de nombres décimaux (Cal13) — **objectif de fin de CM1** | p. 6 : virgules alignées, on complète par des 0 (en rouge sur la fiche) | étape 6, faite |
-| Bleu foncé | Divisions décimales (Cal17) | p. 7 : un entier divisé par 1 chiffre, quotient au centième (100 : 7 = 14,28) | étape 7 |
+| Bleu foncé | Divisions décimales (Cal17) | p. 7 : un entier divisé par 1 chiffre, quotient au centième (100 : 7 = 14,28) | étape 7, faite |
 | Violette | Multiplications de nombres décimaux (Cal16) | p. 8 : décimal × entier ou décimal, la virgule placée au résultat | étape 6, faite |
 | Marron | Divisions par un nombre à deux chiffres ; d'un décimal par un entier (Cal17) — **objectif de fin de CM2** | p. 9 : 198 : 15, 4052 : 16, 45,08 : 7… | étape 7 |
 | Noire | Je calcule plus vite | pas de fiche | étape 8, à préciser |
@@ -228,8 +228,43 @@ Fiche p. 8 et leçon de la classe Calc 16 (p. 22 des leçons), le 31/10/2026.
   pas un 0.
 - Le résultat garde ses 0 à droite (1,904 × 15 = 28,560, comme la correction de la fiche).
 - Code : `PosedLongMultiplication` reçoit `places` ; étape `comma` ; les nombres s'écrivent sans virgule (254).
-- Dans l'échelle, la violette vient juste après la bleu clair tant que la bleu foncé n'est pas faite :
-  la bleu foncé s'insérera avant elle (ordre du classeur).
+- Dans l'échelle, la violette vient après la bleu foncé (ordre du classeur).
+
+### Divisions décimales (bleu foncé)
+
+Fiche p. 7 et leçon de la classe Calc 17 (p. 23 des leçons), le 31/10/2026.
+
+```
+   1  0  0, 0  0 │ 7
+ − 7             ├──────────
+   ‾             │ 1  4, 2  8
+   3  0          │
+ − 2  8          │
+   ‾‾‾‾
+      2  0       ← le 0 ajouté au dividende (en rouge), abaissé
+    − 1  4
+      ‾‾‾‾
+         6  0
+       − 5  6
+         ‾‾‾‾
+            4
+```
+
+- Comme la vert clair (nombre pris, chiffres du quotient — ici « avant la virgule » —, quotient, produit,
+  reste), puis, comme la leçon : « Lorsqu'il y a un reste, on peut continuer la division ». Le reste de la
+  partie entière dit « On continue après la virgule. » ; une étape `pad` : **compléter le dividende par un 0**
+  (« Complète 100 avec un 0 : les dixièmes » ; « 100 = 100,0 : on écrit la virgule et un 0 aux dixièmes.
+  On abaisse le 0 : 20. On écrit aussi la virgule au quotient. »), puis les centièmes de même.
+- La virgule s'écrit au dividende et au quotient dès que le premier 0 est écrit (« dès qu'on abaisse le chiffre
+  des dixièmes »). Les 0 du dividende en rouge, comme les 0 ajoutés de la bleu clair.
+- **On s'arrête aux centièmes**, comme la fiche, même si la division tombe juste avant : 28 : 5 = 5,60.
+- Fin : « 100 : 7 = 14,28 ✓ · Vérifie : 14,28 × 7 = 99,96, presque 100 ».
+- Une série, comme une fiche : un nombre de 2 chiffres (69 : 7 = 9,85), un de 3 chiffres (275 : 8 = 34,37),
+  une division qui tombe juste après la virgule (28 : 5 = 5,60, par 2, 4 ou 5). Il reste toujours quelque
+  chose à la partie entière.
+- Code : `PosedDivision` reçoit `decimals` (chiffres du quotient après la virgule) ; le quotient est compté
+  en centièmes (`result` 1428), `resultText` « 14,28 ».
+- Leçon : la méthode de la classe, les exemples 15 : 2 = 7,5 (la leçon) et 100 : 7 = 14,28 (la fiche).
 
 ## Les écrans
 
@@ -263,5 +298,5 @@ dans `subjects.ts` (identifiant à ne jamais changer).
 5. **Vert foncé** : additions à trois termes, soustractions avec des 0, multiplications à 2 ou 3 chiffres.
    Faite le 31/10/2026 (0.39.0) : `drawMixed`, `PosedLongMultiplication` à N lignes, leçon à plusieurs exemples.
 6. **Bleu clair et violette : les décimaux** (+, −, ×) : la virgule. Bleu clair faite le 31/10/2026 (0.40.0), violette aussi (0.41.0).
-7. **Bleu foncé et marron : les divisions décimales et par 2 chiffres.**
+7. **Bleu foncé et marron : les divisions décimales et par 2 chiffres.** Bleu foncé faite le 31/10/2026 (0.42.0).
 8. **Noire : « je calcule plus vite »** (toutes les opérations, en temps limité ? à préciser).

@@ -140,11 +140,13 @@ export function posedGrid(operation: PosedOperation, options: GridOptions = {}):
  * La division en potence, comme la leçon de la classe : le dividende et le diviseur, le quotient sous
  * le trait (des points pour ses chiffres, une fois comptés), et sous le dividende chaque produit
  * (« − 63 », souligné) puis le reste avec le chiffre abaissé. Le nombre en cours est mis en avant.
+ * Division décimale (bleu foncé) : les 0 qui complètent le dividende en rouge, et la virgule au dividende
+ * et au quotient dès qu'on écrit le premier.
  */
 function divisionGrid(operation: PosedDivision, options: GridOptions): HTMLElement {
-  const { digits, firstLength } = operation;
-  const n = digits.length;
-  const count = n - firstLength + 1;
+  const { digits, firstLength, decimals } = operation;
+  const n = digits.length + decimals;
+  const count = operation.size + decimals;
   // Une colonne à gauche pour le signe « − », puis les chiffres du dividende, la potence, le quotient.
   const col = (j: number) => j + 2;
   const bar = n + 2;
@@ -166,18 +168,28 @@ function divisionGrid(operation: PosedDivision, options: GridOptions): HTMLEleme
   const took = placed.length > 0 && String(operation.dividend).startsWith(String(placed[0])) ? String(placed[0]).length : 0;
   // Le dernier chiffre du nombre en cours k : sous lui s'alignent le produit et le reste.
   const end = (k: number) => col(firstLength - 1 + k);
+  // Les 0 écrits au dividende : la virgule apparaît avec le premier.
+  const pads = operation.writtenPads();
+  const comma = pads.length > 0 ? 'pc-comma' : '';
 
   digits.forEach((digit, j) =>
-    cell(1, col(j), String(digit), [j < took ? 'pd-took' : '', focus === 0 && j < firstLength ? 'pd-focus' : ''].join(' ')),
+    cell(
+      1,
+      col(j),
+      String(digit),
+      [j < took ? 'pd-took' : '', focus === 0 && j < firstLength ? 'pd-focus' : '', j === digits.length - 1 ? comma : ''].join(' '),
+    ),
   );
+  pads.forEach((pad, j) => cell(1, col(digits.length + j), String(pad), 'pc-pad'));
   cells.push(h('span', { class: 'pd-bar', style: `grid-row: 1 / span ${2 * count + 1}; grid-column: ${bar}` }));
   cell(1, bar + 1, String(operation.divisor), 'pd-divisor', Math.max(count, 2));
 
-  // Les points du quotient, une fois ses chiffres comptés.
+  // Les points du quotient, une fois ses chiffres comptés (après la virgule, une fois écrite).
   const sizeIndex = steps.findIndex((step) => step.kind === 'size');
-  const size = sizeIndex >= 0 && sizeIndex < placed.length ? Math.min(placed[sizeIndex]!, 4) : 0;
+  const size = sizeIndex >= 0 && sizeIndex < placed.length ? Math.min(placed[sizeIndex]!, 4) + (comma ? decimals : 0) : 0;
   const quotients = new Set(steps.flatMap((step, i) => (step.kind === 'quotient' && (i < placed.length || step === current) ? [step.column] : [])));
-  for (let k = 0; k < size; k++) if (!quotients.has(k)) cell(2, bar + 1 + k, '·', 'pd-dot');
+  const quotientComma = (k: number) => (k === operation.size - 1 ? comma : '');
+  for (let k = 0; k < size; k++) if (!quotients.has(k)) cell(2, bar + 1 + k, '·', `pd-dot ${quotientComma(k)}`);
 
   steps.forEach((step, i) => {
     const active = step === current;
@@ -185,11 +197,13 @@ function divisionGrid(operation: PosedDivision, options: GridOptions): HTMLEleme
     const text = active ? options.typed || '?' : String(placed[i]);
     const extra = active ? `pc-active${options.typed ? '' : ' is-empty'}` : state(i);
     if (step.kind === 'first') {
-      if (active) cell(2, col(0), text, `pd-first ${extra}`, n);
+      if (active) cell(2, col(0), text, `pd-first ${extra}`, digits.length);
     } else if (step.kind === 'size') {
       if (active) cell(2, bar + 1, text, `pc-result ${extra}`);
+    } else if (step.kind === 'pad') {
+      if (active) cell(1, col(digits.length + step.column - operation.size), text, `pc-pad ${extra}`);
     } else if (step.kind === 'quotient') {
-      cell(2, bar + 1 + step.column, text, `pc-result ${extra}`);
+      cell(2, bar + 1 + step.column, text, `pc-result ${extra} ${quotientComma(step.column)}`);
     } else if (step.kind === 'product') {
       const row = 2 + 2 * step.column;
       const at = end(step.column) - text.length + 1;
@@ -200,8 +214,8 @@ function divisionGrid(operation: PosedDivision, options: GridOptions): HTMLEleme
       const at = end(step.column);
       const highlighted = focus === step.column + 1 ? 'pd-focus' : '';
       number(row, at, text, `pd-rest ${extra} ${highlighted}`, active);
-      // Le chiffre suivant s'abaisse à côté du reste.
-      const next = digits[firstLength + step.column];
+      // Le chiffre suivant s'abaisse à côté du reste (un 0 du dividende, une fois écrit).
+      const next = digits[firstLength + step.column] ?? pads[firstLength + step.column - digits.length];
       if (!active && next !== undefined) cell(row, at + 1, String(next), `pd-down ${highlighted}`);
     }
   });
