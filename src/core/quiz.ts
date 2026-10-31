@@ -11,6 +11,8 @@ export interface QuizQuestion {
   answer: number | string;
   /** Autres réponses justes, ex. « allée » quand le genre ne se voit pas. */
   alsoAccepted?: readonly string[];
+  /** L'astuce, montrée après une erreur (« + 9, c'est + 10 − 1 : … »). */
+  explain?: string;
 }
 
 export interface QuizSession<Q extends QuizQuestion = QuizQuestion> {

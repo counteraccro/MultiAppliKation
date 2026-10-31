@@ -47,7 +47,7 @@ const PRESENT_PLURAL: Record<string, string> = {
 
 describe('ceintures de conjugaison', () => {
   it('suivent les ceintures du classeur, de la blanche à la marron', () => {
-    expect(CONJUGAISON.map((b) => b.belt)).toEqual(BELTS.map((b) => b.id).filter((id) => id !== 'noire' && id !== 'brillante'));
+    expect(CONJUGAISON.map((b) => b.belt)).toEqual(BELTS.map((b) => b.id).filter((id) => !['beige', 'rouge', 'gris', 'noire', 'brillante'].includes(id)));
   });
 
   it('ont assez d’exercices, les pièges du classeur et les bons temps', () => {

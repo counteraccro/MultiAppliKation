@@ -303,7 +303,7 @@ Retours du 25/10/2026 (0.22.1) :
 
 Ensuite, une matière à la fois ; ordre proposé : Conjugaison (clavier déjà fait, commencée le 26/10/2026 :
 voir [12-ceintures-conjugaison.md](12-ceintures-conjugaison.md)),
-Tables (faites le 27/10/2026 sauf les divisions : voir [13-ceintures-tables.md](13-ceintures-tables.md)), Calcul posé (demandé par la fille de l'utilisateur, commencé le 28/10/2026 : voir [15-ceintures-calcul-pose.md](15-ceintures-calcul-pose.md)), puis Calcul mental (pavé déjà fait), Accords, Numération, Grammaire, Mesures.
+Tables (faites le 27/10/2026 sauf les divisions : voir [13-ceintures-tables.md](13-ceintures-tables.md)), Calcul posé (demandé par la fille de l'utilisateur, commencé le 28/10/2026 : voir [15-ceintures-calcul-pose.md](15-ceintures-calcul-pose.md)), puis Calcul mental (commencé le 31/10/2026 : voir [16-ceintures-calcul-mental.md](16-ceintures-calcul-mental.md)), Accords, Numération, Grammaire, Mesures.
 
 ## Réponses du 25/10/2026
 

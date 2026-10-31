@@ -10,7 +10,9 @@ import { capitalize, parseSentence, withNbsp } from './sentence';
 import type { PosedBelt } from './calcul-pose';
 import { PosedDivision, solve, type PosedOperation } from './posed';
 import { posedGrid } from './posed-screen';
-import { isHomophoneBelt, isPosedBelt, isTableBelt, type SubjectBelt } from './subjects';
+import { isHomophoneBelt, isMentalBelt, isPosedBelt, isTableBelt, type SubjectBelt } from './subjects';
+import type { MentalBelt } from './calcul-mental';
+import { factText } from './table-practice';
 import { MAX_FACTOR, newTables, type TableBelt } from './tables';
 
 export interface LessonActions {
@@ -24,6 +26,7 @@ export interface LessonActions {
  * Conjugaison : les pièges du classeur, et un verbe conjugué à chaque temps de la ceinture.
  * Tables : les astuces, et les tables de la ceinture qu'aucune ceinture d'avant n'a montrées.
  * Calcul posé : la méthode, et une opération posée en entier, chaque colonne expliquée.
+ * Calcul mental : les astuces de la classe, et des calculs expliqués.
  */
 export function renderLesson(
   root: HTMLElement,
@@ -46,7 +49,9 @@ export function renderLesson(
           ? tableCards(belt)
           : isPosedBelt(belt)
             ? posedCards(belt)
-            : conjugationCards(belt)),
+            : isMentalBelt(belt)
+              ? mentalCards(belt)
+              : conjugationCards(belt)),
       h('button', { class: 'button primary lesson-practice', type: 'button', onclick: onPractice }, 'S’entraîner'),
     ),
   );
@@ -157,6 +162,27 @@ function posedCards(belt: PosedBelt): HTMLElement[] {
       h('ul', { class: 'lesson-rules' }, ...belt.tips.map((tip) => h('li', {}, withNbsp(tip)))),
     ),
     ...belt.examples().map((operation) => posedExample(solve(operation))),
+  ];
+}
+
+function mentalCards(belt: MentalBelt): HTMLElement[] {
+  return [
+    h(
+      'article',
+      { class: 'lesson-card' },
+      h('h2', {}, 'Les astuces'),
+      h('ul', { class: 'lesson-rules' }, ...belt.tips.map((tip) => h('li', {}, withNbsp(tip)))),
+    ),
+    h(
+      'article',
+      { class: 'lesson-card' },
+      h('h2', {}, 'Des exemples'),
+      h(
+        'ul',
+        { class: 'lesson-rules' },
+        ...belt.examples().map((question) => h('li', {}, h('strong', {}, factText(question)), h('br'), withNbsp(question.explain))),
+      ),
+    ),
   ];
 }
 

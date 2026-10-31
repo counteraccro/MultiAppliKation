@@ -43,6 +43,8 @@ export interface QuestionScreenOptions {
   test?: boolean;
   /** Compte à rebours (ceintures de tables : une minute) ; à zéro, la série s'arrête là. */
   timeLimitMs?: number;
+  /** Chiffres qu'on peut taper (3 par défaut ; calcul mental : 45 × 1000 = 45000). */
+  maxDigits?: number;
   onDone(summary: SeriesSummary): void;
   onQuit(): void;
 }
@@ -121,7 +123,7 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
         if (typed.length >= MAX_LETTERS || (char === ' ' && (typed === '' || typed.endsWith(' ')))) return;
         typed += char;
       } else {
-        if (typed.length >= MAX_DIGITS) return;
+        if (typed.length >= (options.maxDigits ?? MAX_DIGITS)) return;
         typed = typed === '0' ? char : typed + char;
       }
       renderAnswer();
@@ -171,7 +173,7 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
           feedback.textContent = `C’était « ${shown} ». ${wrongHint}`;
         } else {
           answerBox.textContent = String(question.answer);
-          feedback.textContent = `C’était ${question.answer}. ${wrongHint}`;
+          feedback.textContent = `C’était ${question.answer}. ${question.explain ? `${question.explain} ` : ''}${wrongHint}`;
         }
         keypad.setSubmitLabel('→');
         if (chrono) chrono.addPenalty(options.chrono!.penaltyMs);

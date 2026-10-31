@@ -31,8 +31,9 @@ import { pickSentences, PracticeSession } from './practice-session';
 import { capitalize, fullSentence, parseSentence, withNbsp } from './sentence';
 import { renderSentenceScreen } from './sentence-screen';
 import { STICKER_SECTIONS, STICKERS, unlockStickers } from './stickers';
-import { isHomophoneBelt, isPosedBelt, isTableBelt, type Subject, type SubjectBelt } from './subjects';
-import { factText, pickFacts, PRACTICE_SIZE, TablePracticeSession, TableTestSession, type TableMistake } from './table-practice';
+import { isHomophoneBelt, isMentalBelt, isPosedBelt, isTableBelt, type Subject, type SubjectBelt } from './subjects';
+import { MENTAL_PRACTICE_SIZE, MENTAL_TEST_SIZE, MENTAL_TEST_TIME_MS, passesMental, pickCalcs, type MentalBelt } from './calcul-mental';
+import { CalcPracticeSession, CalcTestSession, factText, pickFacts, PRACTICE_SIZE, TablePracticeSession, TableTestSession, type TableMistake } from './table-practice';
 import { TEST_TIME_MS, type TableBelt } from './tables';
 import { isPassing, pickTestSentences, TestSession, type TestMistake } from './test-session';
 import { pickExercises, VerbPracticeSession } from './verb-practice';
@@ -121,6 +122,8 @@ export const ceintures: Activity = {
       );
 
     const label = (belt: SubjectBelt) => `Ceinture ${beltOf(belt.belt).label}`;
+    /** Calcul mental : 45 × 1000 = 45000. */
+    const MENTAL_MAX_DIGITS = 6;
 
     /** Une ceinture pas encore réussie (sauf juste après un échec, sans entraînement depuis). */
     const canTest = (subject: Subject, belt: SubjectBelt) => {
@@ -135,7 +138,9 @@ export const ceintures: Activity = {
           ? practiceTables(subject, belt)
           : isPosedBelt(belt)
             ? practicePosed(subject, belt)
-            : practiceVerb(subject, belt);
+            : isMentalBelt(belt)
+              ? practiceMental(subject, belt)
+              : practiceVerb(subject, belt);
 
     const practiceSentences = (subject: Subject, belt: HomophoneBelt) =>
       show(() => {
@@ -204,6 +209,24 @@ export const ceintures: Activity = {
         });
       });
 
+    /** Calcul mental : 10 calculs au pavé, corrigés tout de suite avec l'astuce. */
+    const practiceMental = (subject: Subject, belt: MentalBelt) =>
+      show(() => {
+        const seen = progressOf(load(), subject).lastPractice?.[belt.belt];
+        const questions = pickCalcs(belt, MENTAL_PRACTICE_SIZE, seen);
+        const session = new CalcPracticeSession(questions);
+        return renderQuestionScreen(root, {
+          session,
+          label: label(belt),
+          maxDigits: MENTAL_MAX_DIGITS,
+          onQuit: () => ladder(subject),
+          onDone: ({ bestStreak }) => {
+            const result = session.result();
+            practiceDone(subject, belt, questions.map((q) => q.id), result, result.toPractice, bestStreak);
+          },
+        });
+      });
+
     function practiceDone(subject: Subject, belt: SubjectBelt, ids: string[], result: Score, toPractice: string[], bestStreak: number) {
       const data = load();
       recordPractice(data, subject, belt.belt, ids, result);
@@ -219,7 +242,9 @@ export const ceintures: Activity = {
           ? testTables(subject, belt)
           : isPosedBelt(belt)
             ? testPosed(subject, belt)
-            : testVerbs(subject, belt);
+            : isMentalBelt(belt)
+              ? testMental(subject, belt)
+              : testVerbs(subject, belt);
 
     const testSentences = (subject: Subject, belt: HomophoneBelt) =>
       show(() => {
@@ -285,6 +310,25 @@ export const ceintures: Activity = {
           onDone: () => {
             const result = session.result();
             testDone(subject, belt, result, 'étapes justes', result.mistakes.length > 0 ? posedCorrections(result.mistakes) : undefined);
+          },
+        });
+      });
+
+    /** Calcul mental : 20 calculs en 2 minutes, une erreur au plus, comme en classe. */
+    const testMental = (subject: Subject, belt: MentalBelt) =>
+      show(() => {
+        const seen = progressOf(load(), subject).lastPractice?.[belt.belt];
+        const session = new CalcTestSession(pickCalcs(belt, MENTAL_TEST_SIZE, seen), passesMental);
+        return renderQuestionScreen(root, {
+          session,
+          test: true,
+          timeLimitMs: MENTAL_TEST_TIME_MS,
+          maxDigits: MENTAL_MAX_DIGITS,
+          label: `En conditions réelles · ${label(belt)}`,
+          onQuit: () => ladder(subject),
+          onDone: () => {
+            const result = session.result();
+            testDone(subject, belt, result, 'calculs justes', result.mistakes.length > 0 ? tableCorrections(result.mistakes) : undefined);
           },
         });
       });
@@ -430,7 +474,14 @@ function tableCorrections(mistakes: TableMistake[]): HTMLElement {
         'ul',
         { class: 'table-corrections' },
         ...wrong.map(({ question, typed }) =>
-          h('li', {}, `${question.prompt} = `, h('span', { class: 'correction' }, h('s', {}, typed!), h('mark', {}, String(question.answer)))),
+          h(
+            'li',
+            {},
+            // « 37 + [12 63] = 100 » : la case au milieu pour un complément.
+            question.suffix === undefined ? `${question.prompt} = ` : `${question.prompt} `,
+            h('span', { class: 'correction' }, h('s', {}, typed!), h('mark', {}, String(question.answer))),
+            question.suffix === undefined ? '' : ` ${question.suffix}`,
+          ),
         ),
       ),
     missing.length > 0 && h('p', { class: 'correction-context' }, 'Pas eu le temps :'),

@@ -1,9 +1,9 @@
-// Ceintures de tables : l'entraînement (10 calculs corrigés tout de suite, un calcul raté revient
-// un peu plus tard) et l'entraînement en conditions réelles (20 calculs en une minute, 30 à la
-// brillante, sans correction pendant ; réussi à 90 %, ceux qu'on n'a pas eu le temps de faire
-// comptent faux).
+// Ceintures de tables et de calcul mental : l'entraînement (10 calculs corrigés tout de suite, un calcul
+// raté revient un peu plus tard) et l'entraînement en conditions réelles (tables : 20 calculs en une
+// minute, 30 à la brillante, réussi à 90 % ; calcul mental : 20 calculs en 2 minutes, une erreur au plus),
+// sans correction pendant ; ceux qu'on n'a pas eu le temps de faire comptent faux.
 
-import { isCorrect, shuffle, type QuizSession } from '../../core/quiz';
+import { isCorrect, shuffle, type QuizQuestion, type QuizSession } from '../../core/quiz';
 import { Series } from '../../core/series';
 import { MULTIPLICATION, questionFromKey, type Calculation } from '../tables/questions';
 import { beltFacts, type TableBelt } from './tables';
@@ -28,8 +28,9 @@ export function pickFacts(belt: TableBelt, count: number, seen: readonly string[
   return picked;
 }
 
-/** « 7 × 8 = 56 », pour les listes du résultat. */
-export const factText = (question: Calculation) => `${question.prompt} = ${question.answer}`;
+/** « 7 × 8 = 56 », « 37 + 63 = 100 » (la case au milieu), pour les listes du résultat. */
+export const factText = (question: QuizQuestion) =>
+  question.suffix === undefined ? `${question.prompt} = ${question.answer}` : `${question.prompt} ${question.answer} ${question.suffix}`;
 
 export interface TablePracticeResult {
   /** Calculs justes au premier essai. */
@@ -39,12 +40,8 @@ export interface TablePracticeResult {
   toPractice: string[];
 }
 
-export class TablePracticeSession extends Series<Calculation> {
-  /** Chaque calcul dans un sens au hasard (3 × 7 ou 7 × 3). */
-  constructor(keys: readonly string[], random: () => number = Math.random) {
-    super(keys.map((key) => questionFromKey(MULTIPLICATION, key, random)));
-  }
-
+/** Un entraînement : les calculs corrigés tout de suite, un raté revient plus tard. */
+export class CalcPracticeSession<Q extends QuizQuestion> extends Series<Q> {
   result(): TablePracticeResult {
     const missed = this.attempts().filter((a) => !a.correct).map((a) => a.question);
     return {
@@ -55,36 +52,47 @@ export class TablePracticeSession extends Series<Calculation> {
   }
 }
 
-export interface TableMistake {
-  question: Calculation;
+export class TablePracticeSession extends CalcPracticeSession<Calculation> {
+  /** Chaque calcul dans un sens au hasard (3 × 7 ou 7 × 3). */
+  constructor(keys: readonly string[], random: () => number = Math.random) {
+    super(keys.map((key) => questionFromKey(MULTIPLICATION, key, random)));
+  }
+}
+
+export interface TableMistake<Q extends QuizQuestion = QuizQuestion> {
+  question: Q;
   /** Ce qui a été tapé ; absent si le temps a manqué. */
   typed?: string;
 }
 
-export interface TableTestResult {
+export interface TableTestResult<Q extends QuizQuestion = QuizQuestion> {
   correct: number;
   total: number;
   passed: boolean;
   /** Calculs faux ou pas faits, dans l'ordre du test, pour la correction. */
-  mistakes: TableMistake[];
+  mistakes: TableMistake<Q>[];
 }
 
-/** Les calculs l'un après l'autre, sans deuxième essai ; le chrono est celui de l'écran. */
-export class TableTestSession implements QuizSession<Calculation> {
+/**
+ * Les calculs l'un après l'autre, sans deuxième essai ; le chrono est celui de l'écran.
+ * `passes` : la règle de réussite (90 % par défaut ; calcul mental : une erreur au plus).
+ */
+export class CalcTestSession<Q extends QuizQuestion> implements QuizSession<Q> {
   readonly total: number;
-  private readonly questions: readonly Calculation[];
   private readonly typed: string[] = [];
 
-  constructor(keys: readonly string[], random: () => number = Math.random) {
-    this.questions = keys.map((key) => questionFromKey(MULTIPLICATION, key, random));
-    this.total = this.questions.length;
+  constructor(
+    private readonly questions: readonly Q[],
+    private readonly passes: (correct: number, total: number) => boolean = isPassing,
+  ) {
+    this.total = questions.length;
   }
 
   get attempted(): number {
     return this.typed.length;
   }
 
-  current(): Calculation | undefined {
+  current(): Q | undefined {
     return this.questions[this.typed.length];
   }
 
@@ -102,12 +110,19 @@ export class TableTestSession implements QuizSession<Calculation> {
   }
 
   /** À la fin des calculs ou du temps : ceux qui restent comptent faux. */
-  result(): TableTestResult {
+  result(): TableTestResult<Q> {
     const mistakes = this.questions
       .map((question, i) => ({ question, typed: this.typed[i] }))
       .filter(({ question, typed }) => typed === undefined || !isCorrect(question, typed))
       .map(({ question, typed }) => (typed === undefined ? { question } : { question, typed }));
     const correct = this.total - mistakes.length;
-    return { correct, total: this.total, passed: isPassing(correct, this.total), mistakes };
+    return { correct, total: this.total, passed: this.passes(correct, this.total), mistakes };
+  }
+}
+
+export class TableTestSession extends CalcTestSession<Calculation> {
+  /** Chaque calcul dans un sens au hasard (3 × 7 ou 7 × 3). */
+  constructor(keys: readonly string[], random: () => number = Math.random) {
+    super(keys.map((key) => questionFromKey(MULTIPLICATION, key, random)));
   }
 }
