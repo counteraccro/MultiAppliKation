@@ -167,7 +167,24 @@ Orthographe des nombres en lettres : les fiches mettent **des traits d'union par
      retoucher un nombre l'enlève avec ceux d'après ; OK quand ils y sont tous ; une pastille donne le rang) ;
      la touche virgule au pavé pour la rose et la marron (`decimal` de la ceinture) ; les suites de décimaux se
      séparent par « ; ».
-5. **Noire, bronze, argent** : les pourcentages et le lien fractions / décimaux.
+5. **Noire, bronze, argent** : les pourcentages et le lien fractions / décimaux. **Faite le 01/11/2026 (0.52.0)** :
+   - `BELTS` : ajout de `bronze` (#CD7F32) et `argent` (#C0C0C0), après la noire.
+   - Noire (fiches n° 127 à 138, leçon Pb 14) : 23 % de 300, 1 % de 40, 36 % de 36 (l'astuce part de 10 % et
+     1 %, ou du quart quand il aide : 35 % = 25 % + 10 %) ; … % de 4 000 = 1 400 ; colorier 40 % de 20 billes ;
+     les billes de plusieurs couleurs au pavé ; 25 %, c'est le quart (boutons) et 35 % = 0,35 ; les petits
+     problèmes de la leçon (pot de confiture, cantine, billes, jus d'orange).
+   - Bronze (étoilée p. 24, fiches n° 139 à 144, leçons N19 et N20) : ranger deux fractions et trois décimaux
+     (les fractions en colonne sur les boutons) ; toucher la fraction égale à 0,2 (le piège 1/2 parmi les choix) ;
+     3/4 = ? et 0,75 = ?/4 ; 3/4 … 0,7 (<, > ou =) ; placer 3/5, 0,9, 5/2 ou 1,25 en touchant la graduation
+     (une unité en dixièmes, ou trois unités en quarts).
+   - Argent (étoilée p. 25, fiches n° 145 à 150, objectif de fin de CM2) : élections (l'un, l'autre, les votes
+     blancs) ; soldes (le nouveau prix ou la réduction) ; augmentations (plante, village, ticket de cinéma) ;
+     quel pourcentage (votes, réduction) ; 5 % de 62, 15 % de 1 500.
+   - Erreurs des corrections Charivari : n° 146, 25 % de 1 500 = 375 (pas 325, ni 235 personnes) ; n° 135,
+     10 % de 50 = 5 (la correction écrit « de 500 ») ; n° 149, la robe coûte 58,90 € (pas 28,90 €).
+   - **Ce qui vient de nous, pas des fiches** : les votes blancs, « quel pourcentage ? », la réduction seule,
+     le village et le ticket de cinéma ; les noms des candidats en plus de M. Renard et Mme Cigogne.
+   - Les « % » et « € » sont collés à leur nombre par une espace insécable (`glued`, et `withNbsp`).
 6. **Or** : problèmes et énigmes (à voir : celles des fiches telles quelles, ou les nôtres).
 
 Chaque étape avec sa leçon (d'après les leçons N de la classe), l'entraînement corrigé tout de suite, les

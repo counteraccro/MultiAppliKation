@@ -389,7 +389,7 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
       update();
     };
     const numbers = new Map(
-      choices.map(({ label, value }) => [value, h('button', { class: 'choice order-choice', type: 'button', onclick: () => touch(value) }, label)] as const),
+      choices.map(({ label, value }) => [value, h('button', { class: 'choice order-choice', type: 'button', onclick: () => touch(value) }, ...withFractions(label))] as const),
     );
     const row = h('div', { class: 'choice-buttons' }, ...numbers.values());
     row.style.setProperty('--choices', String(choices.length));

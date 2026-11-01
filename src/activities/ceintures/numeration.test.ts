@@ -5,7 +5,21 @@ import {
   compareDecimals,
   compareFractions,
   completeDecimal,
+  decimalAsFraction,
   decimalDigitOf,
+  discount,
+  equalToDecimal,
+  findPercent,
+  fractionAsDecimal,
+  growth,
+  paintPercent,
+  percentMarbles,
+  percentMeaning,
+  percentOf,
+  placeNumber,
+  votes,
+  whichPercent,
+  compareMixed,
   decimalTimes,
   decomposeDecimal,
   fractionsToDecimal,
@@ -343,8 +357,58 @@ describe('Numération', () => {
     expect(numberLine(4.62, 0, 0.001, 10, 1).answer).toBe(4.621);
   });
 
+  it('calcule les pourcentages comme sur les fiches (ceinture noire)', () => {
+    // Fiches n° 127, 133 et 138.
+    expect(percentOf(23, 300)).toMatchObject({ answer: 69, explain: expect.stringContaining('2 × 10\u00a0% + 3 × 1\u00a0%') });
+    expect(percentOf(1, 40).answer).toBe(0.4);
+    expect(percentOf(36, 36)).toMatchObject({ answer: 12.96, explain: expect.stringContaining('25\u00a0% + 10\u00a0% + 1\u00a0%') });
+    expect(percentOf(40, 20).explain).toContain('4 × 10\u00a0%');
+    // Fiches n° 130 et 136.
+    expect(findPercent(35, 4000)).toMatchObject({ suffix: '% de 4\u00a0000 = 1\u00a0400', answer: 35 });
+    expect(findPercent(41, 450).suffix).toBe('% de 450 = 184,5');
+    // Fiches n° 128 et 137.
+    expect(paintPercent(20, 40)).toMatchObject({ input: 'paint', answer: 8 });
+    expect(percentMarbles(20, [25, 40, 10], 'blanches').answer).toBe(5);
+    // Leçon Pb 14.
+    expect(percentMeaning(75)).toMatchObject({ answer: 'les trois quarts' });
+    expect(percentMeaning(35).answer).toBe(0.35);
+  });
+
+  it('passe des fractions aux décimaux (ceinture bronze)', () => {
+    expect(fractionAsDecimal(3, 4).answer).toBe(0.75);
+    expect(fractionAsDecimal(5, 2).answer).toBe(2.5);
+    expect(decimalAsFraction(3, 4)).toMatchObject({ prompt: '0,75 =', suffix: '/4', answer: 3 });
+    // Fiche n° 141 : 0,2 = 1/5, pas 1/2.
+    expect(equalToDecimal(1, 5, [[1, 2], [3, 2], [2, 5]]).answer).toBe('1/5');
+    expect(compareMixed(1, 4, '0,4', true).answer).toBe('<');
+    expect(compareMixed(3, 5, '0,6', false).answer).toBe('=');
+    // Fiches n° 139 et 140 : ranger fractions et décimaux.
+    expect(orderDecimals(['1,4', '1/4', '0,8', '1/8', '0,5'], '<').answer).toBe('1/8 < 1/4 < 0,5 < 0,8 < 1,4');
+    expect(orderDecimals(['0,32', '3/2', '3,2', '1/2', '1,2'], '<').answer).toBe('0,32 < 1/2 < 1,2 < 3/2 < 3,2');
+    // Fiches n° 143 et 144 : toucher la graduation.
+    expect(placeNumber(3, 4, '1,25').answer).toBe('5');
+    expect(placeNumber(3, 4, '7/4').answer).toBe('7');
+    expect(placeNumber(1, 10, '3/5').answer).toBe('6');
+  });
+
+  it('résout les problèmes de pourcentages (ceinture argent)', () => {
+    // Fiche n° 145, et n° 146 corrigée : 25 % de 1 500 = 375 (la fiche dit 325).
+    expect(votes(2000, 0, 0, [35, 65], 0).answer).toBe(700);
+    expect(votes(1500, 1, 0, [25, 60], 0).answer).toBe(375);
+    expect(votes(1500, 1, 0, [25, 60], 'blank').answer).toBe(225);
+    // Fiches n° 147 à 149 (n° 149 : 58,90 €, la fiche dit 28,90 €).
+    expect(discount(0, 120, 30, 'price').answer).toBe(84);
+    expect(discount(1, 35, 10, 'price').answer).toBe(31.5);
+    expect(discount(2, 62, 5, 'price').answer).toBe(58.9);
+    expect(discount(2, 62, 5, 'reduction').answer).toBe(3.1);
+    // Fiche n° 150.
+    expect(growth(0, 22, 20).answer).toBe(26.4);
+    expect(whichPercent('votes', 2000, 700).answer).toBe(35);
+    expect(whichPercent('price', 80, 56).answer).toBe(30);
+  });
+
   it('tire des questions justes, dans les nombres de la ceinture', () => {
-    const max = { blanche: 99, jaune: 9999, orange: 99, vert: 999999, bleu: 9999999999, violette: 99, rose: 100, marron: 9999 } as Record<string, number>;
+    const max = { blanche: 99, jaune: 9999, orange: 99, vert: 999999, bleu: 9999999999, violette: 99, rose: 100, marron: 9999, noire: 10000, bronze: 100, argent: 10000 } as Record<string, number>;
     for (const belt of NUMERATION) {
       for (let seed = 1; seed < 300; seed++) {
         for (const question of pickNumeration(belt, 10, [], seeded(seed))) {
@@ -354,7 +418,7 @@ describe('Numération', () => {
             // Ranger : tous les nombres, chacun une fois, dans l'ordre.
             const values = (question.answer as string).split(` ${question.order} `);
             expect([...values].sort()).toEqual(question.choices!.map((c) => c.value).sort());
-            const numbers = values.map((v) => Number(v.replace(',', '.')));
+            const numbers = values.map((v) => (v.includes('/') ? Number(v.split('/')[0]) / Number(v.split('/')[1]) : Number(v.replace(',', '.'))));
             for (let i = 1; i < numbers.length; i++) expect(question.order === '>' ? numbers[i - 1]! > numbers[i]! : numbers[i - 1]! < numbers[i]!).toBe(true);
           } else if (question.choices) expect(question.choices.some((c) => c.value === question.answer)).toBe(true);
           if (typeof question.answer === 'number') {

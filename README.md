@@ -42,7 +42,7 @@ puis la jaune… Une matière à la fois, d'autres viendront.
 | Tables | blanche → bleu foncé, noire, brillante | 20 multiplications en 1 minute (les divisions viendront plus tard) |
 | Calcul posé | blanche → marron | poser l'opération à l'écran, un chiffre à la fois, comme en classe : additions, soustractions, multiplications, divisions, nombres décimaux |
 | Calcul mental | blanche → brillante | calculer de tête avec les astuces de la classe : entiers, décimaux, fractions et pourcentages |
-| Numération | blanche, jaune, orange, rose, verte, bleue, violette, marron (les autres viendront) | lire, écrire et comparer les nombres jusqu'aux milliards : chiffre et nombre de dizaines, de milliers…, nombres en lettres, suites, décompositions, droites graduées ; les fractions : en lettres, sur une droite, colorier en touchant, comparer, calculer ; les décimaux : position des chiffres, fractions décimales, comparer, ranger en touchant, encadrer, intercaler |
+| Numération | blanche, jaune, orange, rose, verte, bleue, violette, marron, noire, bronze, argent (l'or viendra) | lire, écrire et comparer les nombres jusqu'aux milliards : chiffre et nombre de dizaines, de milliers…, nombres en lettres, suites, décompositions, droites graduées ; les fractions : en lettres, sur une droite, colorier en touchant, comparer, calculer ; les décimaux : position des chiffres, fractions décimales, comparer, ranger en touchant, encadrer, intercaler ; fractions et décimaux ; les pourcentages : calculer, colorier, élections, soldes, augmentations |
 
 - Pour chaque ceinture : **la leçon**, **l'entraînement** (corrigé tout de suite, avec l'explication)
   et **l'entraînement en conditions réelles**, comme le jour du passage (sans aide, corrigé à la fin).

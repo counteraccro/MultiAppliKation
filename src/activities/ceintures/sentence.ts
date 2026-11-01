@@ -43,7 +43,7 @@ export function capitalize(word: string): string {
 
 /** Espace insécable avant ! ? : ; » et après « , pour que le signe ne parte pas seul à la ligne. */
 export function withNbsp(text: string): string {
-  return text.replace(/ ([!?:;»])/g, ' $1').replace(/« /g, '« ');
+  return text.replace(/ ([!?:;»%€])/g, ' $1').replace(/« /g, '« ');
 }
 
 /** La phrase complète, chaque trou rempli par sa réponse : pour la correction. */

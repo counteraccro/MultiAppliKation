@@ -21,6 +21,8 @@ export const BELTS = [
   { id: 'marron', label: 'marron', color: '#B08865' },
   { id: 'gris', label: 'grise', color: '#CFCFCF' },
   { id: 'noire', label: 'noire', color: '#4A3F35' },
+  { id: 'bronze', label: 'bronze', color: '#CD7F32' },
+  { id: 'argent', label: 'argent', color: '#C0C0C0' },
   { id: 'brillante', label: 'brillante', color: '#F2C94C' },
 ] as const;
 

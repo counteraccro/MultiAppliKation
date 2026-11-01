@@ -47,8 +47,13 @@ const WORDS_LENGTH = 52;
 const between = (min: number, max: number, random: () => number) => min + Math.floor(random() * (max - min + 1));
 const pick = <T>(items: readonly T[], random: () => number) => items[Math.floor(random() * items.length)]!;
 
+/** « 23 % », « 84 € » : le signe ne part pas seul à la ligne. */
+const glued = (text: string) => text.replace(/ ([%€])/g, '\u00a0$1');
+
 function question(fields: Omit<NumerationQuestion, 'id'>): NumerationQuestion {
-  return { ...fields, id: fields.solved };
+  const texts = { prompt: glued(fields.prompt), solved: glued(fields.solved), explain: glued(fields.explain) };
+  const suffix = fields.suffix === undefined ? {} : { suffix: glued(fields.suffix) };
+  return { ...fields, ...texts, ...suffix, id: texts.solved };
 }
 
 /** 57 842 : les classes séparées par une espace, comme en classe (leçon N10) ; 4,07 avec la virgule. */
@@ -887,6 +892,11 @@ const listed = (items: readonly string[]) => items.join(', ').replace(/, ([^,]*)
 const placesIn = (text: string) => text.split(',')[1]?.length ?? 0;
 /** « 3,5 » → 3.5. */
 const valueOf = (text: string) => Number(text.replace(/\s/g, '').replace(',', '.'));
+/** « 3/4 » → 0.75, « 3,5 » → 3.5. */
+function mixedValue(text: string): number {
+  const [numerator, denominator] = text.split('/');
+  return denominator === undefined ? valueOf(text) : round(Number(numerator) / Number(denominator));
+}
 /** « 3,5 » avec 3 chiffres après la virgule : « 3,500 » (des 0 à la fin, pour comparer). */
 function padTo(text: string, places: number): string {
   const missing = places - placesIn(text);
@@ -1009,11 +1019,19 @@ export function isBetween(text: string, low: string, high: string): NumerationQu
   });
 }
 
-/** « Ordonne par ordre décroissant : 4,3 4,4 4,07 4,36 » : toucher les nombres dans l'ordre (fiche n° 122). */
+/**
+ * « Ordonne par ordre décroissant : 4,3 4,4 4,07 4,36 » : toucher les nombres dans l'ordre (fiche n° 122) ;
+ * avec des fractions, « 1,4 1/4 0,8 1/8 0,5 » (fiches n° 139 et 140).
+ */
 export function orderDecimals(texts: readonly string[], order: '<' | '>'): NumerationQuestion {
-  const sorted = [...texts].sort((x, y) => (order === '>' ? valueOf(y) - valueOf(x) : valueOf(x) - valueOf(y)));
+  const sorted = [...texts].sort((x, y) => (order === '>' ? mixedValue(y) - mixedValue(x) : mixedValue(x) - mixedValue(y)));
   const answer = sorted.join(` ${order} `);
   const places = Math.max(...texts.map(placesIn));
+  const fractions = texts.filter((text) => text.includes('/'));
+  const explain =
+    fractions.length > 0
+      ? `${listed(fractions.map((text) => `${text} = ${spaced(mixedValue(text))}`))} : ${sorted.map((text) => spaced(mixedValue(text))).join(` ${order} `)}.`
+      : `On écrit des 0 pour que tous aient ${places} chiffres après la virgule : ${sorted.map((text) => padTo(text, places)).join(` ${order} `)}.`;
   return question({
     context: order === '>' ? 'Range du plus grand au plus petit' : 'Range du plus petit au plus grand',
     prompt: '',
@@ -1021,7 +1039,7 @@ export function orderDecimals(texts: readonly string[], order: '<' | '>'): Numer
     order,
     answer,
     solved: answer,
-    explain: `On écrit des 0 pour que tous aient ${places} chiffres après la virgule : ${sorted.map((text) => padTo(text, places)).join(` ${order} `)}.`,
+    explain,
   });
 }
 
@@ -1111,6 +1129,324 @@ function fromMental(calc: MentalQuestion, context: string): NumerationQuestion {
   const solved =
     calc.suffix === undefined ? `${calc.prompt} = ${answer}` : `${calc.prompt} ${answer}${calc.suffix.startsWith('/') ? '' : ' '}${calc.suffix}`;
   return { ...calc, context, solved, id: solved };
+}
+
+// --- Le lien entre fractions et décimaux (leçons N19 et N20, fiches n° 139 à 144) ---
+
+/** 1/4 = 0,25 : le décimal d'une part (demis, quarts, cinquièmes, huitièmes). */
+const unitDecimal = (denominator: number) => spaced(round(1 / denominator));
+
+/** « 3/4 = ? » : 0,75 (fiche n° 142). */
+export function fractionAsDecimal(numerator: number, denominator: number): NumerationQuestion {
+  const shown = frac(numerator, denominator);
+  const answer = round(numerator / denominator);
+  return question({
+    context: 'Écris sous la forme d’un nombre à virgule',
+    prompt: shown,
+    answer,
+    solved: `${shown} = ${spaced(answer)}`,
+    explain:
+      numerator === 1
+        ? `${shown} = 1 ÷ ${denominator} = ${spaced(answer)}.`
+        : `${frac(1, denominator)} = ${unitDecimal(denominator)}, donc ${shown} = ${numerator} × ${unitDecimal(denominator)} = ${spaced(answer)}.`,
+  });
+}
+
+/** « 0,75 = ?/4 » : retrouver la fraction. */
+export function decimalAsFraction(numerator: number, denominator: number): NumerationQuestion {
+  const value = spaced(round(numerator / denominator));
+  return question({
+    context: 'Écris sous la forme d’une fraction',
+    prompt: `${value} =`,
+    suffix: `/${denominator}`,
+    answer: numerator,
+    solved: `${value} = ${frac(numerator, denominator)}`,
+    explain: `${frac(1, denominator)} = ${unitDecimal(denominator)} : ${value} = ${numerator} × ${unitDecimal(denominator)}, donc ${frac(numerator, denominator)}.`,
+  });
+}
+
+/** « Parmi ces nombres, lesquels sont égaux ? » : toucher la fraction égale à 0,5 (fiche n° 141). */
+export function equalToDecimal(numerator: number, denominator: number, others: readonly (readonly [number, number])[]): NumerationQuestion {
+  const value = spaced(round(numerator / denominator));
+  const shown = frac(numerator, denominator);
+  return question({
+    context: `Touche la fraction égale à ${value}`,
+    prompt: `${value} =`,
+    suffix: '',
+    choices: [[numerator, denominator] as const, ...others]
+      .sort((a, b) => a[0] / a[1] - b[0] / b[1])
+      .map(([n, d]) => ({ label: frac(n, d), value: frac(n, d) })),
+    answer: shown,
+    solved: `${value} = ${shown}`,
+    explain: `${shown} = ${numerator} ÷ ${denominator} = ${value}. Pour t’aider, tu peux tracer une droite graduée.`,
+  });
+}
+
+/** « 3/4 … 0,7 » : <, > ou =, en écrivant la fraction avec une virgule. */
+export function compareMixed(numerator: number, denominator: number, decimal: string, fractionFirst: boolean): NumerationQuestion {
+  const shown = frac(numerator, denominator);
+  const [left, right] = fractionFirst ? [shown, decimal] : [decimal, shown];
+  const [a, b] = [mixedValue(left), mixedValue(right)];
+  const symbol = a < b ? '<' : a > b ? '>' : '=';
+  const converted = spaced(round(numerator / denominator));
+  const places = Math.max(placesIn(converted), placesIn(decimal));
+  const [l, r] = fractionFirst ? [padTo(converted, places), padTo(decimal, places)] : [padTo(decimal, places), padTo(converted, places)];
+  return question({
+    context: 'Complète avec <, > ou =',
+    prompt: left,
+    suffix: right,
+    choices: SYMBOLS,
+    answer: symbol,
+    solved: `${left} ${symbol} ${right}`,
+    explain: `${shown} = ${converted} : ${l} ${symbol} ${r}.`,
+  });
+}
+
+/** « Place 3/5 », « place 1,25 » : toucher la graduation, sur une droite en dixièmes ou en quarts (fiches n° 143 et 144). */
+export function placeNumber(units: number, parts: number, text: string): NumerationQuestion {
+  const at = Math.round(mixedValue(text) * parts);
+  const line = fractionLine(units, parts, []);
+  const free = Array.from({ length: line.count }, (_, i) => i).filter((i) => !line.labels.includes(i));
+  const named = (i: number) => (text.includes('/') ? frac(i, parts) : spaced(round(i / parts)));
+  const step = parts === 10 ? 'un dixième (0,1)' : parts === 4 ? 'un quart (0,25)' : `${frac(1, parts)} (${unitDecimal(parts)})`;
+  const value = spaced(mixedValue(text));
+  return question({
+    context: 'Touche la graduation du nombre',
+    prompt: text,
+    figure: line,
+    choices: free.map((i) => ({ label: named(i), value: String(i) })),
+    choiceLayout: 'line',
+    answer: String(at),
+    solved: `${text} est à ${at} graduation${at > 1 ? 's' : ''} de 0, sur une droite dont l’unité a ${parts} graduations.`,
+    explain: `L’unité est partagée en ${parts} : chaque graduation vaut ${step}. ${text.includes('/') ? `${text} = ${value}, on avance` : 'On avance'} de ${at} graduation${at > 1 ? 's' : ''} depuis 0.`,
+  });
+}
+
+// --- Les pourcentages (leçon Pb 14, fiches n° 127 à 138 et 145 à 150) ---
+
+/** Les pourcentages à connaître (leçon Pb 14). */
+const KNOWN_PERCENTS: Readonly<Record<number, string>> = { 10: 'le dixième', 25: 'le quart', 50: 'la moitié', 75: 'les trois quarts' };
+
+/**
+ * Comment trouver `percent` % de `n`, comme sur les fiches : 25 %, c'est le quart ; sinon on part de 10 % et de 1 %
+ * (« 23 % = 2 × 10 % + 3 × 1 % ») ; 35 % = 25 % + 10 %.
+ */
+function percentSteps(percent: number, n: number): string {
+  const of = (p: number) => spaced(round((p * n) / 100));
+  const answer = of(percent);
+  if (percent === 50) return `50 %, c’est la moitié : ${spaced(n)} ÷ 2 = ${answer}.`;
+  if (percent === 25) return `25 %, c’est le quart : ${spaced(n)} ÷ 4 = ${answer}.`;
+  if (percent === 75) return `75 %, c’est les trois quarts : ${spaced(n)} ÷ 4 = ${of(25)}, puis 3 × ${of(25)} = ${answer}.`;
+  if (percent === 10) return `10 %, c’est un dixième : ${spaced(n)} ÷ 10 = ${answer}.`;
+  if (percent === 1) return `1 %, c’est un centième : ${spaced(n)} ÷ 100 = ${answer}.`;
+  if (percent === 100) return `100 %, c’est le tout : ${answer}.`;
+  // Le quart quand il aide, comme sur les fiches : 35 % = 25 % + 10 %, 36 % = 25 % + 10 % + 1 % (mais 40 % = 4 × 10 %).
+  const quarter = percent > 25 && percent < 50 && percent % 10 !== 0 && (percent - 25) % 10 <= 1 && n % 4 === 0;
+  const rest = quarter ? percent - 25 : percent;
+  const [tens, ones] = [Math.floor(rest / 10), rest % 10];
+  const terms = [
+    ...(quarter ? [{ label: '25 %', value: of(25) }] : []),
+    ...(tens > 0 ? [{ label: tens > 1 ? `${tens} × 10 %` : '10 %', value: tens > 1 ? `${tens} × ${of(10)}` : of(10) }] : []),
+    ...(ones > 0 ? [{ label: ones > 1 ? `${ones} × 1 %` : '1 %', value: ones > 1 ? `${ones} × ${of(1)}` : of(1) }] : []),
+  ];
+  const known = [
+    ...(quarter ? [`25 % de ${spaced(n)} = ${of(25)} (le quart)`] : []),
+    ...(tens > 0 ? [`10 % de ${spaced(n)} = ${of(10)}`] : []),
+    ...(ones > 0 ? [`1 % de ${spaced(n)} = ${of(1)}`] : []),
+  ];
+  return `${listed(known)}. ${percent} % = ${terms.map((t) => t.label).join(' + ')} : ${terms.map((t) => t.value).join(' + ')} = ${answer}.`;
+}
+
+/** « 23 % de 300 » (fiches n° 127, 129, 131, 133, 135 et 138). */
+export function percentOf(percent: number, n: number): NumerationQuestion {
+  const answer = round((percent * n) / 100);
+  const text = `${percent} % de ${spaced(n)}`;
+  return question({ context: 'Calcule', prompt: text, answer, solved: `${text} = ${spaced(answer)}`, explain: percentSteps(percent, n) });
+}
+
+/** « … % de 4 000 = 1 400 » (fiches n° 130, 132 et 136). */
+export function findPercent(percent: number, n: number): NumerationQuestion {
+  const result = round((percent * n) / 100);
+  const one = round(n / 100);
+  const known = KNOWN_PERCENTS[percent];
+  return question({
+    context: 'Complète',
+    prompt: '',
+    suffix: `% de ${spaced(n)} = ${spaced(result)}`,
+    answer: percent,
+    solved: `${percent} % de ${spaced(n)} = ${spaced(result)}`,
+    explain:
+      known && percent !== 10
+        ? `${spaced(result)}, c’est ${known} de ${spaced(n)} : ${percent} %.`
+        : `1 % de ${spaced(n)} = ${spaced(one)} : ${spaced(result)} = ${percent} × ${spaced(one)}, donc ${percent} %.`,
+  });
+}
+
+/** « Colorie 40 % des 20 billes » (fiches n° 128, 134 et 137). */
+export function paintPercent(total: number, percent: number): NumerationQuestion {
+  const answer = (percent * total) / 100;
+  return question({
+    context: 'Touche pour colorier',
+    prompt: `Colorie ${percent} % des ${total} billes`,
+    input: 'paint',
+    figure: { shape: 'marbles', count: total, columns: 6, colored: 0 },
+    answer,
+    solved: `${percent} % de ${total} billes, c’est ${answer} bille${answer > 1 ? 's' : ''}.`,
+    explain: percentSteps(percent, total),
+  });
+}
+
+/** « 20 billes : 25 % en bleu, 40 % en vert et 10 % en orange. Combien de billes en vert ? » (fiche n° 128). */
+export function percentMarbles(total: number, percents: readonly number[], asked: number | 'blanches'): NumerationQuestion {
+  const counts = percents.map((p) => (p * total) / 100);
+  const list = listed(percents.map((p, i) => `${p} % en ${COLORS[i]}`));
+  const white = total - counts.reduce((sum, n) => sum + n, 0);
+  const [askedText, answer, explain] =
+    asked === 'blanches'
+      ? [
+          'Combien de billes restent blanches ?',
+          white,
+          `${percents.map((p, i) => `${p} % de ${total} = ${counts[i]}`).join(' ; ')}. ${counts.join(' + ')} = ${total - white} billes coloriées : ${total} − ${total - white} = ${white}.`,
+        ]
+      : [`Combien de billes en ${COLORS[asked]} ?`, counts[asked]!, percentSteps(percents[asked]!, total)];
+  const text = `${total} billes : ${list}. ${askedText}`;
+  return question({ prompt: text, suffix: 'billes', answer, solved: `${text} ${answer} billes.`, explain });
+}
+
+/** « 25 %, c'est… » le quart ; « 35 % = ? » 0,35 (leçon Pb 14 : une fraction décimale de dénominateur 100). */
+export function percentMeaning(percent: number): NumerationQuestion {
+  const known = KNOWN_PERCENTS[percent];
+  if (known) {
+    return question({
+      context: 'Complète',
+      prompt: `${percent} %, c’est`,
+      choices: Object.values(KNOWN_PERCENTS).map((name) => ({ label: name, value: name })),
+      answer: known,
+      solved: `${percent} %, c’est ${known}.`,
+      explain: `${percent} % = ${frac(percent, 100)} = ${spaced(percent / 100)}, c’est ${known}.`,
+    });
+  }
+  return question({
+    context: 'Écris sous la forme d’un nombre à virgule',
+    prompt: `${percent} %`,
+    answer: percent / 100,
+    solved: `${percent} % = ${spaced(percent / 100)}`,
+    explain: `${percent} %, c’est ${percent} pour 100 : ${frac(percent, 100)} = ${spaced(percent / 100)}.`,
+  });
+}
+
+/** Les petits problèmes de la leçon Pb 14 : « Un pot de 600 g de confiture contient 25 % de sucre. » */
+const SIMPLE_PROBLEMS = [
+  { text: (n: number, p: number) => `Un pot de ${spaced(n)} g de confiture contient ${p} % de sucre. Combien de grammes de sucre contient-il ?`, unit: 'g' },
+  { text: (n: number, p: number) => `Dans une école de ${spaced(n)} élèves, ${p} % mangent à la cantine. Combien d’élèves mangent à la cantine ?`, unit: 'élèves' },
+  { text: (n: number, p: number) => `Un sac contient ${spaced(n)} billes, dont ${p} % sont rouges. Combien de billes rouges y a-t-il ?`, unit: 'billes' },
+  { text: (n: number, p: number) => `Une bouteille de ${spaced(n)} cL de boisson contient ${p} % de jus d’orange. Combien de centilitres de jus d’orange contient-elle ?`, unit: 'cL' },
+] as const;
+
+export function percentProblem(kind: number, n: number, percent: number): NumerationQuestion {
+  const { text, unit } = SIMPLE_PROBLEMS[kind]!;
+  const answer = round((percent * n) / 100);
+  const prompt = text(n, percent);
+  return question({ prompt, suffix: unit, answer, solved: `${prompt} ${spaced(answer)} ${unit}.`, explain: `${percentSteps(percent, n)}` });
+}
+
+/** Les candidats des élections (fiches n° 145 et 146). */
+const CANDIDATES = ['M. Renard', 'Mme Cigogne', 'M. Hérisson', 'Mme Chouette', 'M. Blaireau', 'Mme Loutre'] as const;
+const VILLAGES = ['Fontaine', 'Dahl', 'Beaulieu', 'Montfort', 'Valcourt'] as const;
+
+/**
+ * « 2 000 personnes ont voté… 35 % pour M. Renard, 65 % pour Mme Cigogne » : combien pour l'un (`asked` 0 ou 1),
+ * ou combien n'ont voté pour personne (`blank`), quand les deux ne font pas 100 %.
+ */
+export function votes(voters: number, village: number, first: number, percents: readonly [number, number], asked: 0 | 1 | 'blank'): NumerationQuestion {
+  const names = [CANDIDATES[first % CANDIDATES.length]!, CANDIDATES[(first + 1) % CANDIDATES.length]!];
+  const blank = 100 - percents[0] - percents[1];
+  const start = `${spaced(voters)} personnes ont voté pour choisir le maire de ${VILLAGES[village]}. ${percents[0]} % ont voté pour ${names[0]}, ${percents[1]} % pour ${names[1]}${blank > 0 ? ', les autres ont voté blanc' : ''}.`;
+  const askedText = asked === 'blank' ? 'Combien de personnes ont voté blanc ?' : `Combien de personnes ont voté pour ${names[asked]} ?`;
+  const percent = asked === 'blank' ? blank : percents[asked];
+  const answer = round((percent * voters) / 100);
+  const explain =
+    asked === 'blank'
+      ? `${percents[0]} % + ${percents[1]} % = ${100 - blank} % : il reste ${blank} % de votes blancs. ${percentSteps(blank, voters)}`
+      : percentSteps(percent, voters);
+  const prompt = `${start} ${askedText}`;
+  return question({ prompt, suffix: 'personnes', answer, solved: `${prompt} ${spaced(answer)} personnes.`, explain });
+}
+
+/** Ce qui est soldé (fiches n° 147 à 149) et ce qui grandit (fiche n° 150). */
+const ITEMS = [
+  ['Ces chaussures coûtaient', 'Combien coûtent-elles maintenant ?'],
+  ['Ce pantalon coûtait', 'Combien coûte-t-il maintenant ?'],
+  ['Cette robe coûtait', 'Combien coûte-t-elle maintenant ?'],
+  ['Ce tee-shirt coûtait', 'Combien coûte-t-il maintenant ?'],
+  ['Ce vélo coûtait', 'Combien coûte-t-il maintenant ?'],
+  ['Ce jeu de société coûtait', 'Combien coûte-t-il maintenant ?'],
+] as const;
+
+/** « Ces chaussures coûtaient 120 €. 30 % de réduction. Combien coûtent-elles maintenant ? » : deux étapes. */
+export function discount(item: number, price: number, percent: number, asked: 'price' | 'reduction'): NumerationQuestion {
+  const [what, how] = ITEMS[item]!;
+  const reduction = round((percent * price) / 100);
+  const after = round(price - reduction);
+  const prompt = `${what} ${spaced(price)} €. Pendant les soldes, le vendeur applique ${percent} % de réduction. ${asked === 'price' ? how : 'De combien est la réduction ?'}`;
+  const answer = asked === 'price' ? after : reduction;
+  return question({
+    prompt,
+    suffix: '€',
+    answer,
+    solved: `${prompt} ${spaced(answer)} €.`,
+    explain:
+      asked === 'price'
+        ? `On cherche d’abord la réduction : ${percent} % de ${spaced(price)} = ${spaced(reduction)} €. Puis le nouveau prix : ${spaced(price)} − ${spaced(reduction)} = ${spaced(after)} €.`
+        : percentSteps(percent, price),
+  });
+}
+
+const GROWING = [
+  {
+    text: (n: number, p: number) => `La semaine dernière, la plante mesurait ${spaced(n)} cm. Aujourd’hui, elle a grandi de ${p} % ! Combien mesure-t-elle maintenant ?`,
+    unit: 'cm',
+  },
+  {
+    text: (n: number, p: number) => `L’an dernier, le village comptait ${spaced(n)} habitants. Cette année, il y en a ${p} % de plus. Combien y a-t-il d’habitants maintenant ?`,
+    unit: 'habitants',
+  },
+  { text: (n: number, p: number) => `Le ticket de cinéma coûtait ${spaced(n)} €. Son prix a augmenté de ${p} %. Combien coûte-t-il maintenant ?`, unit: '€' },
+] as const;
+
+/** « La plante mesurait 22 cm, elle a grandi de 20 % » : l'augmentation, puis la nouvelle taille (fiche n° 150). */
+export function growth(kind: number, n: number, percent: number): NumerationQuestion {
+  const { text, unit } = GROWING[kind]!;
+  const more = round((percent * n) / 100);
+  const after = round(n + more);
+  const prompt = text(n, percent);
+  return question({
+    prompt,
+    suffix: unit,
+    answer: after,
+    solved: `${prompt} ${spaced(after)} ${unit}.`,
+    explain: `On cherche d’abord l’augmentation : ${percent} % de ${spaced(n)} = ${spaced(more)}. Puis ${spaced(n)} + ${spaced(more)} = ${spaced(after)}.`,
+  });
+}
+
+/** « Sur 2 000 votants, 700 ont voté pour M. Renard : quel pourcentage ? », ou la réduction d'un prix. */
+export function whichPercent(kind: 'votes' | 'price', total: number, part: number): NumerationQuestion {
+  const percent = round((part * 100) / total);
+  const prompt =
+    kind === 'votes'
+      ? `${spaced(total)} personnes ont voté pour choisir le maire. ${spaced(part)} ont voté pour ${CANDIDATES[0]}. Quel pourcentage des votes a-t-il eu ?`
+      : `Ce pull coûtait ${spaced(total)} €. Pendant les soldes, il coûte ${spaced(part)} €. Quel est le pourcentage de réduction ?`;
+  const reduction = round(total - part);
+  const answer = kind === 'votes' ? percent : round((reduction * 100) / total);
+  const counted = kind === 'votes' ? part : reduction;
+  const one = round(total / 100);
+  return question({
+    prompt,
+    suffix: '%',
+    answer,
+    solved: `${prompt} ${answer} %.`,
+    explain: `${kind === 'price' ? `La réduction est de ${spaced(total)} − ${spaced(part)} = ${spaced(reduction)} €. ` : ''}1 % de ${spaced(total)} = ${spaced(one)} : ${spaced(counted)} = ${answer} × ${spaced(one)}, donc ${answer} %.`,
+  });
 }
 
 // --- Les ceintures ---
@@ -1611,6 +1947,147 @@ const MARRON_KINDS: readonly Draw[] = [
   },
 ];
 
+/** Les billes des fiches n° 128, 134 et 137 : le nombre de billes, et des pourcentages qui tombent juste. */
+const PERCENT_MARBLES = [
+  [20, [25, 40, 10]],
+  [15, [20, 60]],
+  [16, [25, 50]],
+  [20, [50, 25]],
+  [10, [30, 50, 10]],
+  [40, [25, 10, 50]],
+  [12, [25, 50]],
+  [25, [20, 40]],
+] as const;
+
+/** La noire : les pourcentages simples et des problèmes (fiches n° 127 à 138, leçon Pb 14). */
+const NOIRE_KINDS: readonly Draw[] = [
+  (random) => percentOf(pick([10, 1, 20, 30, 40, 23, 21, 32, 12, 41], random), pick([300, 80, 240, 40, 50, 450, 200, 120, 60, 500, 400, 90, 700], random)),
+  (random) => percentOf(pick([25, 50, 75, 35, 36], random), pick([80, 240, 36, 40, 200, 120, 4000, 60, 100, 400, 1000, 48], random)),
+  (random) => findPercent(pick([1, 2, 3, 10, 20, 25, 30, 40, 41, 23, 35, 50, 75], random), pick([200, 400, 4000, 450, 300, 500, 1000, 600], random)),
+  (random) => {
+    const [total, percents] = pick(PERCENT_MARBLES, random);
+    return paintPercent(total, pick(percents, random));
+  },
+  (random) => {
+    const [total, percents] = pick(PERCENT_MARBLES, random);
+    return percentMarbles(total, percents, random() < 0.3 ? 'blanches' : between(0, percents.length - 1, random));
+  },
+  (random) => percentMeaning(pick([10, 25, 50, 75, 35, 5, 60, 12, 99], random)),
+  (random) => {
+    const kind = between(0, SIMPLE_PROBLEMS.length - 1, random);
+    const n = pick([[600, 400, 500, 800, 250], [200, 300, 400, 250, 120], [40, 60, 80, 200], [100, 150, 200, 50]][kind]!, random);
+    return percentProblem(kind, n, pick([10, 20, 25, 50, 75, 30, 40], random));
+  },
+];
+
+/** Des fractions qui s'écrivent avec une virgule (demis, quarts, cinquièmes, huitièmes). */
+const SIMPLE_FRACTIONS = [
+  [1, 2],
+  [1, 4],
+  [3, 4],
+  [1, 5],
+  [2, 5],
+  [3, 5],
+  [3, 2],
+  [5, 2],
+  [5, 4],
+  [7, 4],
+  [9, 4],
+  [1, 8],
+  [7, 2],
+] as const;
+
+/** « 1,4 1/4 0,8 1/8 0,5 » : deux fractions et trois décimaux, tous différents (fiches n° 139 et 140). */
+function drawMixedOrder(random: () => number): NumerationQuestion {
+  const texts: string[] = [];
+  const values = new Set<number>();
+  const add = (text: string) => {
+    if (values.has(mixedValue(text))) return;
+    values.add(mixedValue(text));
+    texts.push(text);
+  };
+  while (texts.length < 2) {
+    const [n, d] = pick(SIMPLE_FRACTIONS.filter(([n, d]) => n / d < 2), random);
+    add(frac(n, d));
+  }
+  while (texts.length < 5) add(spaced(random() < 0.7 ? between(1, 19, random) / 10 : between(11, 99, random) / 100));
+  return orderDecimals(shuffle(texts, random), random() < 0.8 ? '<' : '>');
+}
+
+/** La bronze : le lien entre fractions et décimaux (fiches n° 139 à 144, leçons N19 et N20). */
+const BRONZE_KINDS: readonly Draw[] = [
+  drawMixedOrder,
+  (random) => {
+    const [n, d] = pick(SIMPLE_FRACTIONS, random);
+    // Le piège de la fiche n° 141 : 0,2 n'est pas 1/2.
+    const digit = Number(spaced(round(n / d)).replace(/\D/g, '').slice(-1));
+    const candidates = [...(digit > 1 ? [[1, digit] as const] : []), ...shuffle(SIMPLE_FRACTIONS, random)];
+    const others: (readonly [number, number])[] = [];
+    for (const [a, b] of candidates) {
+      if (others.length < 3 && a / b !== n / d && !others.some(([x, y]) => x / y === a / b)) others.push([a, b]);
+    }
+    return equalToDecimal(n, d, others);
+  },
+  (random) => {
+    const [n, d] = pick(SIMPLE_FRACTIONS, random);
+    return random() < 0.6 ? fractionAsDecimal(n, d) : decimalAsFraction(n, d);
+  },
+  (random) => {
+    const [n, d] = pick(SIMPLE_FRACTIONS, random);
+    const value = n / d;
+    // Le chiffre du dénominateur après la virgule (1/4 et 0,4), un voisin, ou la même valeur.
+    const kind = between(0, 2, random);
+    const decimal = kind === 0 ? `0,${d}` : kind === 1 ? spaced(round(Math.max(0.1, value + pick([-0.1, 0.05, 0.1, 0.2], random)))) : spaced(value);
+    return compareMixed(n, d, decimal, random() < 0.5);
+  },
+  (random) => {
+    if (random() < 0.5) {
+      // Une unité en dixièmes : 3/10, 3/5 ou 0,9 (fiche n° 143).
+      const at = between(1, 9, random);
+      const text = random() < 0.4 ? spaced(at / 10) : at % 2 === 0 && random() < 0.6 ? frac(at / 2, 5) : frac(at, 10);
+      return placeNumber(1, 10, text);
+    }
+    // Trois unités en quarts : 5/2, 7/4, 1,25 (fiche n° 144).
+    const at = pick(Array.from({ length: 11 }, (_, i) => i + 1).filter((i) => i % 4 !== 0), random);
+    const text = random() < 0.4 ? spaced(at / 4) : at % 2 === 0 ? frac(at / 2, 2) : frac(at, 4);
+    return placeNumber(3, 4, text);
+  },
+];
+
+/** L'argent : manipuler les pourcentages (fiches n° 145 à 150, leçon Pb 14). */
+const ARGENT_KINDS: readonly Draw[] = [
+  (random) => {
+    const [a, b] = pick([[35, 65], [25, 75], [40, 60], [30, 70], [45, 55], [60, 40]] as const, random);
+    return votes(pick([2000, 1500, 1200, 800, 3000, 600, 2500, 400], random), between(0, VILLAGES.length - 1, random), between(0, 5, random), [a, b], random() < 0.5 ? 0 : 1);
+  },
+  (random) => {
+    const [a, b] = pick([[25, 60], [35, 50], [40, 45], [30, 55], [20, 70]] as const, random);
+    const asked = pick([0, 1, 'blank'] as const, random);
+    return votes(pick([2000, 1500, 1200, 800, 3000, 600, 2500, 400], random), between(0, VILLAGES.length - 1, random), between(0, 5, random), [a, b], asked);
+  },
+  (random) =>
+    discount(
+      between(0, ITEMS.length - 1, random),
+      pick([120, 35, 62, 30, 40, 80, 25, 50, 90, 150, 64], random),
+      pick([5, 10, 20, 25, 30, 50, 40], random),
+      random() < 0.75 ? 'price' : 'reduction',
+    ),
+  (random) => {
+    const kind = between(0, GROWING.length - 1, random);
+    const n = pick([[22, 15, 30, 40, 12, 25], [2500, 1200, 800, 4000, 600], [8, 10, 12, 6, 20]][kind]!, random);
+    return growth(kind, n, pick([[10, 20, 50, 25], [1, 2, 4, 5, 10], [10, 20, 5, 25, 50]][kind]!, random));
+  },
+  (random) => {
+    if (random() < 0.5) {
+      const total = pick([2000, 500, 800, 1200, 400], random);
+      return whichPercent('votes', total, (total * pick([35, 40, 25, 60, 15, 45], random)) / 100);
+    }
+    const total = pick([40, 60, 80, 120, 50, 30], random);
+    return whichPercent('price', total, total - (total * pick([10, 20, 25, 50, 30], random)) / 100);
+  },
+  (random) => percentOf(pick([5, 15, 45, 65, 35, 12], random), pick([62, 1500, 2000, 240, 120, 80, 36], random)),
+];
+
 export const NUMERATION: readonly NumerationBelt[] = [
   {
     belt: 'blanche',
@@ -1718,6 +2195,47 @@ export const NUMERATION: readonly NumerationBelt[] = [
     ],
     examples: () => [orderDecimals(['4,3', '4,4', '4,07', '4,36'], '>'), decimalTimes(2, 10, 20, 0.01, 'b'), frameDecimal(8.49, 1, 'high'), completeDecimal(4.6, 4.75)],
     kinds: MARRON_KINDS,
+  },
+  {
+    belt: 'noire',
+    skill: 'Les pourcentages simples (50 %, 25 %, 10 %…) et des problèmes',
+    decimal: true,
+    tips: [
+      'Un pourcentage est une fraction de dénominateur 100 : 35 %, c’est 35/100 = 0,35. Il y a des pourcentages à connaître : 25 %, c’est le quart ; 50 %, la moitié ; 75 %, les trois quarts.',
+      '10 %, c’est un dixième : 10 % de 300 = 300 ÷ 10 = 30. 1 %, c’est un centième : 1 % de 300 = 3.',
+      'Pour les autres, on part de 10 % et de 1 % : 23 % = 2 × 10 % + 3 × 1 %, donc 23 % de 300 = 60 + 9 = 69.',
+      'Pour 35 %, on peut faire 25 % + 10 % : 35 % de 80 = 20 + 8 = 28.',
+      'Un pot de 600 g de confiture contient 25 % de sucre : 25 % de 600 = 600 ÷ 4 = 150 g de sucre.',
+    ],
+    examples: () => [percentOf(23, 300), percentOf(35, 80), findPercent(35, 4000), paintPercent(20, 40)],
+    kinds: NOIRE_KINDS,
+  },
+  {
+    belt: 'bronze',
+    skill: 'Le lien entre les fractions et les nombres décimaux',
+    decimal: true,
+    tips: [
+      'Une fraction est une division : 3/2 = 3 ÷ 2 = 1,5. Il y a des égalités à connaître : 1/2 = 0,5 ; 1/4 = 0,25 ; 3/4 = 0,75 ; 1/5 = 0,2.',
+      'Attention : 0,2 n’est pas 1/2 ! 1/2 = 0,5 et 0,2 = 1/5.',
+      'Pour ranger des fractions et des décimaux, on écrit les fractions avec une virgule : 1/4 = 0,25 et 1/8 = 0,125, donc 1/8 < 1/4 < 0,5.',
+      'Sur une droite graduée, quand l’unité est partagée en 4, chaque graduation vaut un quart, soit 0,25 : 1,25 est à 5 graduations de 0, comme 5/4.',
+    ],
+    examples: () => [fractionAsDecimal(3, 4), equalToDecimal(1, 5, [[1, 2], [3, 2], [2, 5]]), orderDecimals(['1,4', '1/4', '0,8', '1/8', '0,5'], '<'), placeNumber(3, 4, '1,25')],
+    kinds: BRONZE_KINDS,
+  },
+  {
+    belt: 'argent',
+    skill: 'Manipuler les pourcentages : élections, soldes, augmentations',
+    goal: 'CM2',
+    decimal: true,
+    tips: [
+      'Pour trouver 35 % de 2 000, cherche d’abord 10 % (200) et 1 % (20), ou 25 % (le quart, 500) : 35 % = 25 % + 10 %, 500 + 200 = 700.',
+      'Pour un prix soldé, il y a toujours deux étapes : on cherche d’abord la réduction (30 % de 120 € = 36 €), puis le nouveau prix (120 − 36 = 84 €).',
+      'Pour une augmentation, c’est pareil, mais on ajoute : la plante de 22 cm grandit de 20 % : 20 % de 22 = 4,4, puis 22 + 4,4 = 26,4 cm.',
+      'Pour trouver le pourcentage : 1 % de 2 000 = 20 ; 700 = 35 × 20, donc 35 %.',
+    ],
+    examples: () => [votes(2000, 0, 0, [35, 65], 0), discount(0, 120, 30, 'price'), growth(0, 22, 20), whichPercent('votes', 2000, 700)],
+    kinds: ARGENT_KINDS,
   },
 ];
 
