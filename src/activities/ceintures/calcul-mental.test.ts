@@ -2,15 +2,19 @@ import { describe, expect, it } from 'vitest';
 import { answerText, isCorrect } from '../../core/quiz';
 import {
   addDecimals,
+  addFractions,
   CALCUL_MENTAL,
   complementTo100,
   complementToUnit,
   decimalToFraction,
   dividedByPower,
   fractionToDecimal,
+  fractionToNumber,
   MENTAL_TEST_SIZE,
   multiple,
+  part,
   passesMental,
+  percentOf,
   pickCalcs,
   plusNineEleven,
   plusPower,
@@ -18,10 +22,12 @@ import {
   shiftTimes,
   smallAddition,
   smallSubtraction,
+  smartSum,
   subtractDecimals,
   tensCalc,
   timesPower,
   timesRound,
+  wholeAndFraction,
 } from './calcul-mental';
 import { CalcTestSession, factText } from './table-practice';
 
@@ -34,34 +40,46 @@ function seeded(seed: number): () => number {
   };
 }
 
-/** « 8,37 » → 8.37. */
-const num = (text: string) => Number(text.replace(',', '.'));
+/** « 8,37 » → 8.37, « 7/3 » → 7 / 3. */
+const term = (text: string) => {
+  const fraction = /^(\d+)\/(\d+)$/.exec(text);
+  return fraction ? Number(fraction[1]) / Number(fraction[2]) : Number(text.replace(',', '.'));
+};
 const same = (x: number, y: number) => Math.abs(x - y) < 1e-9;
 
-/** Le calcul écrit, recalculé : « 37 + 63 = 100 », « Le triple de 25 = 75 », « 8,37 = 837/100 ». */
+/** « 25 + 47 + 75 », « 2 + 1/3 » : de gauche à droite (jamais deux opérations différentes à la fois). */
+function value(text: string): number {
+  const tokens = text.split(' ');
+  let result = term(tokens[0]!);
+  for (let i = 1; i < tokens.length; i += 2) {
+    const [sign, x] = [tokens[i], term(tokens[i + 1]!)];
+    result = sign === '+' ? result + x : sign === '−' ? result - x : sign === '×' ? result * x : result / x;
+  }
+  return result;
+}
+
+/** Le calcul écrit, recalculé : « 37 + 63 = 100 », « Le triple de 25 = 75 », « 7/3 = 2 + 1/3 », « 25 % de 600 = 150 ». */
 function evaluate(text: string): boolean {
-  const named = /^Le (double|triple|quadruple) de (\d+) = (\d+)$/.exec(text);
-  if (named) return Number(named[2]) * { double: 2, triple: 3, quadruple: 4 }[named[1] as 'double'] === Number(named[3]);
-  const toFraction = /^([\d,]+) = (\d+)\/(\d+)$/.exec(text);
-  if (toFraction) return same(num(toFraction[1]!), Number(toFraction[2]) / Number(toFraction[3]));
-  const fromFraction = /^(\d+)\/(\d+) = ([\d,]+)$/.exec(text);
-  if (fromFraction) return same(Number(fromFraction[1]) / Number(fromFraction[2]), num(fromFraction[3]!));
-  const [, a, sign, b, c] = /^([\d,]+) ([+−×:]) ([\d,]+) = ([\d,]+)$/.exec(text)!;
-  const [x, y] = [num(a!), num(b!)];
-  const result = sign === '+' ? x + y : sign === '−' ? x - y : sign === '×' ? x * y : x / y;
-  return same(result, num(c!));
+  const named = /^(?:Le|La|Les) (double|triple|quadruple|moitié|tiers|quart) de (\d+) = (\d+)$/.exec(text);
+  const factors = { double: 2, triple: 3, quadruple: 4, moitié: 1 / 2, tiers: 1 / 3, quart: 1 / 4 };
+  if (named) return same(Number(named[2]) * factors[named[1] as 'double'], Number(named[3]));
+  const percent = /^(\d+)\u00a0% de (\d+) = (\d+)$/.exec(text);
+  if (percent) return same((Number(percent[1]) * Number(percent[2])) / 100, Number(percent[3]));
+  const [left, right, ...rest] = text.split(' = ');
+  return rest.length === 0 && same(value(left!), value(right!));
 }
 
 describe('ceintures de calcul mental', () => {
-  it('suivent le classeur, de la blanche à la marron', () => {
+  it('suivent le classeur, de la blanche à la brillante', () => {
     expect(CALCUL_MENTAL.map((b) => b.belt)).toEqual([
       'blanche', 'beige', 'jaune', 'orange', 'rouge', 'rose', 'violette',
-      'bleu-clair', 'bleu-fonce', 'vert-clair', 'vert-fonce', 'marron',
+      'bleu-clair', 'bleu-fonce', 'vert-clair', 'vert-fonce', 'marron', 'gris', 'noire', 'brillante',
     ]);
+    expect(CALCUL_MENTAL.find((b) => b.goal === 'CM2')?.belt).toBe('noire');
     expect(CALCUL_MENTAL.find((b) => b.goal === 'CE2')?.belt).toBe('orange');
     expect(CALCUL_MENTAL.find((b) => b.goal === 'CM1')?.belt).toBe('vert-clair');
     // La virgule au pavé, seulement pour les décimaux.
-    expect(CALCUL_MENTAL.filter((b) => b.decimal).map((b) => b.belt)).toEqual(['bleu-clair', 'bleu-fonce', 'vert-clair', 'vert-fonce', 'marron']);
+    expect(CALCUL_MENTAL.filter((b) => b.decimal).map((b) => b.belt)).toEqual(['bleu-clair', 'bleu-fonce', 'vert-clair', 'vert-fonce', 'marron', 'noire']);
   });
 
   it('tirent des calculs justes et positifs, entiers sans la virgule, jusqu’aux millièmes avec', () => {
@@ -136,6 +154,37 @@ describe('ceintures de calcul mental', () => {
     expect(shiftDivided(651, 100).explain).toBe(': 100 : on décale la virgule de 2 rangs vers la gauche : 6,51.');
     expect(shiftDivided(7, 100).explain).toBe(': 100 : on décale la virgule de 2 rangs vers la gauche, on ajoute des 0 devant : 0,07.');
     expect(shiftDivided(3.8, 10).answer).toBe(0.38);
+  });
+
+  it('prend la moitié, le tiers et le quart d’un entier (leçon Calc 4)', () => {
+    expect(part(48, 2)).toMatchObject({ prompt: 'La moitié de 48', answer: 24 });
+    expect(part(48, 2).explain).toBe('La moitié de 40 est 20, la moitié de 8 est 4 : 20 + 4 = 24.');
+    expect(part(60, 2).explain).toBe('La moitié, c’est deux fois moins : 60 : 2 = 30.');
+    expect(part(36, 3).explain).toBe('Le tiers, c’est trois fois moins : combien de fois 3 dans 36 ? 12 fois, car 3 × 12 = 36.');
+    expect(part(80, 4).explain).toBe('Le quart, c’est quatre fois moins : la moitié de la moitié. 80 → 40 → 20.');
+  });
+
+  it('passe d’une fraction à un nombre décimal par une fraction décimale', () => {
+    expect(fractionToNumber(3, 4)).toMatchObject({ prompt: '3/4', answer: 0.75 });
+    expect(fractionToNumber(3, 4).explain).toBe('On multiplie le numérateur et le dénominateur par 25 : 3/4 = 75/100, donc 0,75.');
+    expect(fractionToNumber(7, 2).explain).toBe('On multiplie le numérateur et le dénominateur par 5 : 7/2 = 35/10, donc 3,5.');
+    expect(fractionToNumber(2, 5).answer).toBe(0.4);
+  });
+
+  it('calcule les quatre sortes de la brillante', () => {
+    const sum = smartSum([25, 47, 75], [0, 2]);
+    expect(factText(sum)).toBe('25 + 47 + 75 = 147');
+    expect(sum.explain).toBe('On regroupe ce qui tombe rond : 25 + 75 = 100. Puis 100 + 47 = 147.');
+    const whole = wholeAndFraction(7, 3);
+    expect(whole).toMatchObject({ prompt: '7/3 = 2 +', suffix: '/3', answer: 1 });
+    expect(factText(whole)).toBe('7/3 = 2 + 1/3');
+    expect(whole.explain).toBe('Dans 7, combien de fois 3 ? 2 fois (2 × 3 = 6), reste 1 : 7/3 = 2 + 1/3.');
+    expect(factText(addFractions(2, 1, 5))).toBe('2/5 + 1/5 = 3/5');
+    expect(addFractions(2, 1, 5).explain).toBe('Même dénominateur : on additionne les numérateurs, 2 + 1 = 3, et on garde 5 : 3/5.');
+    expect(percentOf(25, 600)).toMatchObject({ prompt: '25\u00a0% de 600', answer: 150 });
+    expect(percentOf(25, 600).explain).toBe('25 %, c’est le quart : 600 : 4 = 150.');
+    expect(percentOf(50, 30).explain).toBe('50 %, c’est la moitié : 30 : 2 = 15.');
+    expect(percentOf(75, 40).explain).toBe('75 %, c’est les trois quarts : le quart de 40 est 10, et 10 × 3 = 30.');
   });
 
   it('accepte la réponse tapée avec la virgule, et les 0 inutiles', () => {

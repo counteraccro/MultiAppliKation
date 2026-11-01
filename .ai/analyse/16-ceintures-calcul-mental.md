@@ -5,6 +5,7 @@ Homophones, la Conjugaison, les Tables et le Calcul posé. Analyse du 31/10/2026
 (« Ceintures de calcul mental », p. 14 du suivi) et des leçons de la classe Calc 14 et Calc 15
 (« Techniques de calcul mental », p. 20 et 21 de « Leçons Joliot Curie.pdf »). Pas de fiche d'entraînement.
 Pour les décimaux (étape 2, 01/11/2026) : leçons Calc 12 (p. 18), Calc 13 (p. 19) et N19 (p. 42).
+Pour les fractions (étape 3, 01/11/2026) : Calc 4 et 4 bis (p. 9-10), N16 (p. 39), N19 (p. 42), N20 (p. 43), Pb 14 (p. 82).
 
 ## Décisions du 31/10/2026
 
@@ -40,9 +41,9 @@ Pour les décimaux (étape 2, 01/11/2026) : leçons Calc 12 (p. 18), Calc 13 (p.
 | Vert clair | Soustraire deux nombres décimaux — **objectif de fin de CM1** | étape 2, faite |
 | Vert foncé | Calculer le complément d'un décimal pour aller vers l'entier supérieur | étape 2, faite |
 | Marron | Multiplier et diviser un nombre décimal par 10, 100, 1000… | étape 2, faite |
-| Gris | Tiers, quart et moitié d'un entier | étape 3 |
-| Noire | Passer d'une fraction à un nombre décimal — **objectif de fin de CM2** | étape 3 |
-| Brillante | Additions astucieuses, fraction = entier + fraction, additionner des fractions, pourcentage | étape 3 |
+| Gris | Tiers, quart et moitié d'un entier | **étape 3, faite** |
+| Noire | Passer d'une fraction à un nombre décimal — **objectif de fin de CM2** | étape 3, faite |
+| Brillante | Additions astucieuses, fraction = entier + fraction, additionner des fractions, pourcentage | étape 3, faite |
 
 ## Les calculs (étape 1)
 
@@ -83,6 +84,25 @@ Jusqu'aux millièmes, comme dans la classe (6,791 ou 0,003 dans N19, 0,273 × 10
 
 **Une réponse avec des 0 inutiles est juste** (3,50 pour 3,5) : c'est le même nombre (N12 : « 48 = 48,0 »).
 
+## Les calculs (étape 3 : les fractions et les pourcentages)
+
+**Décision du 01/11/2026 : le dénominateur est toujours donné**, l'enfant tape seulement le numérateur dans la
+case au-dessus du trait (comme la bleu clair). Pas de deuxième case, donc pas de question de fractions
+équivalentes (2/4 ou 1/2) ; tout se tape avec le pavé (entiers, ou décimaux avec la virgule).
+
+- **Grise** (Calc 4) : « La moitié de 48 » (on coupe : la moitié de 40 et la moitié de 8), « Le tiers de 36 »
+  (« combien de fois 3 dans 36 ? »), « Le quart de 80 » (la moitié de la moitié). Réponses entières.
+- **Noire** (N19, N20) : « 3/4 = ? », en demis, quarts et cinquièmes, jamais un entier. On multiplie le
+  numérateur et le dénominateur pour avoir une fraction décimale (3/4 = 75/100), puis on écrit 0,75.
+  Cette façon de faire combine N19 et N20 : aucune leçon ne la montre telle quelle.
+- **Brillante**, quatre sortes à tour de rôle :
+  - **Additions astucieuses** (25 + 47 + 75) : on regroupe d'abord deux nombres qui font 100, ou dont les
+    unités font 10 (17 + 23 = 40). **Notre choix** : aucune leçon du PDF n'en parle, l'utilisateur l'a validé.
+  - **Fraction = entier + fraction** (N16) : « 7/3 = 2 + ?/3 » (dans 7, 2 fois 3, reste 1).
+  - **Additionner des fractions** (N16) : « 2/5 + 1/5 = ?/5 », même dénominateur, comme dans la leçon.
+  - **Pourcentages** (Pb 14) : **seulement ceux à connaître de la leçon**, 25 % (le quart), 50 % (la moitié),
+    75 % (les trois quarts), demande de l'utilisateur. Réponses entières.
+
 ## Les écrans
 
 Les mêmes que les Tables : un calcul à la fois au pavé (« 37 + ? = 100 » pour un complément), le compte à
@@ -107,9 +127,11 @@ changer). Le pavé accepte plus de chiffres (`maxDigits`) : 45 × 1000 = 45000.
    astuces, conditions réelles de 20 calculs en 2 minutes à une erreur près, leçon, progrès et autocollants).
    Faite le 31/10/2026 (0.44.0) : `calcul-mental.ts`, séries communes avec les Tables (`CalcPracticeSession`,
    `CalcTestSession`), l'astuce après une erreur (`explain` des questions), couleurs beige, rouge et grise.
-   La matière reste « pas finie » (`unfinished`) tant que les décimaux et les fractions manquent.
+   La matière reste « pas finie » (`unfinished`) tant que les décimaux et les fractions manquent (jusqu'à la 0.47.0).
 2. **Bleu clair → marron : les décimaux** (touche virgule au pavé, fractions décimales).
    Faite le 01/11/2026 (0.46.0) : `decimal` des ceintures (la virgule au pavé), les nombres comptés dans leur
    plus petit rang pour calculer juste (0,1 + 0,2 = 0,3), `numberText` / `answerText` (la virgule à
    l'affichage), `components/fraction.ts` (la fraction en colonne, la case en numérateur).
-3. **Gris → brillante : les fractions et les pourcentages** (saisie d'une fraction à préciser).
+3. **Gris → brillante : les fractions et les pourcentages** (le dénominateur est donné).
+   Faite le 01/11/2026 (0.47.0). La matière est complète : plus `unfinished`, l'autocollant « Ceinture
+   brillante » arrive. Pas d'autocollant « Objectif CM2 » (aucune matière n'en a).

@@ -1,5 +1,5 @@
 // Ceintures de calcul mental : les ceintures du classeur, de la blanche à la brillante
-// (voir .ai/analyse/16-ceintures-calcul-mental.md ; elles arrivent une étape à la fois).
+// (voir .ai/analyse/16-ceintures-calcul-mental.md).
 // « Je calcule rapidement (2 minutes par ceinture, maximum 1 erreur) » : pas de fiche, les calculs se
 // tirent au hasard sur le modèle des exercices des leçons de la classe (Calc 14 et Calc 15).
 
@@ -405,6 +405,135 @@ function drawShift(random: () => number, index: number): MentalQuestion {
   return shiftDivided(noTrailingZero(2, 9999, random) / 10 ** places, 10 ** zeros);
 }
 
+// --- Grise : tiers, quart et moitié d'un entier (leçon Calc 4) ---
+
+const PARTS = { 2: 'La moitié', 3: 'Le tiers', 4: 'Le quart' } as const;
+
+/** « Le tiers de 36 » : trois fois moins, on partage en 3. */
+export function part(n: number, k: 2 | 3 | 4): MentalQuestion {
+  const answer = n / k;
+  const tens = n - (n % 10);
+  const units = n % 10;
+  let explain: string;
+  if (k === 4) {
+    explain = `Le quart, c’est quatre fois moins : la moitié de la moitié. ${n} → ${n / 2} → ${answer}.`;
+  } else if (k === 2 && tens > 0 && units > 0) {
+    explain = `La moitié de ${tens} est ${tens / 2}, la moitié de ${units} est ${units / 2} : ${tens / 2} + ${units / 2} = ${answer}.`;
+  } else if (k === 2) {
+    explain = `La moitié, c’est deux fois moins : ${n} : 2 = ${answer}.`;
+  } else {
+    explain = `Le tiers, c’est trois fois moins : combien de fois 3 dans ${n} ? ${answer} fois, car 3 × ${answer} = ${n}.`;
+  }
+  return calc(`${PARTS[k]} de ${n}`, answer, explain);
+}
+
+function drawPart(random: () => number, index: number): MentalQuestion {
+  const k = ([2, 3, 4] as const)[index % 3]!;
+  const n = k === 2 ? between(5, 99, random) * 2 : k === 3 ? between(4, 33, random) * 3 : between(3, 25, random) * 4;
+  return part(n, k);
+}
+
+// --- Noire : d'une fraction à un nombre décimal (leçons N19 et N20) ---
+
+/** « 3/4 = ? » : on cherche la fraction décimale égale (× 25 : 75/100), puis le nombre décimal. */
+export function fractionToNumber(numerator: number, denominator: 2 | 4 | 5): MentalQuestion {
+  const target = denominator === 4 ? 100 : 10;
+  const factor = target / denominator;
+  const answer = (numerator * factor) / target;
+  const explain = `On multiplie le numérateur et le dénominateur par ${factor} : ${numerator}/${denominator} = ${numerator * factor}/${target}, donc ${fr(answer)}.`;
+  return calc(`${numerator}/${denominator}`, answer, explain);
+}
+
+function drawFractionToNumber(random: () => number, index: number): MentalQuestion {
+  const denominator = ([2, 4, 5] as const)[index % 3]!;
+  // Jamais un entier (8/4 = 2) : la fraction tombe entre deux entiers.
+  for (;;) {
+    // Assez de fractions pour 20 calculs tous différents : jusqu'à 39/2, 23/4, 29/5.
+    const numerator = between(1, denominator === 2 ? 39 : denominator * 6 - 1, random);
+    if (numerator % denominator !== 0) return fractionToNumber(numerator, denominator);
+  }
+}
+
+// --- Brillante : additions astucieuses, fraction = entier + fraction, fractions, pourcentages ---
+
+/** « 25 + 47 + 75 » : on regroupe d'abord les deux qui tombent rond (notre choix : pas de leçon là-dessus). */
+export function smartSum(terms: readonly [number, number, number], pair: readonly [number, number]): MentalQuestion {
+  const [i, j] = pair;
+  const other = terms[3 - i - j]!;
+  const round = terms[i]! + terms[j]!;
+  const sum = round + other;
+  const explain = `On regroupe ce qui tombe rond : ${terms[i]} + ${terms[j]} = ${round}. Puis ${round} + ${other} = ${sum}.`;
+  return calc(terms.join(' + '), sum, explain);
+}
+
+function drawSmartSum(random: () => number): MentalQuestion {
+  let a: number;
+  let b: number;
+  if (random() < 0.5) {
+    // Deux nombres qui font 100 : 25 et 75, 35 et 65.
+    a = between(1, 19, random) * 5;
+    b = 100 - a;
+  } else {
+    // Les unités font 10 : 17 + 23 = 40.
+    const u = between(1, 9, random);
+    a = between(1, 7, random) * 10 + u;
+    b = between(1, 8 - Math.floor(a / 10), random) * 10 + 10 - u;
+  }
+  const c = between(11, 99, random);
+  const order = pick([[a, c, b], [c, a, b], [a, b, c], [b, c, a]] as const, random);
+  const pair = [order.indexOf(a), order.lastIndexOf(b)] as const;
+  return smartSum(order, pair);
+}
+
+/** « 7/3 = 2 + ?/3 » : dans 7, combien de fois 3 ? 2 fois, reste 1 (leçon N16). */
+export function wholeAndFraction(numerator: number, denominator: number): MentalQuestion {
+  const whole = Math.floor(numerator / denominator);
+  const rest = numerator % denominator;
+  const explain = `Dans ${numerator}, combien de fois ${denominator} ? ${whole} fois (${whole} × ${denominator} = ${whole * denominator}), reste ${rest} : ${numerator}/${denominator} = ${whole} + ${rest}/${denominator}.`;
+  return calc(`${numerator}/${denominator} = ${whole} +`, rest, explain, `/${denominator}`);
+}
+
+/** « 2/5 + 1/5 = ?/5 » : on additionne les numérateurs et on garde le dénominateur (leçon N16). */
+export function addFractions(a: number, b: number, denominator: number): MentalQuestion {
+  const explain = `Même dénominateur : on additionne les numérateurs, ${a} + ${b} = ${a + b}, et on garde ${denominator} : ${a + b}/${denominator}.`;
+  return calc(`${a}/${denominator} + ${b}/${denominator} =`, a + b, explain, `/${denominator}`);
+}
+
+const PERCENTS = { 25: 'le quart', 50: 'la moitié', 75: 'les trois quarts' } as const;
+
+/** « 25 % de 600 » : les pourcentages à connaître de la leçon Pb 14. */
+export function percentOf(percent: 25 | 50 | 75, n: number): MentalQuestion {
+  const answer = (n * percent) / 100;
+  const explain =
+    percent === 75
+      ? `75 %, c’est les trois quarts : le quart de ${n} est ${n / 4}, et ${n / 4} × 3 = ${answer}.`
+      : `${percent} %, c’est ${PERCENTS[percent]} : ${n} : ${100 / percent} = ${answer}.`;
+  // Le « % » ne part pas seul à la ligne.
+  return calc(`${percent}\u00a0% de ${n}`, answer, explain);
+}
+
+function drawBrillante(random: () => number, index: number): MentalQuestion {
+  switch (index % 4) {
+    case 0:
+      return drawSmartSum(random);
+    case 1: {
+      const denominator = between(2, 9, random);
+      let numerator = between(denominator + 1, denominator * 5, random);
+      if (numerator % denominator === 0) numerator++;
+      return wholeAndFraction(numerator, denominator);
+    }
+    case 2: {
+      const denominator = between(3, 12, random);
+      const a = between(1, denominator - 1, random);
+      return addFractions(a, between(1, denominator - 1, random), denominator);
+    }
+    default: {
+      const percent = pick([25, 50, 75] as const, random);
+      return percentOf(percent, between(2, 50, random) * (random() < 0.3 ? 20 : 4));
+    }
+  }
+}
+
 export const CALCUL_MENTAL: readonly MentalBelt[] = [
   {
     belt: 'blanche',
@@ -553,6 +682,50 @@ export const CALCUL_MENTAL: readonly MentalBelt[] = [
     ],
     examples: () => [shiftTimes(5.447, 100), shiftTimes(4.2, 100), shiftDivided(651, 100), shiftDivided(7, 100)],
     drawCalc: drawShift,
+  },
+  {
+    belt: 'gris',
+    skill: 'Tiers, quart et moitié d’un entier',
+    tips: [
+      'La moitié, c’est deux fois moins : on partage en 2. La moitié de 48 = 24.',
+      'Coupe le nombre : la moitié de 48, c’est la moitié de 40 (20) et la moitié de 8 (4) : 24.',
+      'Le tiers, c’est trois fois moins : combien de fois 3 dans 36 ? 12 fois. Le tiers de 36 = 12.',
+      'Le quart, c’est quatre fois moins : la moitié de la moitié. 80 → 40 → 20.',
+    ],
+    examples: () => [part(48, 2), part(36, 3), part(80, 4)],
+    drawCalc: drawPart,
+  },
+  {
+    belt: 'noire',
+    skill: 'Passer d’une fraction à un nombre décimal',
+    goal: 'CM2',
+    decimal: true,
+    tips: [
+      'À connaître : 1/2 = 0,5 ; 1/4 = 0,25 ; 3/4 = 0,75.',
+      'Sinon, cherche une fraction décimale égale : on multiplie le numérateur et le dénominateur par le même nombre. 2/5 = 4/10.',
+      'Puis on écrit le nombre décimal : 4/10 = 0,4.',
+      'Plus grande que 1 ? Pareil : 7/2 = 35/10 = 3,5.',
+    ],
+    examples: () => [fractionToNumber(3, 4), fractionToNumber(2, 5), fractionToNumber(7, 2)],
+    drawCalc: drawFractionToNumber,
+  },
+  {
+    belt: 'brillante',
+    skill: 'Additions astucieuses, fraction = entier + fraction, additionner des fractions, pourcentages',
+    tips: [
+      'Additions astucieuses : regroupe d’abord ce qui tombe rond. 25 + 47 + 75, c’est 25 + 75 = 100, puis 100 + 47 = 147.',
+      'Une fraction plus grande que 1, c’est un entier et une fraction : dans 7, il y a 2 fois 3, reste 1. 7/3 = 2 + 1/3.',
+      'Même dénominateur : on additionne les numérateurs et on garde le dénominateur. 2/5 + 1/5 = 3/5.',
+      'Les pourcentages à connaître : 25 % = le quart, 50 % = la moitié, 75 % = les trois quarts.',
+    ],
+    examples: () => [
+      smartSum([25, 47, 75], [0, 2]),
+      wholeAndFraction(7, 3),
+      addFractions(2, 1, 5),
+      percentOf(25, 600),
+      percentOf(75, 40),
+    ],
+    drawCalc: drawBrillante,
   },
 ];
 

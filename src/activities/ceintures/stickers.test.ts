@@ -50,8 +50,8 @@ describe('progrès des ceintures', () => {
   it('compte les ceintures de chaque couleur pour la barre de l’accueil', () => {
     const data = readCeinturesData({});
     setClassLevel(data, homophones, 1, '2026-10-25');
-    // 9 homophones, 10 conjugaison, 10 tables, 10 calcul posé et 12 calcul mental pas encore commencées.
-    expect(masteryCounts(data)).toEqual({ unseen: 51, learning: 0, progress: 0, known: 2, mastered: 0 });
+    // 9 homophones, 10 conjugaison, 10 tables, 10 calcul posé et 15 calcul mental pas encore commencées.
+    expect(masteryCounts(data)).toEqual({ unseen: 54, learning: 0, progress: 0, known: 2, mastered: 0 });
   });
 
   it('ne garde pas des statistiques abîmées', () => {
@@ -116,6 +116,8 @@ describe('autocollants des ceintures', () => {
     // Calcul posé : pas de « dernière ceinture » tant que des ceintures sont à venir.
     expect(STICKER_SECTIONS[3]!.stickers.map((s) => s.id)).not.toContain('calcul-pose.last-belt');
     expect(STICKER_SECTIONS[4]!.stickers.map((s) => s.id)).toContain('calcul-mental.goal-ce2');
+    // Calcul mental complet : l'autocollant de la dernière ceinture.
+    expect(STICKER_SECTIONS[4]!.stickers.map((s) => s.name)).toContain('Ceinture brillante');
     expect(STICKER_SECTIONS.flatMap((s) => s.stickers)).toEqual(STICKERS);
     const [homophones, conjugaison] = STICKER_SECTIONS;
     expect(homophones!.stickers.every((s) => s.id.startsWith('homophones.'))).toBe(true);

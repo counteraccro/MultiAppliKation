@@ -11,6 +11,8 @@ import { createRace } from './race';
 import { soundToggle } from './sound-toggle';
 
 const MAX_DIGITS = 3;
+/** Au-delà de ces caractères, la question s'écrit plus petit pour tenir sur une ligne. */
+const LONG_PROMPT = 9;
 /** Assez pour « sommes allées », pas assez pour taper n'importe quoi. */
 const MAX_LETTERS = 24;
 /** Temps pendant lequel une bonne réponse reste affichée avant la suivante. */
@@ -245,7 +247,8 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
     const denominator = /^\/(\d+)$/.exec(question.suffix ?? '')?.[1];
     suffix.textContent = denominator === undefined ? (question.suffix ?? '') : '';
     equation.replaceChildren(prompt, denominator === undefined ? answerBox : fraction(answerBox, denominator), suffix);
-    equation.classList.toggle('long', question.suffix !== undefined);
+    // Case au milieu, ou calcul long (« 25 % de 600 », « 47 + 77 + 33 ») : plus petit, sur une ligne.
+    equation.classList.toggle('long', question.suffix !== undefined || (!letters && question.prompt.length > LONG_PROMPT));
     answerBox.className = 'answer-box';
     feedback.textContent = '';
     keypad.setSubmitLabel('OK');
