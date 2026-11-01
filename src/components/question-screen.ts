@@ -75,8 +75,8 @@ export interface QuestionScreenOptions {
   onQuit(): void;
 }
 
-/** Pavé de chiffres, clavier de lettres, boutons à toucher, ou dessin à colorier. */
-type Mode = 'digits' | 'letters' | 'choices' | 'paint';
+/** Pavé de chiffres, clavier de lettres, boutons à toucher, dessin à colorier, ou nombres à ranger. */
+type Mode = 'digits' | 'letters' | 'choices' | 'paint' | 'order';
 
 /**
  * Pose les questions d'une série une à une. Une erreur affiche tout de suite
@@ -87,7 +87,7 @@ type Mode = 'digits' | 'letters' | 'choices' | 'paint';
 export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenOptions): () => void {
   const { session } = options;
   const modeOf = (question: QuizQuestion): Mode =>
-    question.choices ? 'choices' : (question.input ?? (options.input === 'letters' ? 'letters' : 'digits'));
+    question.order ? 'order' : question.choices ? 'choices' : (question.input ?? (options.input === 'letters' ? 'letters' : 'digits'));
   let mode: Mode = 'digits';
   let asked: QuizQuestion | undefined;
   let typed = '';
@@ -156,6 +156,12 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
       keypadArea.replaceChildren(input.el);
       figure.replaceChildren(liveFigure!);
     }
+    if (mode === 'order' && asked) {
+      // Les nombres reviennent rangés comme avant.
+      input?.destroy();
+      input = createOrder(asked, previous.split(` ${asked.order} `));
+      keypadArea.replaceChildren(input.el);
+    }
     renderAnswer();
   }
 
@@ -188,6 +194,8 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
       if (state !== 'asking' || typed === '') return;
       const question = session.current();
       if (!question) return;
+      // Ranger : tous les nombres d'abord.
+      if (mode === 'order' && typed.split(` ${question.order} `).length < (question.choices?.length ?? 0)) return;
       chrono?.pause();
       countdown?.pause();
       const correct = session.answer(typed, performance.now() - shownAt);
@@ -251,12 +259,15 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
   /** La figure qu'on touche (graduations, parts à colorier), faite avec la saisie de la question. */
   let liveFigure: SVGElement | undefined;
   const choiceButton = (value: string) => buttons.get(value);
+  /** Le nombre dont on touche un chiffre, avec sa virgule. */
+  let numberParts: Element[] = [];
   const keypadArea = h('div', { class: 'keypad-area' });
 
   /** Le pavé, le clavier ou les boutons de la question ; les boutons « nombre » vont dans la question. */
   function createInput(question: QuizQuestion): Keypad {
     if (mode === 'letters') return createKeyboard(handlers, { hyphen: options.hyphen });
     if (mode === 'paint') return createPaint(question);
+    if (mode === 'order') return createOrder(question);
     if (mode === 'digits') {
       return createKeypad({
         ...handlers,
@@ -285,13 +296,18 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
       });
       buttons = new Map([...liveFigure.querySelectorAll('.nl-pick')].map((el) => [el.getAttribute('data-value')!, el]));
     } else {
+      // 597,4328 : la virgule est dans le nombre, mais ne se touche pas ; les classes ne comptent qu'avant elle.
+      const comma = question.choices?.findIndex((c) => c.value === ',') ?? -1;
+      const whole = comma === -1 ? count : comma;
+      numberParts = (question.choices ?? []).map(({ label, value }, i) => {
+        if (inNumber && value === ',') return h('span', { class: 'digit-comma' }, ',');
+        const button = h('button', { class: inNumber ? 'digit-choice' : 'choice', type: 'button', onclick: () => choose(value) }, ...withFractions(label));
+        // 15 824 000 : un écart entre les classes, comme l'espace des fiches.
+        if (inNumber && i > 0 && i < whole && (whole - i) % 3 === 0) button.classList.add('class-start');
+        return button;
+      });
       buttons = new Map(
-        (question.choices ?? []).map(({ label, value }, i) => {
-          const button = h('button', { class: inNumber ? 'digit-choice' : 'choice', type: 'button', onclick: () => choose(value) }, ...withFractions(label));
-          // 15 824 000 : un écart entre les classes, comme l'espace des fiches.
-          if (inNumber && i > 0 && (count - i) % 3 === 0) button.classList.add('class-start');
-          return [value, button];
-        }),
+        (question.choices ?? []).flatMap(({ value }, i) => (inNumber && value === ',' ? [] : [[value, numberParts[i]!] as const])),
       );
     }
     // Après une erreur, on passe à la suite avec ce bouton (ou Entrée).
@@ -350,6 +366,52 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
     };
   }
 
+  /**
+   * Ranger : on touche les nombres dans l'ordre, ils s'écrivent dans la case (« 4,4 > 4,36 ») ; retoucher
+   * un nombre l'enlève, avec ceux d'après. OK quand ils y sont tous.
+   */
+  function createOrder(question: QuizQuestion, placed: string[] = []): Keypad {
+    const choices = question.choices ?? [];
+    const update = () => {
+      typed = placed.join(` ${question.order} `);
+      for (const [value, button] of numbers) {
+        const rank = placed.indexOf(value);
+        button.classList.toggle('is-chosen', rank !== -1);
+        button.setAttribute('data-rank', rank === -1 ? '' : String(rank + 1));
+      }
+      renderAnswer();
+    };
+    const touch = (value: string) => {
+      if (state !== 'asking') return;
+      const rank = placed.indexOf(value);
+      if (rank === -1) placed.push(value);
+      else placed.splice(rank);
+      update();
+    };
+    const numbers = new Map(
+      choices.map(({ label, value }) => [value, h('button', { class: 'choice order-choice', type: 'button', onclick: () => touch(value) }, label)] as const),
+    );
+    const row = h('div', { class: 'choice-buttons' }, ...numbers.values());
+    row.style.setProperty('--choices', String(choices.length));
+    const submit = h('button', { class: 'button primary paint-submit', type: 'button', onclick: handlers.onSubmit }, 'OK');
+    const onKeydown = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey || document.querySelector('.overlay')) return;
+      if (event.key === 'Enter') handlers.onSubmit();
+      else if (event.key === 'Backspace' && placed.length > 0 && state === 'asking') touch(placed.at(-1)!);
+      else return;
+      event.preventDefault();
+    };
+    document.addEventListener('keydown', onKeydown);
+    update();
+    return {
+      el: h('div', { class: 'choices-input' }, row, submit),
+      setSubmitLabel: (label) => {
+        submit.textContent = label === 'OK' ? 'OK' : 'Continuer →';
+      },
+      destroy: () => document.removeEventListener('keydown', onKeydown),
+    };
+  }
+
   function renderAnswer() {
     // Un bouton touché : on écrit ce qu'il montre (« < »), pas sa valeur.
     const label =
@@ -396,7 +458,7 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
     asked = question;
     // Le pavé ou le clavier reste d'une question à l'autre ; les boutons changent à chaque fois.
     const nextMode = modeOf(question);
-    if (input === undefined || nextMode !== mode || nextMode === 'choices' || nextMode === 'paint') {
+    if (input === undefined || nextMode !== mode || nextMode === 'choices' || nextMode === 'paint' || nextMode === 'order') {
       input?.destroy();
       mode = nextMode;
       liveFigure = undefined;
@@ -416,7 +478,7 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
     suffix.replaceChildren(...withFractions(denominator === undefined ? (question.suffix ?? '') : ''));
     if (question.choiceLayout === 'number') {
       // « Touche le chiffre des dizaines » : les chiffres du nombre sont les boutons.
-      equation.replaceChildren(h('span', { class: 'number-digits' }, ...buttons.values()));
+      equation.replaceChildren(h('span', { class: 'number-digits' }, ...numberParts));
     } else if ((mode === 'choices' || mode === 'paint') && question.suffix === undefined) {
       // « Ce nombre existe-t-il ? cinquante-douze » : pas de case, la réponse est le bouton.
       equation.replaceChildren(prompt);
@@ -431,6 +493,8 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
     const longest = question.choiceLayout === 'number' ? (question.choices?.length ?? 0) >= 7 : `${question.prompt}${question.suffix ?? ''}`.length > LONGEST_TEXT;
     equation.classList.toggle('longest', mode !== 'letters' && longest);
     // Case au milieu, ou calcul long (« 25 % de 600 », « 47 + 77 + 33 ») : plus petit, sur une ligne.
+    // Ranger : les quatre nombres et leurs signes tiennent sur une ligne.
+    equation.classList.toggle('ordering', mode === 'order');
     equation.classList.toggle('long', question.suffix !== undefined || (mode !== 'letters' && question.prompt.length > LONG_PROMPT));
     answerBox.className = 'answer-box';
     feedback.textContent = '';

@@ -2606,6 +2606,41 @@ button.belt-row:active {
   margin-left: 0.3em;
 }
 
+/* 597,4328 : la virgule ne se touche pas. */
+.digit-comma {
+  align-self: flex-end;
+  padding: 0 0.02em;
+}
+
+/* Ranger : les nombres touchés sont grisés, avec leur rang dans une pastille. */
+.equation.ordering {
+  font-size: clamp(1.2rem, 5vw, 1.8rem);
+}
+
+.order-choice {
+  position: relative;
+  font-size: 1.4rem;
+}
+
+.order-choice.is-chosen {
+  background: var(--border);
+  color: var(--text-soft);
+}
+
+.order-choice.is-chosen::after {
+  content: attr(data-rank);
+  position: absolute;
+  top: -8px;
+  right: -6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #ff9900;
+  color: #fff;
+  font-size: 0.95rem;
+  line-height: 26px;
+}
+
 /* Placer une fraction : chaque graduation se touche, une pastille s'allume. */
 .nl-pick {
   cursor: pointer;

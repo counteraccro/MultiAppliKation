@@ -4,9 +4,9 @@
 // Une question se répond au pavé, au clavier de lettres (un nombre en lettres) ou en touchant un bouton.
 
 import { fractionToWords, numberToWords, numberToWordsTraditional } from '../../core/number-words';
-import { groupDigits, shuffle, type NumberLineFigure, type PartsFigure, type QuizQuestion } from '../../core/quiz';
+import { groupDigits, numberText, shuffle, type NumberLineFigure, type PartsFigure, type QuizQuestion } from '../../core/quiz';
 import type { BeltId } from './belts';
-import { pickCalcs } from './calcul-mental';
+import { addDecimals, decimalToFraction, fractionToDecimal, pickCalcs, type MentalQuestion } from './calcul-mental';
 
 /** Une question, résolue pour les listes (`solved`), avec l'astuce de la leçon. */
 export interface NumerationQuestion extends QuizQuestion {
@@ -30,6 +30,8 @@ export interface NumerationBelt {
   examples: () => NumerationQuestion[];
   /** Les sortes de questions de la ceinture, posées à tour de rôle. */
   kinds: readonly Draw[];
+  /** Nombres décimaux : la touche virgule au pavé. */
+  decimal?: boolean;
 }
 
 /** Questions d'un entraînement, et de l'entraînement en conditions réelles (réussi à 9 justes). */
@@ -49,8 +51,10 @@ function question(fields: Omit<NumerationQuestion, 'id'>): NumerationQuestion {
   return { ...fields, id: fields.solved };
 }
 
-/** 57 842 : les classes séparées par une espace, comme en classe (leçon N10). */
-const spaced = (n: number) => groupDigits(String(n));
+/** 57 842 : les classes séparées par une espace, comme en classe (leçon N10) ; 4,07 avec la virgule. */
+const spaced = (n: number) => groupDigits(numberText(n));
+/** 3 + 0,6 ne tombe pas toujours juste avec les nombres de l'ordinateur : on arrondit au millionième. */
+const round = (n: number) => (Number.isInteger(n) ? n : Math.round(n * 1e6) / 1e6);
 
 const RANKS = [
   'unités',
@@ -228,17 +232,19 @@ function drawExists(random: () => number, max: number): NumerationQuestion {
 /** « 41, 39, 37, 35, … » : le nombre suivant. */
 export function sequence(start: number, step: number): NumerationQuestion {
   // Trois nombres seulement quand ils sont grands, comme sur les fiches n° 77 et 78.
-  const shown = (start >= 10000 ? [0, 1, 2] : [0, 1, 2, 3]).map((i) => start + i * step);
+  const shown = (start >= 10000 ? [0, 1, 2] : [0, 1, 2, 3]).map((i) => round(start + i * step));
   const last = shown.at(-1)!;
-  const next = last + step;
+  const next = round(last + step);
   const how = step > 0 ? `On ajoute ${spaced(step)}` : `On enlève ${spaced(-step)}`;
-  const text = shown.map(spaced).join(', ');
+  // Des décimaux : « 1,5 ; 1,4 ; 1,3 » : la virgule est déjà dans les nombres.
+  const separator = Number.isInteger(step) && Number.isInteger(start) ? ',' : ' ;';
+  const text = shown.map(spaced).join(`${separator} `);
   return question({
     context: 'Continue la suite',
-    prompt: `${text},`,
+    prompt: `${text}${separator}`,
     suffix: '',
     answer: next,
-    solved: `${text}, ${spaced(next)}`,
+    solved: `${text}${separator} ${spaced(next)}`,
     explain: `${how} à chaque fois : ${spaced(last)} ${step > 0 ? '+' : '−'} ${spaced(Math.abs(step))} = ${spaced(next)}.`,
   });
 }
@@ -499,7 +505,7 @@ function drawBigCompare(random: () => number, minDigits: number, maxDigits: numb
  * (`label`, sur la graduation `labelAt`, et `labelEvery` graduations plus loin), le repère sur `marker`.
  */
 export function numberLine(label: number, labelAt: number, step: number, labelEvery: number, marker: number): NumerationQuestion {
-  const from = label - labelAt * step;
+  const from = round(label - labelAt * step);
   const figure: NumberLineFigure = {
     from,
     step,
@@ -507,19 +513,19 @@ export function numberLine(label: number, labelAt: number, step: number, labelEv
     labels: [labelAt, labelAt + labelEvery],
     markers: [{ at: marker, name: 'A' }],
   };
-  const answer = from + marker * step;
+  const answer = round(from + marker * step);
   // On part du nombre écrit le plus proche.
   const start = Math.abs(marker - labelAt) <= Math.abs(marker - labelAt - labelEvery) ? labelAt : labelAt + labelEvery;
-  const startValue = from + start * step;
+  const startValue = round(from + start * step);
   const jumps = marker - start;
-  const second = label + labelEvery * step;
+  const second = round(label + labelEvery * step);
   return question({
     context: 'À quel nombre correspond le repère A ?',
     prompt: 'A',
     figure,
     answer,
     solved: `Sur la droite graduée de ${spaced(step)} en ${spaced(step)}, le repère A est ${spaced(answer)}.`,
-    explain: `De ${spaced(label)} à ${spaced(second)}, il y a ${labelEvery} graduation${labelEvery > 1 ? 's' : ''} : chacune vaut ${spaced(step)}. A est ${Math.abs(jumps)} graduation${Math.abs(jumps) > 1 ? 's' : ''} ${jumps > 0 ? 'après' : 'avant'} ${spaced(startValue)} : ${spaced(startValue)} ${jumps > 0 ? '+' : '−'} ${spaced(Math.abs(jumps * step))} = ${spaced(answer)}.`,
+    explain: `De ${spaced(label)} à ${spaced(second)}, il y a ${labelEvery} graduation${labelEvery > 1 ? 's' : ''} : chacune vaut ${spaced(step)}. A est ${Math.abs(jumps)} graduation${Math.abs(jumps) > 1 ? 's' : ''} ${jumps > 0 ? 'après' : 'avant'} ${spaced(startValue)} : ${spaced(startValue)} ${jumps > 0 ? '+' : '−'} ${spaced(round(Math.abs(jumps * step)))} = ${spaced(answer)}.`,
   });
 }
 
@@ -867,6 +873,246 @@ export function remainingProblem(name: string, first: number, second: number, de
   });
 }
 
+// --- Les nombres décimaux (leçons N12, N13, N18 et N19) ---
+
+/** Les rangs après la virgule : le 1er chiffre est celui des dixièmes. */
+const DECIMAL_RANKS = ['dixièmes', 'centièmes', 'millièmes', 'dix-millièmes'] as const;
+/** Le nom d'un rang : 0 les unités, 1 les dizaines…, −1 les dixièmes, −2 les centièmes… */
+const rankName = (rank: number): string => (rank >= 0 ? RANKS[rank]! : DECIMAL_RANKS[-rank - 1]!);
+/** « 1 centième », « 5 centièmes ». */
+const counted = (count: number, rank: number) => `${spaced(count)} ${count > 1 ? rankName(rank) : singular(rankName(rank))}`;
+/** « a, b et c ». */
+const listed = (items: readonly string[]) => items.join(', ').replace(/, ([^,]*)$/, ' et $1');
+/** Chiffres après la virgule : 2 pour « 3,50 » (les 0 de la fin comptent dans l'écriture). */
+const placesIn = (text: string) => text.split(',')[1]?.length ?? 0;
+/** « 3,5 » → 3.5. */
+const valueOf = (text: string) => Number(text.replace(/\s/g, '').replace(',', '.'));
+/** « 3,5 » avec 3 chiffres après la virgule : « 3,500 » (des 0 à la fin, pour comparer). */
+function padTo(text: string, places: number): string {
+  const missing = places - placesIn(text);
+  if (missing <= 0) return text;
+  return `${text}${placesIn(text) === 0 ? ',' : ''}${'0'.repeat(missing)}`;
+}
+/** `count` chiffres au hasard, le dernier n'est pas 0 (sinon on ne l'écrirait pas). */
+const digitsText = (count: number, random: () => number) =>
+  Array.from({ length: count }, (_, i) => between(i === count - 1 ? 1 : 0, 9, random)).join('');
+
+/** « Touche le chiffre des centièmes » dans 597,4328 (fiches n° 55 et 58) ; `rank` : 2 les centaines, −2 les centièmes. */
+export function decimalDigitOf(text: string, rank: number): NumerationQuestion {
+  const whole = text.split(',')[0]!;
+  const at = rank >= 0 ? whole.length - 1 - rank : whole.length - rank;
+  const digit = text[at]!;
+  const name = rankName(rank);
+  const nth = rank >= 0 ? rank + 1 : -rank;
+  return question({
+    context: `Touche le chiffre des ${name}`,
+    prompt: groupDigits(text),
+    // La virgule est dans le nombre, mais ne se touche pas.
+    choices: [...text].map((d, i) => ({ label: d, value: d === ',' ? ',' : String(i) })),
+    choiceLayout: 'number',
+    answer: String(at),
+    solved: `Dans ${groupDigits(text)}, le chiffre des ${name} est ${digit}.`,
+    explain: `Le chiffre des ${name} est le ${nth === 1 ? '1er' : `${nth}e`} chiffre ${rank >= 0 ? 'avant' : 'après'} la virgule : ${digit}. Tu peux utiliser un tableau de numération.`,
+  });
+}
+
+/** « 2 + 4/10 », « 5 + 3/10 + 2/100 », « 57/100 » : en nombre décimal (fiches n° 56, 59 et 62). */
+export function fractionsToDecimal(whole: number, fractions: readonly (readonly [number, number])[]): NumerationQuestion {
+  const answer = round(whole + fractions.reduce((sum, [n, d]) => sum + n / d, 0));
+  const shown = [...(whole > 0 ? [spaced(whole)] : []), ...fractions.map(([n, d]) => frac(n, d))].join(' + ');
+  const said = [...(whole > 0 ? [counted(whole, 0)] : []), ...fractions.map(([n, d]) => counted(n, 1 - String(d).length))];
+  return question({
+    context: 'Écris sous forme d’un nombre décimal',
+    prompt: shown,
+    answer,
+    solved: `${shown} = ${spaced(answer)}`,
+    explain: `${shown}, c’est ${listed(said)} : ${spaced(answer)}. Tu peux utiliser un tableau de numération.`,
+  });
+}
+
+/** « cinq unités et cinq centièmes », « trente-quatre dixièmes » : en nombre décimal (fiches n° 57 et 61, leçon N13). */
+export function wordsToDecimal(parts: readonly (readonly [count: number, rank: number])[]): NumerationQuestion {
+  // « une unité », mais « un dixième ».
+  const said = (count: number, rank: number) => (count === 1 && rank === 0 ? 'une' : numberToWords(count));
+  const words = listed(parts.map(([count, rank]) => `${said(count, rank)} ${count > 1 ? rankName(rank) : singular(rankName(rank))}`));
+  const answer = round(parts.reduce((sum, [count, rank]) => sum + count * 10 ** rank, 0));
+  const each = parts.map(([count, rank]) => `${counted(count, rank)} = ${spaced(round(count * 10 ** rank))}`);
+  return question({
+    context: 'Écris sous forme d’un nombre décimal',
+    prompt: words,
+    answer,
+    solved: `${words} = ${spaced(answer)}`,
+    explain: `${each.join(', ')}${parts.length > 1 ? ` : ${spaced(answer)}` : ''}. Tu peux utiliser un tableau de numération.`,
+  });
+}
+
+/** « 45,37 = 40 + 5 + 0,3 + … » : la décomposition, un morceau à trouver (leçon N12). */
+export function decomposeDecimal(text: string, hole: number): NumerationQuestion {
+  const whole = text.split(',')[0]!;
+  const all = [...text.replace(',', '')]
+    .map((digit, i) => ({ digit, rank: whole.length - 1 - i, value: round(Number(digit) * 10 ** (whole.length - 1 - i)) }))
+    .filter((part) => part.value > 0);
+  const missing = all[hole]!;
+  const before = all.slice(0, hole).map((part) => spaced(part.value));
+  const after = all.slice(hole + 1).map((part) => spaced(part.value));
+  return question({
+    context: 'Complète la décomposition',
+    prompt: [`${text} =`, ...before.map((part) => `${part} +`)].join(' '),
+    suffix: after.map((part) => `+ ${part}`).join(' '),
+    answer: missing.value,
+    solved: `${text} = ${all.map((part) => spaced(part.value)).join(' + ')}`,
+    explain: `Dans ${text}, ${missing.digit} est le chiffre des ${rankName(missing.rank)} : il vaut ${spaced(missing.value)}.`,
+  });
+}
+
+/** « 3,25 … 3,5 », « 0,81 … 0,084 » : <, > ou = (fiches n° 60, 63 et 119 à 121). */
+export function compareDecimals(left: string, right: string): NumerationQuestion {
+  const [a, b] = [valueOf(left), valueOf(right)];
+  const symbol = a < b ? '<' : a > b ? '>' : '=';
+  const places = Math.max(placesIn(left), placesIn(right));
+  const [l, r] = [padTo(left, places), padTo(right, places)];
+  const padded = l !== left || r !== right ? `On écrit des 0 à la fin du plus court : ${l} et ${r}. ` : '';
+  const why =
+    a === b
+      ? 'C’est le même nombre.'
+      : Math.floor(a) !== Math.floor(b)
+        ? 'On compare d’abord les parties entières. Le crocodile mange le plus grand.'
+        : 'Les parties entières sont pareilles : on compare les chiffres après la virgule, en commençant par les dixièmes. Le crocodile mange le plus grand.';
+  return question({
+    context: 'Complète avec <, > ou =',
+    prompt: left,
+    suffix: right,
+    choices: SYMBOLS,
+    answer: symbol,
+    solved: `${left} ${symbol} ${right}`,
+    explain: `${padded}${why}`,
+  });
+}
+
+/** « 6,124 est-il compris entre 6,12 et 6,15 ? » (fiches n° 109 et 110). */
+export function isBetween(text: string, low: string, high: string): NumerationQuestion {
+  const [v, lo, hi] = [text, low, high].map(valueOf) as [number, number, number];
+  const yes = lo < v && v < hi;
+  const places = Math.max(...[text, low, high].map(placesIn));
+  const [t, l, h] = [text, low, high].map((x) => padTo(x, places));
+  const why = yes ? `${l} < ${t} < ${h}` : v < lo ? `${t} < ${l}` : `${t} > ${h}`;
+  return question({
+    context: `Ce nombre est-il compris entre ${low} et ${high} ?`,
+    prompt: text,
+    choices: [
+      { label: 'Oui', value: 'oui' },
+      { label: 'Non', value: 'non' },
+    ],
+    answer: yes ? 'oui' : 'non',
+    solved: `${text} ${yes ? 'est' : 'n’est pas'} compris entre ${low} et ${high}.`,
+    explain: `On écrit des 0 pour que tous aient ${places} chiffres après la virgule : ${why}.`,
+  });
+}
+
+/** « Ordonne par ordre décroissant : 4,3 4,4 4,07 4,36 » : toucher les nombres dans l'ordre (fiche n° 122). */
+export function orderDecimals(texts: readonly string[], order: '<' | '>'): NumerationQuestion {
+  const sorted = [...texts].sort((x, y) => (order === '>' ? valueOf(y) - valueOf(x) : valueOf(x) - valueOf(y)));
+  const answer = sorted.join(` ${order} `);
+  const places = Math.max(...texts.map(placesIn));
+  return question({
+    context: order === '>' ? 'Range du plus grand au plus petit' : 'Range du plus petit au plus grand',
+    prompt: '',
+    choices: texts.map((text) => ({ label: text, value: text })),
+    order,
+    answer,
+    solved: answer,
+    explain: `On écrit des 0 pour que tous aient ${places} chiffres après la virgule : ${sorted.map((text) => padTo(text, places)).join(` ${order} `)}.`,
+  });
+}
+
+/** « 50,03 = (… × 10) + (3 × 0,01) », « 3,07 = (3 × …) + (7 × 0,01) » (fiches n° 114 et 115). */
+export function decimalTimes(a: number, powerA: number, b: number, powerB: number, hole: 'a' | 'b' | 'powerA' | 'powerB'): NumerationQuestion {
+  const [x, y] = [round(a * powerA), round(b * powerB)];
+  const n = round(x + y);
+  const shown = { a: String(a), powerA: spaced(powerA), b: String(b), powerB: spaced(powerB) };
+  const full = (blank?: keyof typeof shown) => {
+    const part = (key: keyof typeof shown) => (key === blank ? '§' : shown[key]);
+    return `(${part('a')} × ${part('powerA')}) + (${part('b')} × ${part('powerB')})`;
+  };
+  const [before, after] = full(hole).split('§') as [string, string];
+  return question({
+    context: 'Complète l’égalité',
+    prompt: `${spaced(n)} = ${before}`.trim(),
+    suffix: after.trim(),
+    answer: { a, powerA, b, powerB }[hole],
+    solved: `${spaced(n)} = ${full()}`,
+    explain: `${spaced(n)} = ${spaced(x)} + ${spaced(y)} : ${spaced(x)} = ${a} × ${spaced(powerA)} et ${spaced(y)} = ${b} × ${spaced(powerB)}.`,
+  });
+}
+
+/** « 4,6 + … = 4,75 », « 2,05 + … = 3 » (fiches n° 123 et 124). */
+export function completeDecimal(a: number, target: number): NumerationQuestion {
+  const answer = round(target - a);
+  const places = Math.max(...[a, target, answer].map((x) => placesIn(numberText(x))));
+  const units = (x: number) => spaced(Math.round(x * 10 ** places));
+  const padded = [a, target].filter((x) => placesIn(numberText(x)) < places).map((x) => `${spaced(x)} = ${padTo(spaced(x), places)}`);
+  return question({
+    context: 'Complète l’égalité',
+    prompt: `${spaced(a)} +`,
+    suffix: `= ${spaced(target)}`,
+    answer,
+    solved: `${spaced(a)} + ${spaced(answer)} = ${spaced(target)}`,
+    explain: `${padded.length > 0 ? `On écrit des 0 : ${padded.join(', ')}. ` : ''}De ${units(a)} à ${units(target)} ${rankName(-places)}, il y en a ${units(answer)} : ${spaced(answer)}.`,
+  });
+}
+
+/** « 2 × 0,5 », « 2 × 2,5 », « 5 ÷ 2 » : des demis (fiches n° 125 et 126). */
+export function halfCalc(n: number, op: '×' | '÷'): NumerationQuestion {
+  const text = op === '×' ? `2 × ${spaced(n)}` : `${n} ÷ 2`;
+  const answer = op === '×' ? round(2 * n) : n / 2;
+  const whole = Math.floor(n);
+  const explain =
+    op === '÷'
+      ? `${n} = ${n - 1} + 1 : ${n - 1} ÷ 2 = ${(n - 1) / 2}, et 1 ÷ 2 = 0,5 (un demi). Donc ${spaced(answer)}.`
+      : whole === 0
+        ? '0,5, c’est un demi : 2 demis font 1.'
+        : `0,5, c’est un demi : 2 × 0,5 = 1. 2 × ${whole} = ${2 * whole}, et ${2 * whole} + 1 = ${spaced(answer)}.`;
+  return question({ context: 'Calcule', prompt: text, answer, solved: `${text} = ${spaced(answer)}`, explain });
+}
+
+/** « 8,4 < 8,49 < … » : encadrer à l'unité, au dixième, au centième (leçon N18). */
+export function frameDecimal(n: number, places: 0 | 1 | 2, hidden: 'low' | 'high'): NumerationQuestion {
+  const unit = 10 ** places;
+  const floor = Math.floor(round(n * unit));
+  const [low, high] = [round(floor / unit), round((floor + 1) / unit)];
+  const kept = places === 0 ? `la partie entière, ${low}` : `${places === 1 ? '1 chiffre' : '2 chiffres'} après la virgule, ${spaced(low)}`;
+  return question({
+    context: `Encadre ${['à l’unité', 'au dixième', 'au centième'][places]}`,
+    prompt: hidden === 'low' ? '' : `${spaced(low)} < ${spaced(n)} <`,
+    suffix: hidden === 'low' ? `< ${spaced(n)} < ${spaced(high)}` : '',
+    answer: hidden === 'low' ? low : high,
+    solved: `${spaced(low)} < ${spaced(n)} < ${spaced(high)}`,
+    explain: `On garde ${kept}, puis on ajoute 1 ${singular(rankName(-places))} : ${spaced(high)}.`,
+  });
+}
+
+/** « 4,6 < … < 4,7 » : toucher le nombre qu'on peut intercaler, parmi quatre (leçon N18). */
+export function intercalate(low: number, high: number, answer: number, others: readonly number[]): NumerationQuestion {
+  const places = placesIn(numberText(answer));
+  return question({
+    context: `Touche le nombre compris entre ${spaced(low)} et ${spaced(high)}`,
+    prompt: `${spaced(low)} <`,
+    suffix: `< ${spaced(high)}`,
+    choices: [answer, ...others].sort((x, y) => x - y).map((x) => ({ label: spaced(x), value: numberText(x) })),
+    answer: numberText(answer),
+    solved: `${spaced(low)} < ${spaced(answer)} < ${spaced(high)}`,
+    explain: `On écrit un chiffre de plus après la virgule : ${padTo(spaced(low), places)} < ${spaced(answer)} < ${padTo(spaced(high), places)}.`,
+  });
+}
+
+/** Un calcul de la ceinture de calcul mental (fractions décimales, leçon N19), résolu pour les listes. */
+function fromMental(calc: MentalQuestion, context: string): NumerationQuestion {
+  const answer = spaced(calc.answer);
+  const solved =
+    calc.suffix === undefined ? `${calc.prompt} = ${answer}` : `${calc.prompt} ${answer}${calc.suffix.startsWith('/') ? '' : ' '}${calc.suffix}`;
+  return { ...calc, context, solved, id: solved };
+}
+
 // --- Les ceintures ---
 
 /** La blanche : les nombres jusqu'à 99 (fiches n° 1 à 18). */
@@ -1186,6 +1432,185 @@ const BLEU_KINDS: readonly Draw[] = [
   (random) => drawBigCompare(random, 7, 10),
 ];
 
+/** Deux décimaux à comparer : 5,4 et 5,40, 7,8 et 7,08, ou pas le même nombre de chiffres après la virgule. */
+function drawCompareDecimals(random: () => number, maxPlaces: number): NumerationQuestion {
+  const whole = between(0, 9, random);
+  const d = between(1, 9, random);
+  const kind = between(0, 3, random);
+  let [left, right] = [`${whole},${d}`, kind === 0 ? `${whole},${d}0` : `${whole},0${d}`];
+  if (kind >= 2) {
+    const a = between(1, maxPlaces, random);
+    let b = between(1, maxPlaces - 1, random);
+    if (b >= a) b++;
+    // Le plus souvent, les premiers chiffres sont les mêmes : 3,184 et 3,1246.
+    const common = kind === 3 ? Math.min(a, b) - 1 : 0;
+    const digits = digitsText(a, random);
+    left = `${whole},${digits}`;
+    right = `${whole},${digits.slice(0, common)}${digitsText(b - common, random)}`;
+    if (valueOf(left) === valueOf(right)) right = `${whole + 1},${digitsText(b, random)}`;
+  }
+  return random() < 0.5 ? compareDecimals(left, right) : compareDecimals(right, left);
+}
+
+/** La rose : les nombres décimaux (fiches n° 55 à 66, leçons N12 et N13). */
+const ROSE_KINDS: readonly Draw[] = [
+  (random) => {
+    const [wholeDigits, places] = [between(2, 4, random), between(2, 4, random)];
+    const text = `${between(10 ** (wholeDigits - 1), 10 ** wholeDigits - 1, random)},${digitsText(places, random)}`;
+    // Des centaines aux millièmes.
+    return decimalDigitOf(text, between(-Math.min(places, 3), Math.min(wholeDigits - 1, 2), random));
+  },
+  (random) => {
+    const kind = between(0, 3, random);
+    if (kind === 0) return fractionsToDecimal(between(1, 50, random), [[between(1, 9, random), 10]]);
+    if (kind === 1) {
+      const denominator = pick([10, 100], random);
+      const numerator = denominator === 10 ? between(1, 9, random) : Number(digitsText(2, random));
+      return fractionsToDecimal(0, [[numerator, denominator]]);
+    }
+    if (kind === 2) return fractionsToDecimal(between(1, 50, random), [[between(1, 9, random), 100]]);
+    return fractionsToDecimal(between(1, 9, random), [
+      [between(1, 9, random), 10],
+      [between(1, 9, random), 100],
+    ]);
+  },
+  (random) => {
+    const [units, digit] = [between(1, 9, random), between(1, 9, random)];
+    const kind = between(0, 3, random);
+    if (kind === 0) return wordsToDecimal([[digit, -1]]);
+    if (kind === 1) return wordsToDecimal([[units, 0], [digit, -2]]);
+    if (kind === 2) return wordsToDecimal([[units, 0], [digit, -1]]);
+    // « trente-quatre dixièmes », « quatorze centièmes » (leçon N13).
+    return wordsToDecimal([[Number(`${between(1, 4, random)}${between(1, 9, random)}`), pick([-1, -2], random)]]);
+  },
+  (random) => drawCompareDecimals(random, 2),
+  // L'unité partagée en 10 (fiches n° 64 et 66), le dixième partagé en 10 (fiche n° 65).
+  (random) => numberLine(between(0, 15, random), 0, 0.1, 10, between(1, 9, random)),
+  (random) => numberLine(between(0, 9, random) / 10, 0, 0.01, 10, between(1, 9, random)),
+  (random) => {
+    for (;;) {
+      const text = `${between(10, 99, random)},${digitsText(2, random)}`;
+      const count = [...text].filter((d) => d !== ',' && d !== '0').length;
+      if (count >= 3) return decomposeDecimal(text, between(0, count - 1, random));
+    }
+  },
+];
+
+/** « 6,124 », « 6,0124 » : dedans ou dehors, entre deux nombres à 2 chiffres après la virgule (fiches n° 109 et 110). */
+function drawIsBetween(random: () => number): NumerationQuestion {
+  const whole = between(1, 9, random);
+  const low = between(11, 85, random);
+  const high = low + between(2, 5, random);
+  const text = (hundredths: number) => `${whole},${String(hundredths).padStart(2, '0')}${digitsText(between(1, 2, random), random)}`;
+  const kind = between(0, 3, random);
+  const n =
+    kind === 0
+      ? text(between(low, high - 1, random))
+      : kind === 1
+        ? // Un 0 juste après la virgule : 6,0124 est plus petit que 6,12.
+          `${whole},0${low}${between(1, 9, random)}`
+        : kind === 2
+          ? text(between(high, high + 4, random))
+          : text(between(low - 5, low - 1, random));
+  return isBetween(n, numberText(round(whole + low / 100)), numberText(round(whole + high / 100)));
+}
+
+/** Une suite qui passe un dixième ou une unité : 10,07 ; 10,08 ; 10,09 ; 10,1 (fiches n° 116 à 118). */
+function drawDecimalSequence(random: () => number): NumerationQuestion {
+  const step = pick([10, 1, 5], random);
+  const whole = between(1, 12, random);
+  // En centièmes : le passage, à une unité ou à un dixième.
+  const boundary = whole * 100 + (step === 1 && random() < 0.6 ? between(1, 9, random) * 10 : 0);
+  const k = between(1, 4, random);
+  const up = random() < 0.7;
+  return sequence((up ? boundary - k * step : boundary + k * step) / 100, (up ? step : -step) / 100);
+}
+
+/** « 4,3 4,4 4,07 4,36 » : quatre nombres proches, pas le même nombre de chiffres après la virgule (fiche n° 122). */
+function drawOrder(random: () => number): NumerationQuestion {
+  const whole = between(0, 9, random);
+  const d = between(1, 8, random);
+  const texts: string[] = [];
+  while (texts.length < 4) {
+    const first = pick([0, d, d + 1], random);
+    const rest = digitsText(between(0, 2, random), random);
+    if (first === 0 && rest === '') continue;
+    const text = `${whole},${first}${rest}`;
+    if (!texts.some((t) => valueOf(t) === valueOf(text))) texts.push(text);
+  }
+  // Parfois un 0 à la fin, comme 1,200 sur la fiche.
+  if (random() < 0.25) texts[0] = padTo(texts[0]!, 3);
+  return orderDecimals(texts, random() < 0.75 ? '>' : '<');
+}
+
+/** « 4,6 < … < 4,7 » : le bon nombre, et trois qui n'y sont pas. */
+function drawIntercalate(random: () => number): NumerationQuestion {
+  const places = between(0, 1, random);
+  const unit = 10 ** places;
+  const lowUnits = places === 0 ? between(1, 9, random) : between(1, 9, random) * 10 + between(1, 8, random);
+  const [low, high] = [lowUnits / unit, (lowUnits + 1) / unit];
+  const fine = (k: number) => round((lowUnits * 10 + k) / (unit * 10));
+  const answer = fine(between(1, 9, random));
+  // Juste avant, juste après, et le piège du 0 après la virgule (4,062 < 4,6).
+  const candidates = [fine(-between(1, 9, random)), fine(10 + between(1, 9, random)), fine(20 + between(1, 9, random))];
+  if (places === 1) candidates.push(valueOf(numberText(answer).replace(',', ',0')));
+  const others = shuffle([...new Set(candidates)], random).slice(0, 3);
+  return intercalate(low, high, answer, others);
+}
+
+/** La marron : manipuler les nombres décimaux (fiches n° 109 à 126, leçons N18 et N19). */
+const MARRON_KINDS: readonly Draw[] = [
+  drawIsBetween,
+  // Le dixième partagé en centièmes (fiche n° 111), le centième en millièmes (fiches n° 112 et 113).
+  (random) =>
+    random() < 0.5
+      ? numberLine(between(10, 99, random) / 10, 0, 0.01, 10, between(1, 9, random))
+      : numberLine(between(100, 999, random) / 100, 0, 0.001, 10, between(1, 9, random)),
+  (random) => {
+    const powers = [100, 10, 1, 0.1, 0.01, 0.001];
+    const i = between(0, powers.length - 2, random);
+    const j = between(i + 1, powers.length - 1, random);
+    const hole = pick(['a', 'b', 'powerA', 'powerB'] as const, random);
+    // « 20,2 = (2 × 10) + (… × 0,01) » : il faut 20 centièmes pour faire 2 dixièmes.
+    const b = hole === 'b' && j - i >= 2 && random() < 0.5 ? between(1, 4, random) * 10 : between(1, 9, random);
+    return decimalTimes(between(1, 9, random), powers[i]!, b, powers[j]!, hole);
+  },
+  drawDecimalSequence,
+  (random) => drawCompareDecimals(random, 4),
+  drawOrder,
+  (random) => {
+    const whole = between(1, 9, random);
+    const start = whole * 100 + (random() < 0.5 ? between(1, 9, random) * 10 : between(1, 95, random));
+    const kind = between(0, 2, random);
+    const target = kind === 0 ? (whole + 1) * 100 : kind === 1 ? start + between(1, 9, random) * 10 : start + between(1, 30, random);
+    return completeDecimal(start / 100, target / 100);
+  },
+  (random) => {
+    const kind = between(0, 2, random);
+    if (kind === 0) return halfCalc(between(0, 9, random) + 0.5, '×');
+    if (kind === 1) return halfCalc(between(1, 9, random) * 2 + 1, '÷');
+    // 2,8 + 2,02 : des dixièmes et des centièmes.
+    const a = (between(1, 9, random) * 10 + between(1, 9, random)) / 10;
+    const b = (between(1, 9, random) * 100 + Number(digitsText(2, random))) / 100;
+    return fromMental(random() < 0.5 ? addDecimals(a, b) : addDecimals(b, a), 'Calcule');
+  },
+  (random) => {
+    if (random() < 0.5) return drawIntercalate(random);
+    const places = between(0, 2, random) as 0 | 1 | 2;
+    const n = valueOf(`${between(1, 20, random)},${digitsText(places + 1, random)}`);
+    return frameDecimal(n, places, random() < 0.5 ? 'low' : 'high');
+  },
+  (random) => {
+    const places = between(1, 3, random) as 1 | 2 | 3;
+    const digits = between(1, Math.min(places + 2, 4), random);
+    let numerator = between(10 ** (digits - 1), 10 ** digits - 1, random);
+    if (numerator % 10 === 0) numerator += 1;
+    return random() < 0.5
+      ? fromMental(decimalToFraction(numerator, places), 'Écris sous forme d’une fraction décimale')
+      : fromMental(fractionToDecimal(numerator, places), 'Écris sous forme d’un nombre décimal');
+  },
+];
+
 export const NUMERATION: readonly NumerationBelt[] = [
   {
     belt: 'blanche',
@@ -1227,6 +1652,20 @@ export const NUMERATION: readonly NumerationBelt[] = [
     kinds: ORANGE_KINDS,
   },
   {
+    belt: 'rose',
+    skill: 'Lire, écrire et comparer les nombres décimaux, passer des fractions décimales aux nombres décimaux',
+    decimal: true,
+    tips: [
+      'Un nombre décimal a une partie entière et une partie décimale, séparées par une virgule. Dans 62,578 : 6 dizaines, 2 unités, puis 5 dixièmes, 7 centièmes et 8 millièmes.',
+      'Le 1er chiffre après la virgule est celui des dixièmes, le 2e celui des centièmes, le 3e celui des millièmes. Tu peux utiliser un tableau de numération.',
+      'Une fraction avec 10, 100 ou 1000 au dénominateur est une fraction décimale : 4/10, c’est 4 dixièmes, 0,4 ; 4/100, c’est 4 centièmes, 0,04.',
+      'Pour comparer deux nombres décimaux, on compare d’abord les parties entières. Si elles sont pareilles, on écrit des 0 à la fin du plus court : 3,5 = 3,50, donc 3,25 < 3,5.',
+      'Sur une droite graduée, quand l’unité est partagée en 10 parts égales, chaque graduation vaut un dixième (0,1) ; quand un dixième est partagé en 10, chaque graduation vaut un centième (0,01).',
+    ],
+    examples: () => [decimalDigitOf('597,4328', -2), fractionsToDecimal(40, [[4, 100]]), compareDecimals('3,25', '3,5'), numberLine(3, 0, 0.1, 10, 7)],
+    kinds: ROSE_KINDS,
+  },
+  {
     belt: 'vert',
     skill: 'Lire, écrire, représenter et comparer les nombres jusqu’aux millions',
     goal: 'CM1',
@@ -1265,6 +1704,20 @@ export const NUMERATION: readonly NumerationBelt[] = [
     ],
     examples: () => [placeFraction(2, 6, 2, 3), fractionCalc(3, 4, '+', 1, 2), wholePlusFraction(9, 4, 'part'), equalFraction(1, 2, 3, true)],
     kinds: VIOLETTE_KINDS,
+  },
+  {
+    belt: 'marron',
+    skill: 'Manipuler les nombres décimaux : décomposer, comparer, ranger, encadrer, intercaler, les placer sur une droite graduée',
+    decimal: true,
+    tips: [
+      'Pour comparer ou ranger des nombres décimaux, écris des 0 à la fin des plus courts, pour qu’ils aient tous autant de chiffres après la virgule : 4,4 = 4,40 > 4,36.',
+      '62,578 = (6 × 10) + (2 × 1) + (5 × 0,1) + (7 × 0,01) + (8 × 0,001). Il faut 10 centièmes pour faire 1 dixième : 0,2 = 20 × 0,01.',
+      'Encadrer, c’est écrire le nombre d’avant et celui d’après : à l’unité 6 < 6,3 < 7, au dixième 8,4 < 8,49 < 8,5. Intercaler, c’est écrire un nombre entre les deux : entre 4,6 et 4,7, il y a 4,62.',
+      'Sur une droite graduée, cherche ce que vaut une graduation : entre 4,6 et 4,7, il y a 10 graduations, chacune vaut un centième (0,01).',
+      '8,37 a 2 chiffres après la virgule : 8,37 = 837/100. Dans l’autre sens, 12/10 : 10 a un 0, il y aura 1 chiffre après la virgule, 1,2.',
+    ],
+    examples: () => [orderDecimals(['4,3', '4,4', '4,07', '4,36'], '>'), decimalTimes(2, 10, 20, 0.01, 'b'), frameDecimal(8.49, 1, 'high'), completeDecimal(4.6, 4.75)],
+    kinds: MARRON_KINDS,
   },
 ];
 

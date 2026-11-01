@@ -2,7 +2,19 @@ import { describe, expect, it } from 'vitest';
 import { answerText, isCorrect, isNumberLine } from '../../core/quiz';
 import {
   compare,
+  compareDecimals,
   compareFractions,
+  completeDecimal,
+  decimalDigitOf,
+  decimalTimes,
+  decomposeDecimal,
+  fractionsToDecimal,
+  frameDecimal,
+  halfCalc,
+  intercalate,
+  isBetween,
+  orderDecimals,
+  wordsToDecimal,
   complementTo,
   complementTo100,
   decompose,
@@ -273,16 +285,81 @@ describe('Numération', () => {
     expect(remainingProblem('Mathilde', 1, 2, 4, false)).toMatchObject({ suffix: '/4', answer: 1 });
   });
 
+  it('lit, écrit et décompose les nombres décimaux (ceinture rose)', () => {
+    // Fiche n° 55 : le 3 de 597,4328 ; la virgule ne se touche pas.
+    const digit = decimalDigitOf('597,4328', -2);
+    expect(digit.choices![Number(digit.answer)]).toEqual({ label: '3', value: '5' });
+    expect(digit.choices![3]).toEqual({ label: ',', value: ',' });
+    expect(decimalDigitOf('4986,127', 2).choices![Number(decimalDigitOf('4986,127', 2).answer)]!.label).toBe('9');
+    // Fiches n° 56, 59 et 62.
+    expect(fractionsToDecimal(40, [[4, 100]]).answer).toBe(40.04);
+    expect(fractionsToDecimal(0, [[57, 100]]).answer).toBe(0.57);
+    expect(fractionsToDecimal(5, [[3, 10], [2, 100]])).toMatchObject({ prompt: '5 + 3/10 + 2/100', answer: 5.32 });
+    // Fiches n° 57 et 61, leçon N13.
+    expect(wordsToDecimal([[5, 0], [5, -2]])).toMatchObject({ prompt: 'cinq unités et cinq centièmes', answer: 5.05 });
+    expect(wordsToDecimal([[1, 0], [3, -1]]).prompt).toBe('une unité et trois dixièmes');
+    expect(wordsToDecimal([[34, -1]])).toMatchObject({ prompt: 'trente-quatre dixièmes', answer: 3.4 });
+    // Leçon N12.
+    expect(decomposeDecimal('45,37', 3)).toMatchObject({ prompt: '45,37 = 40 + 5 + 0,3 +', suffix: '', answer: 0.07 });
+  });
+
+  it('compare et range les nombres décimaux', () => {
+    expect(compareDecimals('3,25', '3,5').answer).toBe('<');
+    expect(compareDecimals('5,4', '5,40').answer).toBe('=');
+    expect(compareDecimals('7,8', '7,08').answer).toBe('>');
+    expect(compareDecimals('0,81', '0,084').explain).toContain('0,810 et 0,084');
+    // Fiche n° 122 : on touche les nombres dans l'ordre.
+    const order = orderDecimals(['4,3', '4,4', '4,07', '4,36'], '>');
+    expect(order).toMatchObject({ order: '>', answer: '4,4 > 4,36 > 4,3 > 4,07' });
+    expect(isCorrect(order, '4,4 > 4,36 > 4,3 > 4,07')).toBe(true);
+    expect(isCorrect(order, '4,4 > 4,3 > 4,36 > 4,07')).toBe(false);
+    expect(orderDecimals(['1,200', '1,15', '1,8', '1,21'], '<').answer).toBe('1,15 < 1,200 < 1,21 < 1,8');
+    // Fiche n° 109.
+    expect(isBetween('6,124', '6,12', '6,15').answer).toBe('oui');
+    expect(isBetween('6,0124', '6,12', '6,15')).toMatchObject({ answer: 'non', explain: expect.stringContaining('6,0124 < 6,1200') });
+    expect(isBetween('6,148', '6,12', '6,15').answer).toBe('oui');
+  });
+
+  it('manipule les nombres décimaux (ceinture marron)', () => {
+    // Fiches n° 114 et 115.
+    expect(decimalTimes(2, 10, 20, 0.01, 'b')).toMatchObject({ prompt: '20,2 = (2 × 10) + (', suffix: '× 0,01)', answer: 20 });
+    expect(decimalTimes(3, 1, 7, 0.01, 'powerA')).toMatchObject({ prompt: '3,07 = (3 ×', suffix: ') + (7 × 0,01)', answer: 1 });
+    expect(decimalTimes(3, 10, 7, 0.1, 'a').answer).toBe(3);
+    // Fiches n° 123 à 126.
+    expect(completeDecimal(4.6, 4.75).answer).toBe(0.15);
+    expect(completeDecimal(2.05, 3).answer).toBe(0.95);
+    expect(halfCalc(2.5, '×').answer).toBe(5);
+    expect(halfCalc(5, '÷').answer).toBe(2.5);
+    // Leçon N18 : encadrer et intercaler.
+    expect(frameDecimal(8.49, 1, 'high')).toMatchObject({ prompt: '8,4 < 8,49 <', answer: 8.5 });
+    expect(frameDecimal(9.746, 2, 'low')).toMatchObject({ suffix: '< 9,746 < 9,75', answer: 9.74 });
+    expect(frameDecimal(6.3, 0, 'low').answer).toBe(6);
+    const between = intercalate(4.6, 4.7, 4.62, [4.062, 4.58, 4.71]);
+    expect(between.answer).toBe('4,62');
+    expect(between.choices!.map((c) => c.label)).toEqual(['4,062', '4,58', '4,62', '4,71']);
+    // Une suite qui passe le dixième (fiche n° 116).
+    expect(sequence(10.07, 0.01)).toMatchObject({ prompt: '10,07 ; 10,08 ; 10,09 ; 10,1 ;', answer: 10.11 });
+    // La droite graduée en millièmes (fiche n° 112).
+    expect(numberLine(4.62, 0, 0.001, 10, 1).answer).toBe(4.621);
+  });
+
   it('tire des questions justes, dans les nombres de la ceinture', () => {
-    const max = { blanche: 99, jaune: 9999, orange: 99, vert: 999999, bleu: 9999999999, violette: 99 } as Record<string, number>;
+    const max = { blanche: 99, jaune: 9999, orange: 99, vert: 999999, bleu: 9999999999, violette: 99, rose: 100, marron: 9999 } as Record<string, number>;
     for (const belt of NUMERATION) {
       for (let seed = 1; seed < 300; seed++) {
         for (const question of pickNumeration(belt, 10, [], seeded(seed))) {
           // La réponse attendue est juste, et elle se tape (ou se touche).
           expect(isCorrect(question, question.choices ? String(question.answer) : answerText(question))).toBe(true);
-          if (question.choices) expect(question.choices.some((c) => c.value === question.answer)).toBe(true);
+          if (question.order) {
+            // Ranger : tous les nombres, chacun une fois, dans l'ordre.
+            const values = (question.answer as string).split(` ${question.order} `);
+            expect([...values].sort()).toEqual(question.choices!.map((c) => c.value).sort());
+            const numbers = values.map((v) => Number(v.replace(',', '.')));
+            for (let i = 1; i < numbers.length; i++) expect(question.order === '>' ? numbers[i - 1]! > numbers[i]! : numbers[i - 1]! < numbers[i]!).toBe(true);
+          } else if (question.choices) expect(question.choices.some((c) => c.value === question.answer)).toBe(true);
           if (typeof question.answer === 'number') {
-            expect(Number.isInteger(question.answer)).toBe(true);
+            // Des entiers, ou des décimaux jusqu'aux millièmes (rose et marron), sans 4,0699999.
+            expect(String(question.answer)).toMatch(belt.decimal ? /^\d+(\.\d{1,3})?$/ : /^\d+$/);
             // Ça tient au pavé.
             expect(String(question.answer).length).toBeLessThanOrEqual(10);
             expect(question.answer).toBeGreaterThanOrEqual(0);

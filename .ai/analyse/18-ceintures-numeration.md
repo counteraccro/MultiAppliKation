@@ -147,7 +147,26 @@ Orthographe des nombres en lettres : les fiches mettent **des traits d'union par
      la case, dans les astuces et la correction du test. En test, « Revenir à la réponse d'avant » redonne le
      dessin colorié tel qu'il était.
 4. **Rose et marron** : les décimaux (position des chiffres, fractions décimales, comparer, ranger, droite
-   graduée en dixièmes, centièmes, millièmes, suites). Nouvel écran : ranger.
+   graduée en dixièmes, centièmes, millièmes, suites). Nouvel écran : ranger. **Faite le 01/11/2026 (0.51.0)** :
+   - Rose (fiches n° 55 à 66, leçons N12 et N13) : toucher le chiffre des centaines… millièmes dans 597,4328
+     (la virgule est dans le nombre mais ne se touche pas) ; 2 + 4/10, 57/100, 5 + 3/10 + 2/100 en nombre
+     décimal ; « cinq unités et cinq centièmes », « trente-quatre dixièmes » ; comparer (3,25 … 3,5 ; 5,4 … 5,40 ;
+     7,8 … 7,08) ; lire une droite graduée en dixièmes ou en centièmes ; décomposer 45,37 = 40 + 5 + 0,3 + ?.
+   - Marron (fiches n° 109 à 126, leçons N18 et N19) : « 6,124 est-il compris entre 6,12 et 6,15 ? » (oui / non,
+     au lieu d'entourer) ; droite graduée en centièmes et en millièmes ; (? × 10) + (3 × 0,01) = 50,03 et
+     (3 × ?) + (7 × 0,01) = 3,07 ; suites qui passent un dixième ou une unité ; comparer jusqu'aux
+     dix-millièmes ; **ranger** quatre nombres ; 4,6 + ? = 4,75 ; 2 × 2,5, 5 ÷ 2, 2,8 + 2,02 ; encadrer à
+     l'unité, au dixième, au centième et intercaler (leçon N18) ; 8,37 = ?/100 et 12/10 = ? (leçon N19, les
+     questions du calcul mental).
+   - Les droites graduées des fiches ont 100 graduations ; dans l'app, elles en gardent 11 (une unité, un
+     dixième ou un centième partagé en 10), assez larges pour bien les lire.
+   - **Ce qui vient de nous, pas des fiches** : encadrer, intercaler et les fractions décimales de la marron
+     (d'après les leçons N18 et N19) ; parfois ranger du plus petit au plus grand (les fiches ne rangent que du
+     plus grand au plus petit).
+   - Écran : `order: '<' | '>'` (on touche les nombres dans l'ordre, ils s'écrivent dans la case avec le signe ;
+     retoucher un nombre l'enlève avec ceux d'après ; OK quand ils y sont tous ; une pastille donne le rang) ;
+     la touche virgule au pavé pour la rose et la marron (`decimal` de la ceinture) ; les suites de décimaux se
+     séparent par « ; ».
 5. **Noire, bronze, argent** : les pourcentages et le lien fractions / décimaux.
 6. **Or** : problèmes et énigmes (à voir : celles des fiches telles quelles, ou les nôtres).
 

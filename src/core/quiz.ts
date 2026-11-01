@@ -26,6 +26,11 @@ export interface QuizQuestion {
   solved?: string;
   /** Une droite graduée ou un dessin (billes, rectangle), au-dessus de la question. */
   figure?: Figure;
+  /**
+   * Ranger : les `choices` se touchent dans l'ordre, du plus grand au plus petit (`>`) ou l'inverse (`<`) ;
+   * la réponse est leurs `label` dans l'ordre, séparés par le signe : « 4,4 > 4,36 > 4,3 > 4,07 ».
+   */
+  order?: '<' | '>';
 }
 
 export type Figure = NumberLineFigure | PartsFigure;
