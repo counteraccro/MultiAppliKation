@@ -729,11 +729,19 @@ export const CALCUL_MENTAL: readonly MentalBelt[] = [
   },
 ];
 
-/** Les calculs d'une série, tous différents et pas ceux de la dernière fois (`seen`) si possible. */
-export function pickCalcs(belt: MentalBelt, count: number, seen: readonly string[] = [], random = Math.random): MentalQuestion[] {
-  const picked: MentalQuestion[] = [];
+/**
+ * Les calculs d'une série (`draw` : le tirage d'une ceinture, `index` dans la série), tous différents
+ * et pas ceux de la dernière fois (`seen`) si possible. Sert aussi à la numération.
+ */
+export function pickCalcs<Q extends QuizQuestion & { id: string }>(
+  draw: (random: () => number, index: number) => Q,
+  count: number,
+  seen: readonly string[] = [],
+  random = Math.random,
+): Q[] {
+  const picked: Q[] = [];
   for (let tries = 0; picked.length < count; tries++) {
-    const question = belt.drawCalc(random, picked.length);
+    const question = draw(random, picked.length);
     const known = (tries < 1000 && picked.some((p) => p.id === question.id)) || (tries < 100 && seen.includes(question.id));
     if (!known) picked.push(question);
   }

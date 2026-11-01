@@ -33,8 +33,16 @@ import { pickSentences, PracticeSession } from './practice-session';
 import { capitalize, fullSentence, parseSentence, withNbsp } from './sentence';
 import { renderSentenceScreen } from './sentence-screen';
 import { STICKER_SECTIONS, STICKERS, unlockStickers } from './stickers';
-import { isHomophoneBelt, isMentalBelt, isPosedBelt, isTableBelt, type Subject, type SubjectBelt } from './subjects';
+import { isHomophoneBelt, isMentalBelt, isNumerationBelt, isPosedBelt, isTableBelt, type Subject, type SubjectBelt } from './subjects';
 import { MENTAL_PRACTICE_SIZE, MENTAL_TEST_SIZE, MENTAL_TEST_TIME_MS, passesMental, pickCalcs, type MentalBelt } from './calcul-mental';
+import {
+  NUMERATION_MAX_LETTERS,
+  NUMERATION_PRACTICE_SIZE,
+  NUMERATION_TEST_SIZE,
+  pickNumeration,
+  type NumerationBelt,
+  type NumerationQuestion,
+} from './numeration';
 import { CalcPracticeSession, CalcTestSession, factText, pickFacts, PRACTICE_SIZE, TablePracticeSession, TableTestSession, type TableMistake } from './table-practice';
 import { TEST_TIME_MS, type TableBelt } from './tables';
 import { isPassing, pickTestSentences, TestSession, type TestMistake } from './test-session';
@@ -42,7 +50,8 @@ import { pickExercises, VerbPracticeSession } from './verb-practice';
 import { VerbTestSession, type VerbMistake } from './verb-test';
 
 // Voir .ai/analyse/11-ceintures.md : les ceintures de la classe, homophones puis conjugaison (12-ceintures-conjugaison.md)
-// tables (13-ceintures-tables.md) et calcul posé (15-ceintures-calcul-pose.md).
+// tables (13-ceintures-tables.md), calcul posé (15-ceintures-calcul-pose.md), calcul mental (16-ceintures-calcul-mental.md)
+// et numération (18-ceintures-numeration.md).
 // Accueil (les matières), échelle d'une matière, leçon, entraînement et test d'une ceinture,
 // progrès et autocollants.
 export const ceintures: Activity = {
@@ -142,7 +151,9 @@ export const ceintures: Activity = {
             ? practicePosed(subject, belt)
             : isMentalBelt(belt)
               ? practiceMental(subject, belt)
-              : practiceVerb(subject, belt);
+              : isNumerationBelt(belt)
+                ? practiceNumeration(subject, belt)
+                : practiceVerb(subject, belt);
 
     const practiceSentences = (subject: Subject, belt: HomophoneBelt) =>
       show(() => {
@@ -215,13 +226,33 @@ export const ceintures: Activity = {
     const practiceMental = (subject: Subject, belt: MentalBelt) =>
       show(() => {
         const seen = progressOf(load(), subject).lastPractice?.[belt.belt];
-        const questions = pickCalcs(belt, MENTAL_PRACTICE_SIZE, seen);
+        const questions = pickCalcs(belt.drawCalc, MENTAL_PRACTICE_SIZE, seen);
         const session = new CalcPracticeSession(questions);
         return renderQuestionScreen(root, {
           session,
           label: label(belt),
           maxDigits: MENTAL_MAX_DIGITS,
           decimal: belt.decimal,
+          onQuit: () => ladder(subject),
+          onDone: ({ bestStreak }) => {
+            const result = session.result();
+            practiceDone(subject, belt, questions.map((q) => q.id), result, result.toPractice, bestStreak);
+          },
+        });
+      });
+
+    /** Numération : 10 questions (pavé, lettres ou boutons), corrigées tout de suite avec l'astuce. */
+    const practiceNumeration = (subject: Subject, belt: NumerationBelt) =>
+      show(() => {
+        const seen = progressOf(load(), subject).lastPractice?.[belt.belt];
+        const questions = pickNumeration(belt, NUMERATION_PRACTICE_SIZE, seen);
+        const session = new CalcPracticeSession(questions);
+        return renderQuestionScreen(root, {
+          session,
+          label: label(belt),
+          maxDigits: MENTAL_MAX_DIGITS,
+          maxLetters: NUMERATION_MAX_LETTERS,
+          hyphen: true,
           onQuit: () => ladder(subject),
           onDone: ({ bestStreak }) => {
             const result = session.result();
@@ -247,7 +278,9 @@ export const ceintures: Activity = {
             ? testPosed(subject, belt)
             : isMentalBelt(belt)
               ? testMental(subject, belt)
-              : testVerbs(subject, belt);
+              : isNumerationBelt(belt)
+                ? testNumeration(subject, belt)
+                : testVerbs(subject, belt);
 
     const testSentences = (subject: Subject, belt: HomophoneBelt) =>
       show(() => {
@@ -321,7 +354,7 @@ export const ceintures: Activity = {
     const testMental = (subject: Subject, belt: MentalBelt) =>
       show(() => {
         const seen = progressOf(load(), subject).lastPractice?.[belt.belt];
-        const session = new CalcTestSession(pickCalcs(belt, MENTAL_TEST_SIZE, seen), passesMental);
+        const session = new CalcTestSession(pickCalcs(belt.drawCalc, MENTAL_TEST_SIZE, seen), passesMental);
         return renderQuestionScreen(root, {
           session,
           test: true,
@@ -333,6 +366,26 @@ export const ceintures: Activity = {
           onDone: () => {
             const result = session.result();
             testDone(subject, belt, result, 'calculs justes', result.mistakes.length > 0 ? tableCorrections(result.mistakes) : undefined);
+          },
+        });
+      });
+
+    /** Numération : 10 questions sans aide, réussi à 9 justes (90 %), sans minuteur. */
+    const testNumeration = (subject: Subject, belt: NumerationBelt) =>
+      show(() => {
+        const seen = progressOf(load(), subject).lastPractice?.[belt.belt];
+        const session = new CalcTestSession(pickNumeration(belt, NUMERATION_TEST_SIZE, seen));
+        return renderQuestionScreen(root, {
+          session,
+          test: true,
+          maxDigits: MENTAL_MAX_DIGITS,
+          maxLetters: NUMERATION_MAX_LETTERS,
+          hyphen: true,
+          label: `En conditions réelles · ${label(belt)}`,
+          onQuit: () => ladder(subject),
+          onDone: () => {
+            const result = session.result();
+            testDone(subject, belt, result, 'réponses justes', result.mistakes.length > 0 ? numerationCorrections(result.mistakes) : undefined);
           },
         });
       });
@@ -498,6 +551,29 @@ function correction(question: QuizQuestion, typed: string): (HTMLElement | strin
   const denominator = /^\/(\d+)$/.exec(question.suffix ?? '')?.[1];
   if (denominator !== undefined) return [fraction(fixed, denominator)];
   return question.suffix === undefined ? [fixed] : [fixed, ` ${question.suffix}`];
+}
+
+/** La correction d'un test de numération : chaque question fausse résolue, et ce qui avait été répondu. */
+function numerationCorrections(mistakes: TableMistake<NumerationQuestion>[]): HTMLElement {
+  return h(
+    'div',
+    { class: 'to-practice sentences test-corrections' },
+    h('h2', {}, 'La correction'),
+    h(
+      'ul',
+      {},
+      ...mistakes.map(({ question, typed }) => {
+        // Un bouton touché : ce qu'il montrait (« < », le chiffre), pas sa valeur.
+        const given = question.choices?.find((c) => c.value === typed)?.label ?? typed;
+        return h(
+          'li',
+          {},
+          h('mark', {}, withNbsp(question.solved)),
+          given !== undefined && h('small', { class: 'correction-context' }, `Tu avais répondu : ${given}`),
+        );
+      }),
+    ),
+  );
 }
 
 /** La correction d'un test de calcul posé : chaque opération fausse, le résultat écrit barré et le bon surligné. */

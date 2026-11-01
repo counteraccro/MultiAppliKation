@@ -1,18 +1,21 @@
 import { closestAnswer, diffParts } from '../core/diff';
 import { h } from '../core/dom';
-import { acceptedAnswers, answerText, normalizeAnswer, type QuizSession } from '../core/quiz';
+import { acceptedAnswers, answerText, normalizeAnswer, type QuizQuestion, type QuizSession } from '../core/quiz';
 import { sounds } from '../core/sound';
 import { createChrono } from './chrono';
 import { createCountdown } from './countdown';
 import { fraction, withFractions } from './fraction';
 import { createKeyboard } from './keyboard';
-import { createKeypad } from './keypad';
+import { createKeypad, type Keypad } from './keypad';
+import { numberLine } from './number-line';
 import { createRace } from './race';
 import { soundToggle } from './sound-toggle';
 
 const MAX_DIGITS = 3;
 /** Au-delà de ces caractères, la question s'écrit plus petit pour tenir sur une ligne. */
 const LONG_PROMPT = 9;
+/** Au-delà, une question en chiffres s'écrit aussi petit qu'une réponse en mots. */
+const LONG_TEXT = 14;
 /** Assez pour « sommes allées », pas assez pour taper n'importe quoi. */
 const MAX_LETTERS = 24;
 /** Temps pendant lequel une bonne réponse reste affichée avant la suivante. */
@@ -50,18 +53,29 @@ export interface QuestionScreenOptions {
   maxDigits?: number;
   /** Nombres décimaux : la touche virgule au pavé (elle compte dans `maxDigits`). */
   decimal?: boolean;
+  /** Lettres qu'on peut taper (24 par défaut ; plus pour un nombre en lettres). */
+  maxLetters?: number;
+  /** Nombres en lettres : une touche trait d'union au clavier. */
+  hyphen?: boolean;
   onDone(summary: SeriesSummary): void;
   onQuit(): void;
 }
 
+/** Pavé de chiffres, clavier de lettres ou boutons à toucher. */
+type Mode = 'digits' | 'letters' | 'choices';
+
 /**
  * Pose les questions d'une série une à une. Une erreur affiche tout de suite
  * la bonne réponse, sans gronder ; l'enfant passe à la suite avec OK.
+ * Chaque question peut dire comment y répondre (numération : pavé, lettres ou boutons).
  * Renvoie la fonction de nettoyage.
  */
 export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenOptions): () => void {
   const { session } = options;
-  const letters = options.input === 'letters';
+  const modeOf = (question: QuizQuestion): Mode =>
+    question.choices ? 'choices' : (question.input ?? (options.input === 'letters' ? 'letters' : 'digits'));
+  let mode: Mode = 'digits';
+  let asked: QuizQuestion | undefined;
   let typed = '';
   let shownAt = 0;
   let state: 'asking' | 'correct' | 'wrong' | 'over' = 'asking';
@@ -75,8 +89,9 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
   const prompt = h('span', { class: 'prompt' });
   const suffix = h('span', { class: 'prompt' });
   const answerBox = h('span', { class: 'answer-box', 'aria-live': 'polite' });
-  const equation = h('div', { class: `equation${letters ? ' words' : ''}` }, prompt, answerBox, suffix);
+  const equation = h('div', { class: 'equation' }, prompt, answerBox, suffix);
   const context = h('p', { class: 'question-context' });
+  const figure = h('div', { class: 'question-figure' });
   const feedback = h('p', { class: 'feedback', 'aria-live': 'polite' });
   const progress = h('div', { class: 'progress', 'aria-hidden': 'true' });
   const progressText = h('span', { class: 'visually-hidden' });
@@ -123,9 +138,9 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
   const handlers = {
     onChar(char: string) {
       if (state !== 'asking') return;
-      if (letters) {
+      if (mode === 'letters') {
         // Pas d'espace au début ni deux de suite : il ne se verrait pas.
-        if (typed.length >= MAX_LETTERS || (char === ' ' && (typed === '' || typed.endsWith(' ')))) return;
+        if (typed.length >= (options.maxLetters ?? MAX_LETTERS) || (char === ' ' && (typed === '' || typed.endsWith(' ')))) return;
         typed += char;
       } else {
         if (typed.length >= (options.maxDigits ?? MAX_DIGITS)) return;
@@ -155,11 +170,13 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
       if (options.test) {
         state = 'correct';
         answerBox.classList.add('is-placed');
+        choiceButton(typed)?.classList.add('is-placed');
         sounds.placed();
         timer = window.setTimeout(next, CORRECT_PAUSE_MS);
       } else if (correct) {
         state = 'correct';
         answerBox.classList.add('is-correct');
+        choiceButton(typed)?.classList.add('is-correct');
         feedback.textContent = 'Bravo !';
         const firstTry = !missed.has(question);
         if (firstTry) streak++;
@@ -176,35 +193,93 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
         sounds.wrong();
         renderStreak(false);
         answerBox.classList.add('is-wrong');
-        if (letters) {
+        if (mode === 'letters') {
           // La bonne forme, avec ce qui diffère de ce qu'elle a tapé surligné (« commen[ç]ons »).
           const shown = closestAnswer(normalizeAnswer(typed), acceptedAnswers(question));
           const [start, diff, end] = diffParts(normalizeAnswer(typed), shown);
           answerBox.replaceChildren(start, diff ? h('mark', {}, diff) : '', end);
-          feedback.textContent = `C’était « ${shown} ». ${wrongHint}`;
+          feedback.textContent = `C’était « ${shown} ». ${question.explain ? `${question.explain} ` : ''}${wrongHint}`;
         } else {
           answerBox.textContent = answerText(question);
+          // Boutons : le choisi barré, le bon mis en avant.
+          choiceButton(typed)?.classList.add('is-wrong');
+          choiceButton(String(question.answer))?.classList.add('is-answer');
           feedback.replaceChildren(
             ...withFractions(`C’était ${answerText(question)}. ${question.explain ? `${question.explain} ` : ''}${wrongHint}`),
           );
         }
-        keypad.setSubmitLabel('→');
+        input?.setSubmitLabel('→');
         if (chrono) chrono.addPenalty(options.chrono!.penaltyMs);
       }
       race?.pause();
       renderProgress();
     },
   };
-  const keypad = letters
-    ? createKeyboard(handlers)
-    : createKeypad({
+  let input: Keypad | undefined;
+  /** Les boutons de la question en cours, par réponse. */
+  let buttons = new Map<string, HTMLButtonElement>();
+  const choiceButton = (value: string) => buttons.get(value);
+  const keypadArea = h('div', { class: 'keypad-area' });
+
+  /** Le pavé, le clavier ou les boutons de la question ; les boutons « nombre » vont dans la question. */
+  function createInput(question: QuizQuestion): Keypad {
+    if (mode === 'letters') return createKeyboard(handlers, { hyphen: options.hyphen });
+    if (mode === 'digits') {
+      return createKeypad({
         ...handlers,
         onDigit: (digit) => handlers.onChar(String(digit)),
         onComma: options.decimal ? () => handlers.onChar(',') : undefined,
       });
+    }
+    return createChoices(question);
+  }
+
+  function createChoices(question: QuizQuestion): Keypad {
+    const choose = (value: string) => {
+      if (state !== 'asking') return;
+      typed = value;
+      renderAnswer();
+      handlers.onSubmit();
+    };
+    const inNumber = question.choiceLayout === 'number';
+    buttons = new Map(
+      (question.choices ?? []).map(({ label, value }) => [
+        value,
+        h('button', { class: inNumber ? 'digit-choice' : 'choice', type: 'button', onclick: () => choose(value) }, label),
+      ]),
+    );
+    // Après une erreur, on passe à la suite avec ce bouton (ou Entrée).
+    const proceed = h('button', { class: 'button primary choice-next', type: 'button', hidden: true, onclick: handlers.onSubmit }, 'Continuer →');
+    const el = h('div', { class: 'choices-input' });
+    if (!inNumber) {
+      const row = h('div', { class: 'choice-buttons' }, ...buttons.values());
+      row.style.setProperty('--choices', String(buttons.size));
+      el.append(row);
+    }
+    el.append(proceed);
+    const onKeydown = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey || document.querySelector('.overlay')) return;
+      // « < », « > », « = » au clavier d'ordinateur.
+      const typedChoice = inNumber ? undefined : question.choices?.find((c) => c.label === event.key);
+      if (event.key === 'Enter') handlers.onSubmit();
+      else if (typedChoice) choose(typedChoice.value);
+      else return;
+      event.preventDefault();
+    };
+    document.addEventListener('keydown', onKeydown);
+    return {
+      el,
+      setSubmitLabel: (label) => {
+        proceed.hidden = label === 'OK';
+      },
+      destroy: () => document.removeEventListener('keydown', onKeydown),
+    };
+  }
 
   function renderAnswer() {
-    answerBox.textContent = typed || '?';
+    // Un bouton touché : on écrit ce qu'il montre (« < »), pas sa valeur.
+    const label = mode === 'choices' ? (asked?.choices?.find((c) => c.value === typed)?.label ?? typed) : typed;
+    answerBox.textContent = label || '?';
     answerBox.classList.toggle('is-empty', typed === '');
   }
 
@@ -239,19 +314,44 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
     state = 'asking';
     renderProgress();
     typed = '';
+    asked = question;
+    // Le pavé ou le clavier reste d'une question à l'autre ; les boutons changent à chaque fois.
+    const nextMode = modeOf(question);
+    if (input === undefined || nextMode !== mode || nextMode === 'choices') {
+      input?.destroy();
+      mode = nextMode;
+      input = createInput(question);
+      keypadArea.replaceChildren(input.el);
+    }
+    section.classList.toggle('letters', mode === 'letters');
+    if (mode !== 'choices') buttons = new Map();
     // Nombre caché : la case est au milieu (« 7 × ? = 56 »), l'opération plus longue s'affiche plus petit.
-    // En mots, pas de « = » : « nous [ mangerons ] ».
-    prompt.replaceChildren(...withFractions(question.suffix === undefined && !letters ? `${question.prompt} =` : question.prompt));
+    // En mots ou avec des boutons, pas de « = » : « nous [ mangerons ] », « 92 [ > ] 29 ».
+    prompt.replaceChildren(...withFractions(question.suffix === undefined && mode === 'digits' ? `${question.prompt} =` : question.prompt));
     context.textContent = question.context ?? '';
+    figure.replaceChildren(...(question.figure ? [numberLine(question.figure)] : []));
+    figure.hidden = !question.figure;
     // « 8,37 = ?/100 » : la case est le numérateur d'une fraction.
     const denominator = /^\/(\d+)$/.exec(question.suffix ?? '')?.[1];
     suffix.textContent = denominator === undefined ? (question.suffix ?? '') : '';
-    equation.replaceChildren(prompt, denominator === undefined ? answerBox : fraction(answerBox, denominator), suffix);
+    if (question.choiceLayout === 'number') {
+      // « Touche le chiffre des dizaines » : les chiffres du nombre sont les boutons.
+      equation.replaceChildren(h('span', { class: 'number-digits' }, ...buttons.values()));
+    } else if (mode === 'choices' && question.suffix === undefined) {
+      // « Ce nombre existe-t-il ? cinquante-douze » : pas de case, la réponse est le bouton.
+      equation.replaceChildren(prompt);
+    } else {
+      equation.replaceChildren(prompt, denominator === undefined ? answerBox : fraction(answerBox, denominator), suffix);
+    }
+    // Des mots (« quatre-vingt-quinze », « Le double de 37 ») ou une suite (« 635, 535, 435, 335, ») :
+    // plus petit, comme une réponse en mots.
+    const wordy = /\p{L}{2}/u.test(question.prompt) || `${question.prompt}${question.suffix ?? ''}`.length > LONG_TEXT;
+    equation.classList.toggle('words', mode === 'letters' || wordy);
     // Case au milieu, ou calcul long (« 25 % de 600 », « 47 + 77 + 33 ») : plus petit, sur une ligne.
-    equation.classList.toggle('long', question.suffix !== undefined || (!letters && question.prompt.length > LONG_PROMPT));
+    equation.classList.toggle('long', question.suffix !== undefined || (mode !== 'letters' && question.prompt.length > LONG_PROMPT));
     answerBox.className = 'answer-box';
     feedback.textContent = '';
-    keypad.setSubmitLabel('OK');
+    input.setSubmitLabel('OK');
     renderAnswer();
     shownAt = performance.now();
     chrono?.start();
@@ -259,40 +359,40 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
     race?.start();
   }
 
-  root.append(
+  const section = h(
+    'section',
+    { class: 'play' },
     h(
-      'section',
-      { class: `play${letters ? ' letters' : ''}` },
-      h(
-        'header',
-        { class: 'play-bar' },
-        h('button', { class: 'quit', type: 'button', 'aria-label': 'Arrêter', onclick: options.onQuit }, '✕'),
-        h('span', { class: 'play-label' }, options.label),
-        progress,
-        progressText,
-        soundButton,
-      ),
-      h(
-        'div',
-        { class: 'question' },
-        chrono?.el,
-        countdown?.el,
-        race?.el,
-        context,
-        equation,
-        feedback,
-        streakEl,
-        undoButton,
-      ),
-      h('div', { class: 'keypad-area' }, keypad.el),
+      'header',
+      { class: 'play-bar' },
+      h('button', { class: 'quit', type: 'button', 'aria-label': 'Arrêter', onclick: options.onQuit }, '✕'),
+      h('span', { class: 'play-label' }, options.label),
+      progress,
+      progressText,
+      soundButton,
     ),
+    h(
+      'div',
+      { class: 'question' },
+      chrono?.el,
+      countdown?.el,
+      race?.el,
+      context,
+      figure,
+      equation,
+      feedback,
+      streakEl,
+      undoButton,
+    ),
+    keypadArea,
   );
+  root.append(section);
 
   next();
 
   return () => {
     window.clearTimeout(timer);
-    keypad.destroy();
+    input?.destroy();
     chrono?.destroy();
     countdown?.destroy();
     race?.destroy();

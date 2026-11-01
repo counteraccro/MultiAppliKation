@@ -17,8 +17,9 @@ const TYPABLE = /^[a-zàâäçéèêëîïôöùûüœæ ]$/;
  * Clavier de lettres dessiné dans l'app (AZERTY, minuscules), pour répondre en mots.
  * Le clavier iOS cacherait la moitié de l'écran et corrigerait tout seul.
  * Au clavier d'ordinateur : lettres, accents, espace, Retour arrière, Entrée.
+ * `hyphen` : une touche trait d'union, pour les nombres en lettres (« cent-soixante-trois »).
  */
-export function createKeyboard(handlers: KeyboardHandlers): Keypad {
+export function createKeyboard(handlers: KeyboardHandlers, { hyphen = false } = {}): Keypad {
   const key = (label: string, action: () => void, extra = '') =>
     h('button', { class: `kb-key ${extra}`, type: 'button', onclick: action }, label);
   const letter = (char: string, extra = '') => key(char, () => handlers.onChar(char), extra);
@@ -35,7 +36,7 @@ export function createKeyboard(handlers: KeyboardHandlers): Keypad {
     h('div', { class: 'kb-row' }, ...[...ROWS[0]!].map((c) => letter(c))),
     h('div', { class: 'kb-row' }, ...[...ROWS[1]!].map((c) => letter(c))),
     h('div', { class: 'kb-row' }, ...[...ROWS[2]!].map((c) => letter(c)), back),
-    h('div', { class: 'kb-row' }, space, submit),
+    h('div', { class: 'kb-row' }, hyphen && letter('-', 'kb-hyphen'), space, submit),
   );
 
   const onKeydown = (event: KeyboardEvent) => {
@@ -43,7 +44,7 @@ export function createKeyboard(handlers: KeyboardHandlers): Keypad {
     // Une fenêtre est ouverte par-dessus (mise à jour…) : le clavier est pour elle.
     if (document.querySelector('.overlay')) return;
     const char = event.key.toLocaleLowerCase('fr');
-    if (TYPABLE.test(char)) handlers.onChar(char);
+    if (TYPABLE.test(char) || (hyphen && char === '-')) handlers.onChar(char);
     else if (event.key === 'Backspace') handlers.onBackspace();
     else if (event.key === 'Enter') handlers.onSubmit();
     else return;

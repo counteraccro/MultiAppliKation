@@ -205,9 +205,9 @@ describe('ceintures de calcul mental', () => {
 
   it('tire des calculs différents, pas ceux de la dernière fois', () => {
     for (const belt of CALCUL_MENTAL) {
-      const first = pickCalcs(belt, MENTAL_TEST_SIZE, [], seeded(3));
+      const first = pickCalcs(belt.drawCalc, MENTAL_TEST_SIZE, [], seeded(3));
       expect(new Set(first.map((q) => q.id)).size).toBe(MENTAL_TEST_SIZE);
-      const next = pickCalcs(belt, 10, first.map((q) => q.id), seeded(5));
+      const next = pickCalcs(belt.drawCalc, 10, first.map((q) => q.id), seeded(5));
       // Peu de dizaines entières (70 + 30 = 100) : elles peuvent revenir.
       expect(next.filter((q) => first.some((f) => f.id === q.id)).length).toBeLessThanOrEqual(2);
     }
@@ -216,7 +216,7 @@ describe('ceintures de calcul mental', () => {
   it('se réussit avec une erreur au plus', () => {
     expect(passesMental(19, 20)).toBe(true);
     expect(passesMental(18, 20)).toBe(false);
-    const questions = pickCalcs(CALCUL_MENTAL[0]!, 20, [], seeded(9));
+    const questions = pickCalcs(CALCUL_MENTAL[0]!.drawCalc, 20, [], seeded(9));
     const session = new CalcTestSession(questions, passesMental);
     for (const question of questions.slice(0, 19)) session.answer(String(question.answer));
     // Le temps manque pour le dernier : il compte faux, c'est la seule erreur.

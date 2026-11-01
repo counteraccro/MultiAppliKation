@@ -2297,6 +2297,116 @@ button.belt-row:active {
   font-size: 1.4rem;
 }
 
+/* Numération : des boutons à la place du pavé (« < > = », « Oui / Non »), corrigés sur place. */
+
+.choices-input {
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 12px;
+}
+
+.choice-next {
+  min-height: 72px;
+  font-size: 1.4rem;
+}
+
+.choice.is-correct,
+.digit-choice.is-correct {
+  background: #2ecc71;
+  color: #fff;
+}
+
+.choice.is-placed,
+.digit-choice.is-placed {
+  background: var(--border);
+}
+
+.choice.is-wrong,
+.digit-choice.is-wrong {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.choice.is-answer,
+.digit-choice.is-answer {
+  background: #fff1d6;
+  color: #b86e00;
+  box-shadow: 0 0 0 4px #ffcf70;
+}
+
+/* « Touche le chiffre des dizaines » : chaque chiffre du nombre est un bouton. */
+.number-digits {
+  display: flex;
+  gap: 0.12em;
+}
+
+.digit-choice {
+  min-width: 1.1em;
+  padding: 0 0.08em;
+  border: 0;
+  border-radius: 0.18em;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  font: inherit;
+  color: var(--text);
+  touch-action: manipulation;
+}
+
+/* La droite graduée des fiches, au-dessus de la question. */
+.question-figure {
+  width: 100%;
+  max-width: 420px;
+}
+
+.number-line {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.nl-axis,
+.nl-tick {
+  fill: none;
+  stroke: var(--text);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.nl-label {
+  fill: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 800;
+  text-anchor: middle;
+}
+
+.nl-marker {
+  fill: var(--primary);
+}
+
+.nl-marker-name {
+  fill: var(--primary-dark);
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 800;
+  text-anchor: middle;
+}
+
+.lesson-rules .number-line {
+  max-width: 340px;
+  margin-bottom: 4px;
+}
+
+.kb-hyphen {
+  flex: 0 0 auto;
+  min-width: 3em;
+}
+
 /* Calcul posé (ceintures) : l'opération en colonnes, comme sur le cahier. */
 
 .posed {

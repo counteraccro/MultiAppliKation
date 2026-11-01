@@ -28,11 +28,15 @@ export function pickFacts(belt: TableBelt, count: number, seen: readonly string[
   return picked;
 }
 
-/** « 7 × 8 = 56 », « 37 + 63 = 100 » (la case au milieu), « 8,37 = 837/100 », pour les listes du résultat. */
+/**
+ * « 7 × 8 = 56 », « 37 + 63 = 100 » (la case au milieu), « 8,37 = 837/100 », pour les listes du résultat ;
+ * la question résolue si elle le dit (numération : « 92 > 29 »).
+ */
 export const factText = (question: QuizQuestion) =>
-  question.suffix === undefined
+  question.solved ??
+  (question.suffix === undefined
     ? `${question.prompt} = ${answerText(question)}`
-    : `${question.prompt} ${answerText(question)}${question.suffix.startsWith('/') ? '' : ' '}${question.suffix}`;
+    : `${question.prompt} ${answerText(question)}${question.suffix.startsWith('/') ? '' : ' '}${question.suffix}`);
 
 export interface TablePracticeResult {
   /** Calculs justes au premier essai. */

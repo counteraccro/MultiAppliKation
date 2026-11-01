@@ -13,6 +13,34 @@ export interface QuizQuestion {
   alsoAccepted?: readonly string[];
   /** L'astuce, montrée après une erreur (« + 9, c'est + 10 − 1 : … »). */
   explain?: string;
+  /** Pavé ou clavier de lettres, quand la série mélange les deux (numération). */
+  input?: 'digits' | 'letters';
+  /** Répondre en touchant un bouton (« < », « oui ») ; la réponse attendue est la `value` du bon. */
+  choices?: readonly Choice[];
+  /** `number` : les boutons sont les chiffres du nombre, à toucher dans le nombre (« le chiffre des dizaines »). */
+  choiceLayout?: 'number';
+  /** La question résolue, pour les listes et la correction : « Dans 54, le chiffre des dizaines est 5. » */
+  solved?: string;
+  /** Une droite graduée, dessinée au-dessus de la question. */
+  figure?: NumberLineFigure;
+}
+
+export interface Choice {
+  label: string;
+  value: string;
+}
+
+/**
+ * Une droite graduée : `count` graduations, `step` de l'une à l'autre à partir de `from` ;
+ * les nombres écrits au-dessus des graduations `labels` (leur rang), le repère `markerName` sur `marker`.
+ */
+export interface NumberLineFigure {
+  from: number;
+  step: number;
+  count: number;
+  labels: readonly number[];
+  marker: number;
+  markerName: string;
 }
 
 export interface QuizSession<Q extends QuizQuestion = QuizQuestion> {
@@ -36,9 +64,11 @@ export function normalizeAnswer(text: string): string {
 /** Un nombre écrit à la française : 1,2 et non 1.2. */
 export const numberText = (n: number) => String(n).replace('.', ',');
 
-/** La réponse attendue telle qu'on l'écrit : « 1,2 », « mangerons ». */
+/** La réponse attendue telle qu'on l'écrit : « 1,2 », « mangerons », « 5 » (le chiffre touché). */
 export const answerText = (question: QuizQuestion) =>
-  typeof question.answer === 'number' ? numberText(question.answer) : question.answer;
+  typeof question.answer === 'number'
+    ? numberText(question.answer)
+    : (question.choices?.find((c) => c.value === question.answer)?.label ?? question.answer);
 
 /** Toutes les réponses justes, l'attendue en premier. */
 export function acceptedAnswers(question: QuizQuestion): string[] {
@@ -48,6 +78,8 @@ export function acceptedAnswers(question: QuizQuestion): string[] {
 export function isCorrect(question: QuizQuestion, typed: string): boolean {
   // Un décimal se tape avec la virgule ; 3,50 est le même nombre que 3,5.
   if (typeof question.answer === 'number') return typed.trim() !== '' && Number(typed.replace(',', '.')) === question.answer;
+  // Un bouton touché : sa valeur, pas ce qu'il montre (deux chiffres 4 dans 44).
+  if (question.choices) return typed === question.answer;
   const answer = normalizeAnswer(typed);
   return acceptedAnswers(question).some((a) => normalizeAnswer(a) === answer);
 }

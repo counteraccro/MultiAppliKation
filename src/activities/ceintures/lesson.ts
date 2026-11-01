@@ -1,4 +1,5 @@
 import { withFractions } from '../../components/fraction';
+import { numberLine } from '../../components/number-line';
 import { topbar } from '../../components/topbar';
 import { h } from '../../core/dom';
 import type { ActivityContext } from '../types';
@@ -11,8 +12,9 @@ import { capitalize, parseSentence, withNbsp } from './sentence';
 import type { PosedBelt } from './calcul-pose';
 import { PosedDivision, solve, type PosedOperation } from './posed';
 import { posedGrid } from './posed-screen';
-import { isHomophoneBelt, isMentalBelt, isPosedBelt, isTableBelt, type SubjectBelt } from './subjects';
+import { isHomophoneBelt, isMentalBelt, isNumerationBelt, isPosedBelt, isTableBelt, type SubjectBelt } from './subjects';
 import type { MentalBelt } from './calcul-mental';
+import type { NumerationBelt } from './numeration';
 import { factText } from './table-practice';
 import { MAX_FACTOR, newTables, type TableBelt } from './tables';
 
@@ -28,6 +30,7 @@ export interface LessonActions {
  * Tables : les astuces, et les tables de la ceinture qu'aucune ceinture d'avant n'a montrées.
  * Calcul posé : la méthode, et une opération posée en entier, chaque colonne expliquée.
  * Calcul mental : les astuces de la classe, et des calculs expliqués.
+ * Numération : les astuces des leçons de la classe, et des questions expliquées.
  */
 export function renderLesson(
   root: HTMLElement,
@@ -52,7 +55,9 @@ export function renderLesson(
             ? posedCards(belt)
             : isMentalBelt(belt)
               ? mentalCards(belt)
-              : conjugationCards(belt)),
+              : isNumerationBelt(belt)
+                ? numerationCards(belt)
+                : conjugationCards(belt)),
       h('button', { class: 'button primary lesson-practice', type: 'button', onclick: onPractice }, 'S’entraîner'),
     ),
   );
@@ -183,6 +188,36 @@ function mentalCards(belt: MentalBelt): HTMLElement[] {
         { class: 'lesson-rules' },
         ...belt.examples().map((question) =>
           h('li', {}, h('strong', {}, ...withFractions(factText(question))), h('br'), ...withFractions(withNbsp(question.explain))),
+        ),
+      ),
+    ),
+  ];
+}
+
+function numerationCards(belt: NumerationBelt): HTMLElement[] {
+  return [
+    h(
+      'article',
+      { class: 'lesson-card' },
+      h('h2', {}, 'Les astuces'),
+      h('ul', { class: 'lesson-rules' }, ...belt.tips.map((tip) => h('li', {}, withNbsp(tip)))),
+    ),
+    h(
+      'article',
+      { class: 'lesson-card' },
+      h('h2', {}, 'Des exemples'),
+      h(
+        'ul',
+        { class: 'lesson-rules' },
+        ...belt.examples().map((question) =>
+          h(
+            'li',
+            {},
+            question.figure && numberLine(question.figure),
+            h('strong', {}, withNbsp(question.solved)),
+            h('br'),
+            withNbsp(question.explain),
+          ),
         ),
       ),
     ),
