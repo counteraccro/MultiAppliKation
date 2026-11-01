@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { answerText, isCorrect } from '../../core/quiz';
 import {
   compare,
+  complementTo,
   complementTo100,
+  decompose,
+  decomposeTimes,
   digitOf,
   digitsToWords,
   doubleOrHalf,
@@ -12,9 +15,12 @@ import {
   NUMERATION,
   NUMERATION_TEST_SIZE,
   numberLine,
+  numberLineChoices,
   numberOf,
   pickNumeration,
   sequence,
+  timesPowers,
+  wellWritten,
   wordsToDigits,
 } from './numeration';
 import { CalcTestSession, factText } from './table-practice';
@@ -117,8 +123,68 @@ describe('Numération', () => {
     expect(numberLine(200, 1, 10, 10, 6).answer).toBe(250);
   });
 
+  it('écrit les grands nombres par classes (ceinture verte)', () => {
+    // Fiche n° 67 : groupés par trois en partant de la droite, sans 0 au début.
+    const written = wellWritten(30300, seeded(1));
+    expect(answerText(written)).toBe('30\u00a0300');
+    // Deux écritures fausses parmi 303 00, 3 03 00 et 030 300.
+    const labels = written.choices!.map((c) => c.label);
+    expect(labels).toHaveLength(3);
+    expect(labels.filter((label) => ['303\u00a000', '3\u00a003\u00a000', '030\u00a0300'].includes(label))).toHaveLength(2);
+    // Fiches n° 68 et 69.
+    expect(wordsToDigits(808000)).toMatchObject({ prompt: 'huit-cent-huit-mille', answer: 808000 });
+    expect(wordsToDigits(100108).explain).toBe('On lit par classes : 100 mille et 108. Chaque classe s’écrit avec 3 chiffres, des 0 s’il le faut : 100\u00a0108.');
+    expect(digitsToWords(4100)).toMatchObject({ prompt: '4\u00a0100', answer: 'quatre-mille-cent' });
+    expect(digitsToWords(4100).explain).toContain('Mille ne prend jamais de s');
+    // Les cents devant millions : avec un s (la règle), sans (les fiches n° 83 et 86).
+    expect(digitsToWords(900000090).answer).toBe('neuf-cents-millions-quatre-vingt-dix');
+    expect(isCorrect(digitsToWords(900000090), 'neuf-cent-millions-quatre-vingt-dix')).toBe(true);
+    expect(isCorrect(digitsToWords(900000090), 'neuf cents millions quatre-vingt-dix')).toBe(true);
+  });
+
+  it('distingue le chiffre et le nombre de milliers, de millions', () => {
+    // Fiches n° 72 à 74.
+    expect(numberOf(45863, 3).answer).toBe(45);
+    expect(numberOf(986421, 2).answer).toBe(9864);
+    expect(numberOf(9476, 4)).toMatchObject({ answer: 0 });
+    expect(numberOf(45863, 3).explain).toBe('On lit 45\u00a0863 jusqu’au chiffre des milliers : 45. Le chiffre des milliers, lui, est 5.');
+    // Fiches n° 79 à 81.
+    expect(numberOf(15824000, 4).answer).toBe(1582);
+    expect(numberOf(1650762, 6).solved).toBe('Dans 1\u00a0650\u00a0762, il y a 1 million.');
+    expect(numberOf(846250, 4).answer).toBe(84);
+    const digit = digitOf(15824000, 4);
+    expect(answerText(digit)).toBe('2');
+    expect(digit.explain).toBe('La classe des mille est 824 : son chiffre des dizaines est 2.');
+  });
+
+  it('complète et décompose les grands nombres', () => {
+    // Fiches n° 75 et 84.
+    expect(complementTo(2300, 3000)).toMatchObject({ answer: 700, explain: '23 centaines + 7 centaines = 30 centaines.' });
+    expect(complementTo(1605250, 1606000).answer).toBe(750);
+    expect(complementTo(1605250, 1606000).explain).toBe(
+      '1\u00a0605\u00a0250 + 50 = 1\u00a0605\u00a0300, puis + 700 = 1\u00a0606\u00a0000 : 50 + 700 = 750.',
+    );
+    expect(complementTo(14500000, 15000000).answer).toBe(500000);
+    // Fiche n° 76.
+    const parts = decompose(49200, 1);
+    expect(parts).toMatchObject({ prompt: '49\u00a0200 = 40\u00a0000 +', suffix: '+ 200', answer: 9000 });
+    expect(parts.solved).toBe('49\u00a0200 = 40\u00a0000 + 9\u00a0000 + 200');
+    // Fiches n° 88 et 89.
+    expect(timesPowers(4, 7, 6, 2).answer).toBe(40000600);
+    expect(timesPowers(4, 8, 6, 4).answer).toBe(400060000);
+    expect(decomposeTimes(2, 6, 5, 5, 0)).toMatchObject({ prompt: '2\u00a0500\u00a0000 = 2 ×', answer: 1000000 });
+    expect(decomposeTimes(2, 9, 5, 6, 1).answer).toBe(1000000);
+  });
+
+  it('fait choisir le nombre du repère parmi quatre (fiche n° 90)', () => {
+    const question = numberLineChoices(3000000, 0, 100000, 10, 2);
+    expect(question.choices?.map((c) => c.label)).toEqual(['3\u00a0002\u00a0000', '3\u00a0020\u00a0000', '3\u00a0200\u00a0000', '32\u00a0000\u00a0000']);
+    expect(question.answer).toBe('3200000');
+    expect(question.explain).toContain('chacune vaut 100\u00a0000');
+  });
+
   it('tire des questions justes, dans les nombres de la ceinture', () => {
-    const max = { blanche: 99, jaune: 9999 } as Record<string, number>;
+    const max = { blanche: 99, jaune: 9999, vert: 999999, bleu: 9999999999 } as Record<string, number>;
     for (const belt of NUMERATION) {
       for (let seed = 1; seed < 300; seed++) {
         for (const question of pickNumeration(belt, 10, [], seeded(seed))) {
@@ -127,6 +193,8 @@ describe('Numération', () => {
           if (question.choices) expect(question.choices.some((c) => c.value === question.answer)).toBe(true);
           if (typeof question.answer === 'number') {
             expect(Number.isInteger(question.answer)).toBe(true);
+            // Ça tient au pavé.
+            expect(String(question.answer).length).toBeLessThanOrEqual(10);
             expect(question.answer).toBeGreaterThanOrEqual(0);
             expect(question.answer).toBeLessThanOrEqual(max[belt.belt]!);
           }
@@ -135,9 +203,11 @@ describe('Numération', () => {
             expect(from).toBeGreaterThanOrEqual(0);
             expect(from + (count - 1) * step).toBeLessThanOrEqual(max[belt.belt]!);
             expect(labels).not.toContain(marker);
+            for (const label of labels) expect(label).toBeLessThan(count);
           }
           expect(question.explain).not.toMatch(/undefined|NaN/);
           expect(question.solved).not.toMatch(/undefined|NaN/);
+          if (question.input === 'letters') expect((question.answer as string).length).toBeLessThanOrEqual(60);
         }
       }
     }

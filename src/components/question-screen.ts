@@ -1,6 +1,6 @@
 import { closestAnswer, diffParts } from '../core/diff';
 import { h } from '../core/dom';
-import { acceptedAnswers, answerText, normalizeAnswer, type QuizQuestion, type QuizSession } from '../core/quiz';
+import { acceptedAnswers, answerText, groupDigits, normalizeAnswer, type QuizQuestion, type QuizSession } from '../core/quiz';
 import { sounds } from '../core/sound';
 import { createChrono } from './chrono';
 import { createCountdown } from './countdown';
@@ -16,6 +16,8 @@ const MAX_DIGITS = 3;
 const LONG_PROMPT = 9;
 /** Au-delà, une question en chiffres s'écrit aussi petit qu'une réponse en mots. */
 const LONG_TEXT = 14;
+/** Au-delà, encore plus petit : « 800 073 = 800 000 + … + 3 », une suite de grands nombres. */
+const LONGEST_TEXT = 15;
 /** Assez pour « sommes allées », pas assez pour taper n'importe quoi. */
 const MAX_LETTERS = 24;
 /** Temps pendant lequel une bonne réponse reste affichée avant la suivante. */
@@ -57,6 +59,8 @@ export interface QuestionScreenOptions {
   maxLetters?: number;
   /** Nombres en lettres : une touche trait d'union au clavier. */
   hyphen?: boolean;
+  /** Grands nombres (numération) : ce qui est tapé et la réponse s'écrivent par classes, « 57 842 ». */
+  classes?: boolean;
   onDone(summary: SeriesSummary): void;
   onQuit(): void;
 }
@@ -85,6 +89,9 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
   let streak = 0;
   let bestStreak = 0;
   const missed = new Set<unknown>();
+  /** La réponse attendue, par classes si on le demande. */
+  const shownAnswer = (question: QuizQuestion) =>
+    options.classes && typeof question.answer === 'number' ? groupDigits(answerText(question)) : answerText(question);
 
   const prompt = h('span', { class: 'prompt' });
   const suffix = h('span', { class: 'prompt' });
@@ -200,12 +207,12 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
           answerBox.replaceChildren(start, diff ? h('mark', {}, diff) : '', end);
           feedback.textContent = `C’était « ${shown} ». ${question.explain ? `${question.explain} ` : ''}${wrongHint}`;
         } else {
-          answerBox.textContent = answerText(question);
+          answerBox.textContent = shownAnswer(question);
           // Boutons : le choisi barré, le bon mis en avant.
           choiceButton(typed)?.classList.add('is-wrong');
           choiceButton(String(question.answer))?.classList.add('is-answer');
           feedback.replaceChildren(
-            ...withFractions(`C’était ${answerText(question)}. ${question.explain ? `${question.explain} ` : ''}${wrongHint}`),
+            ...withFractions(`C’était ${shownAnswer(question)}. ${question.explain ? `${question.explain} ` : ''}${wrongHint}`),
           );
         }
         input?.setSubmitLabel('→');
@@ -242,18 +249,24 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
       handlers.onSubmit();
     };
     const inNumber = question.choiceLayout === 'number';
+    const count = question.choices?.length ?? 0;
     buttons = new Map(
-      (question.choices ?? []).map(({ label, value }) => [
-        value,
-        h('button', { class: inNumber ? 'digit-choice' : 'choice', type: 'button', onclick: () => choose(value) }, label),
-      ]),
+      (question.choices ?? []).map(({ label, value }, i) => {
+        const button = h('button', { class: inNumber ? 'digit-choice' : 'choice', type: 'button', onclick: () => choose(value) }, label);
+        // 15 824 000 : un écart entre les classes, comme l'espace des fiches.
+        if (inNumber && i > 0 && (count - i) % 3 === 0) button.classList.add('class-start');
+        return [value, button];
+      }),
     );
     // Après une erreur, on passe à la suite avec ce bouton (ou Entrée).
     const proceed = h('button', { class: 'button primary choice-next', type: 'button', hidden: true, onclick: handlers.onSubmit }, 'Continuer →');
     const el = h('div', { class: 'choices-input' });
     if (!inNumber) {
       const row = h('div', { class: 'choice-buttons' }, ...buttons.values());
-      row.style.setProperty('--choices', String(buttons.size));
+      // Quatre grands nombres (« 70 900 000 ») : deux par ligne, plus petits.
+      const wide = (question.choices ?? []).some((c) => c.label.length > 7);
+      row.style.setProperty('--choices', String(wide && buttons.size > 3 ? 2 : buttons.size));
+      row.classList.toggle('wide', wide);
       el.append(row);
     }
     el.append(proceed);
@@ -278,7 +291,12 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
 
   function renderAnswer() {
     // Un bouton touché : on écrit ce qu'il montre (« < »), pas sa valeur.
-    const label = mode === 'choices' ? (asked?.choices?.find((c) => c.value === typed)?.label ?? typed) : typed;
+    const label =
+      mode === 'choices'
+        ? (asked?.choices?.find((c) => c.value === typed)?.label ?? typed)
+        : mode === 'digits' && options.classes
+          ? groupDigits(typed)
+          : typed;
     answerBox.textContent = label || '?';
     answerBox.classList.toggle('is-empty', typed === '');
   }
@@ -347,6 +365,9 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
     // plus petit, comme une réponse en mots.
     const wordy = /\p{L}{2}/u.test(question.prompt) || `${question.prompt}${question.suffix ?? ''}`.length > LONG_TEXT;
     equation.classList.toggle('words', mode === 'letters' || wordy);
+    // Un nombre à toucher chiffre par chiffre prend plus de place : plus petit dès 7 chiffres.
+    const longest = question.choiceLayout === 'number' ? (question.choices?.length ?? 0) >= 7 : `${question.prompt}${question.suffix ?? ''}`.length > LONGEST_TEXT;
+    equation.classList.toggle('longest', mode !== 'letters' && longest);
     // Case au milieu, ou calcul long (« 25 % de 600 », « 47 + 77 + 33 ») : plus petit, sur une ligne.
     equation.classList.toggle('long', question.suffix !== undefined || (mode !== 'letters' && question.prompt.length > LONG_PROMPT));
     answerBox.className = 'answer-box';

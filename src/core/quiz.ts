@@ -64,6 +64,13 @@ export function normalizeAnswer(text: string): string {
 /** Un nombre écrit à la française : 1,2 et non 1.2. */
 export const numberText = (n: number) => String(n).replace('.', ',');
 
+/** Les classes séparées par une espace insécable, comme en classe (leçon N10) : 1 808, 57 842,5. */
+export function groupDigits(text: string): string {
+  const [whole, decimals] = text.split(',') as [string, string?];
+  const grouped = whole.length < 4 ? whole : whole.replace(/\B(?=(\d{3})+$)/g, '\u00a0');
+  return decimals === undefined ? grouped : `${grouped},${decimals}`;
+}
+
 /** La réponse attendue telle qu'on l'écrit : « 1,2 », « mangerons », « 5 » (le chiffre touché). */
 export const answerText = (question: QuizQuestion) =>
   typeof question.answer === 'number'

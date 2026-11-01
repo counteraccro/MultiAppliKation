@@ -96,7 +96,31 @@ Orthographe des nombres en lettres : les fiches mettent **des traits d'union par
      nombre suivant » (les fiches en demandent 4), le choix des nombres tirés. Laissés de côté : les étiquettes
      (n° 32-33, remplacées par chiffres ↔ lettres) et le porte-monnaie (n° 36).
 2. **Vert et bleu** : les grands nombres (millions, milliards), sur les mêmes écrans ; décomposer, nombres bien
-   écrits. Leçon N10.
+   écrits. Leçon N10. **Faite le 01/11/2026 (0.49.0)** :
+   - Couleurs `vert` (« verte », #43A047) et `bleu` (« bleue », #1E88E5) ajoutées à `BELTS`.
+   - Les grands nombres s'écrivent **par classes**, avec une espace insécable dès 4 chiffres (1 808, 57 842),
+     comme la leçon N10 et les fiches vertes : `groupDigits` (core/quiz.ts). L'écran de question le fait pour ce
+     qui est tapé au pavé et pour la correction (option `classes`, seulement en numération : le Calcul mental ne
+     change pas) ; les nombres écrits sur la droite graduée aussi. Au pavé : jusqu'à 10 chiffres (2 005 000 000).
+   - Verte (fiches n° 67 à 78) : toucher le nombre bien écrit (30 300 parmi 303 00, 3 03 00, 030 300), lettres ↔
+     chiffres jusqu'à 999 999, nombre de centaines / milliers / dizaines de milliers (45 863 → 45), chiffre d'un
+     rang, compléter au millier (2 300 + … = 3 000), décomposer avec un morceau à trouver (49 200 = 40 000 + … +
+     200), suites (de 1 à 10 000, trois nombres montrés comme sur les fiches), < > =, droite graduée de 100, 1 000
+     ou 10 000.
+   - Bleue (fiches n° 79 à 90) : chiffre d'un rang (jusqu'aux dizaines de millions), nombre de dizaines /
+     centaines de milliers, de millions, lettres ↔ chiffres jusqu'aux milliards, compléter (1 605 250 + … =
+     1 606 000), « 4 × 10 000 000 + 6 × 100 », « 2 500 000 = 2 × … + 5 × 100 000 », droite graduée de 100 000 ou
+     1 000 000 avec **quatre nombres au choix** (fiche n° 90 : le bon et les chiffres décalés d'un rang), suites,
+     < > = (souvent un chiffre de plus d'un côté).
+   - **Orthographe** : « neuf-cents-millions » (la règle : cent prend un s devant million, qui est un nom) est
+     la réponse attendue ; « neuf-cent-millions », écrit ainsi sur les fiches n° 83 et 86, est accepté aussi.
+   - Écran : les énoncés de plus de 15 caractères (« 800 073 = 800 000 + … + 3 ») et les nombres de 7 chiffres
+     ou plus à toucher s'écrivent plus petit (`longest`) ; quatre grands nombres au choix vont deux par ligne ;
+     un écart sépare les classes quand on touche un chiffre ; la droite graduée se raccourcit pour qu'un grand
+     nombre écrit au bout ne soit pas coupé.
+   - Corrigé au passage : à la jaune, la droite graduée de 10 en 10 n'affichait parfois qu'un nombre (le second
+     tombait sur une 12ᵉ graduation inexistante).
+   - Laissés de côté : les étiquettes (n° 70, 71, 87), comme à la jaune.
 3. **Orange et violette** : les fractions (lire, écrire, droite graduée, comparer, entier + fraction, calculs).
    Nouveaux écrans : placer sur une droite, colorier (selon la réponse 4).
 4. **Rose et marron** : les décimaux (position des chiffres, fractions décimales, comparer, ranger, droite

@@ -4,7 +4,7 @@ import { fraction, withFractions } from '../../components/fraction';
 import { renderQuestionScreen } from '../../components/question-screen';
 import { renderResult } from '../../components/result';
 import { h } from '../../core/dom';
-import { answerText, type QuizQuestion } from '../../core/quiz';
+import { answerText, groupDigits, type QuizQuestion } from '../../core/quiz';
 import { dayOf } from '../../core/play-days';
 import type { Sticker } from '../../core/stickers';
 import type { Activity } from '../types';
@@ -36,6 +36,7 @@ import { STICKER_SECTIONS, STICKERS, unlockStickers } from './stickers';
 import { isHomophoneBelt, isMentalBelt, isNumerationBelt, isPosedBelt, isTableBelt, type Subject, type SubjectBelt } from './subjects';
 import { MENTAL_PRACTICE_SIZE, MENTAL_TEST_SIZE, MENTAL_TEST_TIME_MS, passesMental, pickCalcs, type MentalBelt } from './calcul-mental';
 import {
+  NUMERATION_MAX_DIGITS,
   NUMERATION_MAX_LETTERS,
   NUMERATION_PRACTICE_SIZE,
   NUMERATION_TEST_SIZE,
@@ -250,9 +251,10 @@ export const ceintures: Activity = {
         return renderQuestionScreen(root, {
           session,
           label: label(belt),
-          maxDigits: MENTAL_MAX_DIGITS,
+          maxDigits: NUMERATION_MAX_DIGITS,
           maxLetters: NUMERATION_MAX_LETTERS,
           hyphen: true,
+          classes: true,
           onQuit: () => ladder(subject),
           onDone: ({ bestStreak }) => {
             const result = session.result();
@@ -378,9 +380,10 @@ export const ceintures: Activity = {
         return renderQuestionScreen(root, {
           session,
           test: true,
-          maxDigits: MENTAL_MAX_DIGITS,
+          maxDigits: NUMERATION_MAX_DIGITS,
           maxLetters: NUMERATION_MAX_LETTERS,
           hyphen: true,
+          classes: true,
           label: `En conditions réelles · ${label(belt)}`,
           onQuit: () => ladder(subject),
           onDone: () => {
@@ -564,7 +567,8 @@ function numerationCorrections(mistakes: TableMistake<NumerationQuestion>[]): HT
       {},
       ...mistakes.map(({ question, typed }) => {
         // Un bouton touché : ce qu'il montrait (« < », le chiffre), pas sa valeur.
-        const given = question.choices?.find((c) => c.value === typed)?.label ?? typed;
+        // Un nombre tapé : par classes, comme la correction.
+        const given = question.choices?.find((c) => c.value === typed)?.label ?? (typeof question.answer === 'number' && typed !== undefined ? groupDigits(typed) : typed);
         return h(
           'li',
           {},

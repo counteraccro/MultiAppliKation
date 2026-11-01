@@ -1552,6 +1552,11 @@ button {
   font-size: clamp(1.8rem, 8vw, 3.2rem);
 }
 
+/* Les grands nombres de la numération : « 800 073 = 800 000 + … + 3 » sur une ligne. */
+.equation.longest {
+  font-size: clamp(1.4rem, 6vw, 2.3rem);
+}
+
 .equation.words .answer-box {
   min-width: 4em;
   /* Un espace tapé (« avons ␣ ») doit se voir. */
@@ -2286,6 +2291,10 @@ button.belt-row:active {
   color: var(--text);
 }
 
+.choice-buttons.wide .choice {
+  font-size: 1.3rem;
+}
+
 .choice:active {
   transform: translateY(2px);
   box-shadow: 0 2px 0 var(--border);
@@ -2590,4 +2599,9 @@ button.belt-row:active {
 .pc-result,
 .pd-rest {
   min-width: 1em;
+}
+
+/* 15 824 000 : l'espace entre les classes, quand on touche un chiffre dans un grand nombre. */
+.digit-choice.class-start {
+  margin-left: 0.3em;
 }
