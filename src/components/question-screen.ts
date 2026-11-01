@@ -1,6 +1,15 @@
 import { closestAnswer, diffParts } from '../core/diff';
 import { h } from '../core/dom';
-import { acceptedAnswers, answerText, groupDigits, normalizeAnswer, type QuizQuestion, type QuizSession } from '../core/quiz';
+import {
+  acceptedAnswers,
+  answerText,
+  groupDigits,
+  isNumberLine,
+  normalizeAnswer,
+  type PartsFigure,
+  type QuizQuestion,
+  type QuizSession,
+} from '../core/quiz';
 import { sounds } from '../core/sound';
 import { createChrono } from './chrono';
 import { createCountdown } from './countdown';
@@ -8,6 +17,7 @@ import { fraction, withFractions } from './fraction';
 import { createKeyboard } from './keyboard';
 import { createKeypad, type Keypad } from './keypad';
 import { numberLine } from './number-line';
+import { drawFigure, partsPicture } from './parts-picture';
 import { createRace } from './race';
 import { soundToggle } from './sound-toggle';
 
@@ -65,8 +75,8 @@ export interface QuestionScreenOptions {
   onQuit(): void;
 }
 
-/** Pavé de chiffres, clavier de lettres ou boutons à toucher. */
-type Mode = 'digits' | 'letters' | 'choices';
+/** Pavé de chiffres, clavier de lettres, boutons à toucher, ou dessin à colorier. */
+type Mode = 'digits' | 'letters' | 'choices' | 'paint';
 
 /**
  * Pose les questions d'une série une à une. Une erreur affiche tout de suite
@@ -139,6 +149,13 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
     if (previous === undefined) return;
     next();
     typed = previous;
+    if (mode === 'paint' && asked) {
+      // Le dessin revient colorié comme avant, à corriger.
+      input?.destroy();
+      input = createPaint(asked, Number(previous));
+      keypadArea.replaceChildren(input.el);
+      figure.replaceChildren(liveFigure!);
+    }
     renderAnswer();
   }
 
@@ -174,6 +191,8 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
       chrono?.pause();
       countdown?.pause();
       const correct = session.answer(typed, performance.now() - shownAt);
+      // Le dessin ne se colorie plus une fois la réponse donnée.
+      liveFigure?.classList.add('is-locked');
       if (options.test) {
         state = 'correct';
         answerBox.classList.add('is-placed');
@@ -200,7 +219,11 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
         sounds.wrong();
         renderStreak(false);
         answerBox.classList.add('is-wrong');
-        if (mode === 'letters') {
+        if (mode === 'paint') {
+          // Colorier : le nombre de parts suffit, l'astuce dit comment partager.
+          const told = `Tu en as colorié ${typed}, il en fallait ${answerText(question)}.`;
+          feedback.replaceChildren(...withFractions(`${told} ${question.explain ? `${question.explain} ` : ''}${wrongHint}`));
+        } else if (mode === 'letters') {
           // La bonne forme, avec ce qui diffère de ce qu'elle a tapé surligné (« commen[ç]ons »).
           const shown = closestAnswer(normalizeAnswer(typed), acceptedAnswers(question));
           const [start, diff, end] = diffParts(normalizeAnswer(typed), shown);
@@ -223,14 +246,17 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
     },
   };
   let input: Keypad | undefined;
-  /** Les boutons de la question en cours, par réponse. */
-  let buttons = new Map<string, HTMLButtonElement>();
+  /** Les boutons de la question en cours, par réponse (les graduations à toucher sont dans la droite). */
+  let buttons = new Map<string, Element>();
+  /** La figure qu'on touche (graduations, parts à colorier), faite avec la saisie de la question. */
+  let liveFigure: SVGElement | undefined;
   const choiceButton = (value: string) => buttons.get(value);
   const keypadArea = h('div', { class: 'keypad-area' });
 
   /** Le pavé, le clavier ou les boutons de la question ; les boutons « nombre » vont dans la question. */
   function createInput(question: QuizQuestion): Keypad {
     if (mode === 'letters') return createKeyboard(handlers, { hyphen: options.hyphen });
+    if (mode === 'paint') return createPaint(question);
     if (mode === 'digits') {
       return createKeypad({
         ...handlers,
@@ -249,19 +275,29 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
       handlers.onSubmit();
     };
     const inNumber = question.choiceLayout === 'number';
+    const onLine = question.choiceLayout === 'line' && question.figure !== undefined && isNumberLine(question.figure);
     const count = question.choices?.length ?? 0;
-    buttons = new Map(
-      (question.choices ?? []).map(({ label, value }, i) => {
-        const button = h('button', { class: inNumber ? 'digit-choice' : 'choice', type: 'button', onclick: () => choose(value) }, label);
-        // 15 824 000 : un écart entre les classes, comme l'espace des fiches.
-        if (inNumber && i > 0 && (count - i) % 3 === 0) button.classList.add('class-start');
-        return [value, button];
-      }),
-    );
+    if (onLine) {
+      // Placer une fraction : on touche la graduation sur la droite.
+      liveFigure = numberLine(question.figure as Parameters<typeof numberLine>[0], {
+        at: (question.choices ?? []).map((c) => Number(c.value)),
+        onPick: (at) => choose(String(at)),
+      });
+      buttons = new Map([...liveFigure.querySelectorAll('.nl-pick')].map((el) => [el.getAttribute('data-value')!, el]));
+    } else {
+      buttons = new Map(
+        (question.choices ?? []).map(({ label, value }, i) => {
+          const button = h('button', { class: inNumber ? 'digit-choice' : 'choice', type: 'button', onclick: () => choose(value) }, ...withFractions(label));
+          // 15 824 000 : un écart entre les classes, comme l'espace des fiches.
+          if (inNumber && i > 0 && (count - i) % 3 === 0) button.classList.add('class-start');
+          return [value, button];
+        }),
+      );
+    }
     // Après une erreur, on passe à la suite avec ce bouton (ou Entrée).
     const proceed = h('button', { class: 'button primary choice-next', type: 'button', hidden: true, onclick: handlers.onSubmit }, 'Continuer →');
     const el = h('div', { class: 'choices-input' });
-    if (!inNumber) {
+    if (!inNumber && !onLine) {
       const row = h('div', { class: 'choice-buttons' }, ...buttons.values());
       // Quatre grands nombres (« 70 900 000 ») : deux par ligne, plus petits.
       const wide = (question.choices ?? []).some((c) => c.label.length > 7);
@@ -289,6 +325,31 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
     };
   }
 
+  /** Colorier en touchant le dessin, puis OK : la réponse est le nombre de parts coloriées. */
+  function createPaint(question: QuizQuestion, colored = 0): Keypad {
+    liveFigure = partsPicture({ ...(question.figure as PartsFigure), colored }, {
+      onChange: (colored) => {
+        if (state !== 'asking') return;
+        typed = colored > 0 ? String(colored) : '';
+        renderAnswer();
+      },
+    });
+    const submit = h('button', { class: 'button primary paint-submit', type: 'button', onclick: handlers.onSubmit }, 'OK');
+    const onKeydown = (event: KeyboardEvent) => {
+      if (event.key !== 'Enter' || document.querySelector('.overlay')) return;
+      event.preventDefault();
+      handlers.onSubmit();
+    };
+    document.addEventListener('keydown', onKeydown);
+    return {
+      el: h('div', { class: 'choices-input' }, submit),
+      setSubmitLabel: (label) => {
+        submit.textContent = label === 'OK' ? 'OK' : 'Continuer →';
+      },
+      destroy: () => document.removeEventListener('keydown', onKeydown),
+    };
+  }
+
   function renderAnswer() {
     // Un bouton touché : on écrit ce qu'il montre (« < »), pas sa valeur.
     const label =
@@ -297,7 +358,7 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
         : mode === 'digits' && options.classes
           ? groupDigits(typed)
           : typed;
-    answerBox.textContent = label || '?';
+    answerBox.replaceChildren(...withFractions(label || '?'));
     answerBox.classList.toggle('is-empty', typed === '');
   }
 
@@ -335,9 +396,10 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
     asked = question;
     // Le pavé ou le clavier reste d'une question à l'autre ; les boutons changent à chaque fois.
     const nextMode = modeOf(question);
-    if (input === undefined || nextMode !== mode || nextMode === 'choices') {
+    if (input === undefined || nextMode !== mode || nextMode === 'choices' || nextMode === 'paint') {
       input?.destroy();
       mode = nextMode;
+      liveFigure = undefined;
       input = createInput(question);
       keypadArea.replaceChildren(input.el);
     }
@@ -347,15 +409,15 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
     // En mots ou avec des boutons, pas de « = » : « nous [ mangerons ] », « 92 [ > ] 29 ».
     prompt.replaceChildren(...withFractions(question.suffix === undefined && mode === 'digits' ? `${question.prompt} =` : question.prompt));
     context.textContent = question.context ?? '';
-    figure.replaceChildren(...(question.figure ? [numberLine(question.figure)] : []));
+    figure.replaceChildren(...(question.figure ? [liveFigure ?? drawFigure(question.figure)] : []));
     figure.hidden = !question.figure;
     // « 8,37 = ?/100 » : la case est le numérateur d'une fraction.
     const denominator = /^\/(\d+)$/.exec(question.suffix ?? '')?.[1];
-    suffix.textContent = denominator === undefined ? (question.suffix ?? '') : '';
+    suffix.replaceChildren(...withFractions(denominator === undefined ? (question.suffix ?? '') : ''));
     if (question.choiceLayout === 'number') {
       // « Touche le chiffre des dizaines » : les chiffres du nombre sont les boutons.
       equation.replaceChildren(h('span', { class: 'number-digits' }, ...buttons.values()));
-    } else if (mode === 'choices' && question.suffix === undefined) {
+    } else if ((mode === 'choices' || mode === 'paint') && question.suffix === undefined) {
       // « Ce nombre existe-t-il ? cinquante-douze » : pas de case, la réponse est le bouton.
       equation.replaceChildren(prompt);
     } else {

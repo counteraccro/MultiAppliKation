@@ -2605,3 +2605,74 @@ button.belt-row:active {
 .digit-choice.class-start {
   margin-left: 0.3em;
 }
+
+/* Placer une fraction : chaque graduation se touche, une pastille s'allume. */
+.nl-pick {
+  cursor: pointer;
+}
+
+.nl-hit {
+  fill: transparent;
+}
+
+.nl-spot {
+  fill: var(--surface);
+  stroke: var(--primary);
+  stroke-width: 2;
+}
+
+.nl-pick:hover .nl-spot,
+.nl-pick.is-placed .nl-spot {
+  fill: var(--primary);
+}
+
+.nl-pick.is-correct .nl-spot {
+  fill: #2ecc71;
+  stroke: #2ecc71;
+}
+
+.nl-pick.is-wrong .nl-spot {
+  fill: #e74c3c;
+  stroke: #e74c3c;
+}
+
+.nl-pick.is-answer .nl-spot {
+  fill: #ffcf70;
+  stroke: #b86e00;
+  stroke-width: 3;
+}
+
+/* Fractions : des billes, un rectangle quadrillé, des barres ; on colorie en touchant. */
+.parts-picture {
+  display: block;
+  width: 100%;
+  /* Des cases assez grandes pour les toucher du doigt. */
+  max-width: calc(var(--parts-width) * 1.5);
+  height: auto;
+  margin: 0 auto;
+}
+
+.parts-picture .part {
+  fill: var(--surface);
+  stroke: var(--text);
+  stroke-width: 2;
+  transition: fill 0.12s;
+}
+
+.parts-picture .part.is-colored {
+  fill: #ff9900;
+}
+
+.parts-picture.is-paintable .part {
+  cursor: pointer;
+}
+
+.parts-picture.is-locked .part {
+  cursor: default;
+}
+
+.paint-submit {
+  width: 100%;
+  min-height: 64px;
+  font-size: 1.4rem;
+}

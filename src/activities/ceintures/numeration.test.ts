@@ -1,13 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import { answerText, isCorrect } from '../../core/quiz';
+import { answerText, isCorrect, isNumberLine } from '../../core/quiz';
 import {
   compare,
+  compareFractions,
   complementTo,
   complementTo100,
   decompose,
   decomposeTimes,
   digitOf,
   digitsToWords,
+  equalFraction,
+  fractionCalc,
+  fractionToLetters,
+  frameFraction,
+  lettersToFraction,
+  marblesProblem,
+  paintFraction,
+  placeFraction,
+  readColored,
+  readFractionLine,
+  remainingProblem,
+  whichMarker,
+  wholePlusFraction,
   doubleOrHalf,
   exists,
   groups,
@@ -117,7 +131,7 @@ describe('Numération', () => {
     // Fiche n° 17 : graduée de 5 en 5, 50 et 60 écrits, A sur 75.
     const question = numberLine(50, 1, 5, 2, 6);
     expect(question.answer).toBe(75);
-    expect(question.figure).toMatchObject({ from: 45, step: 5, labels: [1, 3], marker: 6 });
+    expect(question.figure).toMatchObject({ from: 45, step: 5, labels: [1, 3], markers: [{ at: 6, name: 'A' }] });
     expect(question.explain).toBe('De 50 à 60, il y a 2 graduations : chacune vaut 5. A est 3 graduations après 60 : 60 + 15 = 75.');
     // Fiche n° 34 : graduée de 10 en 10, 200 et 300 écrits.
     expect(numberLine(200, 1, 10, 10, 6).answer).toBe(250);
@@ -183,8 +197,84 @@ describe('Numération', () => {
     expect(question.explain).toContain('chacune vaut 100\u00a0000');
   });
 
+  it('écrit les fractions en lettres et en chiffres (ceinture orange)', () => {
+    // Fiches n° 37 à 39 et 42.
+    expect(fractionToLetters(3, 4)).toMatchObject({ prompt: '3/4', input: 'letters', answer: 'trois quarts' });
+    expect(fractionToLetters(5, 3).answer).toBe('cinq tiers');
+    expect(fractionToLetters(8, 5).answer).toBe('huit cinquièmes');
+    expect(fractionToLetters(1, 2).answer).toBe('un demi');
+    const big = fractionToLetters(21, 4);
+    expect(big.answer).toBe('vingt-et-un quarts');
+    expect(isCorrect(big, 'vingt et un quarts')).toBe(true);
+    const words = lettersToFraction(9, 3, seeded(2));
+    expect(words).toMatchObject({ prompt: 'neuf tiers', answer: '9/3' });
+    expect(words.choices).toHaveLength(4);
+    expect(words.choices?.map((c) => c.value)).toContain('3/9');
+  });
+
+  it('lit et place les fractions sur une droite graduée', () => {
+    // Fiche n° 43 : en quarts, B sur la 3e graduation.
+    const read = readFractionLine(2, 4, 3);
+    expect(read).toMatchObject({ prompt: 'A =', suffix: '/4', answer: 3 });
+    expect(read.figure).toMatchObject({ from: 0, count: 9, labels: [0, 4, 8], markers: [{ at: 3, name: 'A' }] });
+    // Fiche n° 46 : en quarts, 3/2 est sur la 6e graduation, le repère C.
+    const marker = whichMarker(2, 4, [2, 3, 6], 2);
+    expect(marker).toMatchObject({ prompt: '3/2', answer: 'C' });
+    expect(marker.explain).toContain('3/2 = 6/4');
+    // Fiche n° 94 : sur une droite en sixièmes, 2/3 = 4/6.
+    const place = placeFraction(2, 6, 2, 3);
+    expect(place).toMatchObject({ choiceLayout: 'line', answer: '4' });
+    expect(place.choices?.map((c) => c.value)).not.toContain('6');
+  });
+
+  it('colorie et lit une fraction d’un dessin', () => {
+    // Fiche n° 47 : 2/3 de 12 billes.
+    const marbles = paintFraction(12, 2, 3, 'marbles');
+    expect(marbles).toMatchObject({ input: 'paint', answer: 8, figure: { shape: 'marbles', count: 12, colored: 0 } });
+    expect(isCorrect(marbles, '8')).toBe(true);
+    expect(paintFraction(24, 5, 6, 'grid').answer).toBe(20);
+    expect(paintFraction(24, 1, 24, 'grid').solved).toBe('1/24 de 24 cases, c’est 1 case.');
+    // Fiche n° 54 : 13 tiers, sur 5 barres de 3.
+    const bars = readColored('bars', 15, 3, 13, seeded(1));
+    expect(bars.answer).toBe('13/3');
+    expect(bars.choices?.map((c) => c.value)).toContain('13/3');
+    expect(readColored('grid', 4, 2, 1, seeded(1)).answer).toBe('1/4');
+  });
+
+  it('calcule avec les fractions (ceinture violette)', () => {
+    // Fiches n° 101 à 104.
+    expect(fractionCalc(3, 4, '+', 1, 2)).toMatchObject({ prompt: '3/4 + 1/2 =', suffix: '/4', answer: 5 });
+    expect(fractionCalc(3, 4, '−', 1, 2).answer).toBe(1);
+    expect(fractionCalc(2, 3, '×', 1, 3)).toMatchObject({ prompt: '2 × 1/3 =', suffix: '/3', answer: 2 });
+    expect(fractionCalc(3, 5, '+', 2, 5).answer).toBe(5);
+    expect(wholePlusFraction(9, 4, 'part')).toMatchObject({ prompt: '9/4 = 2 +', suffix: '/4', answer: 1 });
+    expect(wholePlusFraction(17, 5, 'whole')).toMatchObject({ prompt: '17/5 =', suffix: '+ 2/5', answer: 3 });
+    expect(frameFraction(11, 4, 'low')).toMatchObject({ suffix: '< 11/4 < 3', answer: 2 });
+    expect(frameFraction(11, 4, 'high').answer).toBe(3);
+    expect(equalFraction(1, 2, 2, true)).toMatchObject({ prompt: '1/2 =', suffix: '/4', answer: 2 });
+    expect(equalFraction(3, 4, 2, false)).toMatchObject({ prompt: '6/8 =', suffix: '/4', answer: 3 });
+  });
+
+  it('compare les fractions et résout les problèmes', () => {
+    expect(compareFractions(3, 7, 5, 7).answer).toBe('<');
+    expect(compareFractions(2, 3, 2, 5).answer).toBe('>');
+    expect(compareFractions(7, 4, 1, 1)).toMatchObject({ suffix: '1', answer: '>' });
+    expect(compareFractions(1, 2, 2, 4).answer).toBe('=');
+    // Fiche n° 105 : 12 billes, 1/6 en bleu, 1/4 en vert, 1/3 en orange ; 3 restent blanches.
+    const fractions = [
+      [1, 6],
+      [1, 4],
+      [1, 3],
+    ] as const;
+    expect(marblesProblem(12, fractions, 'blanches').answer).toBe(3);
+    expect(marblesProblem(12, fractions, 1).answer).toBe(3);
+    expect(marblesProblem(12, fractions, 2).answer).toBe(4);
+    // Leçon N16 : un quart puis deux quarts, il reste un quart.
+    expect(remainingProblem('Mathilde', 1, 2, 4, false)).toMatchObject({ suffix: '/4', answer: 1 });
+  });
+
   it('tire des questions justes, dans les nombres de la ceinture', () => {
-    const max = { blanche: 99, jaune: 9999, vert: 999999, bleu: 9999999999 } as Record<string, number>;
+    const max = { blanche: 99, jaune: 9999, orange: 99, vert: 999999, bleu: 9999999999, violette: 99 } as Record<string, number>;
     for (const belt of NUMERATION) {
       for (let seed = 1; seed < 300; seed++) {
         for (const question of pickNumeration(belt, 10, [], seeded(seed))) {
@@ -198,11 +288,11 @@ describe('Numération', () => {
             expect(question.answer).toBeGreaterThanOrEqual(0);
             expect(question.answer).toBeLessThanOrEqual(max[belt.belt]!);
           }
-          if (question.figure) {
-            const { from, step, count, labels, marker } = question.figure;
+          if (question.figure && isNumberLine(question.figure)) {
+            const { from, step, count, labels, markers } = question.figure;
             expect(from).toBeGreaterThanOrEqual(0);
             expect(from + (count - 1) * step).toBeLessThanOrEqual(max[belt.belt]!);
-            expect(labels).not.toContain(marker);
+            for (const { at } of markers) expect(labels).not.toContain(at);
             for (const label of labels) expect(label).toBeLessThan(count);
           }
           expect(question.explain).not.toMatch(/undefined|NaN/);

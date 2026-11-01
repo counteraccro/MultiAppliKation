@@ -3,8 +3,8 @@
 // fiches Charivari (« entrainements numération.pdf ») ; les astuces viennent des leçons N1 à N10 de la classe.
 // Une question se répond au pavé, au clavier de lettres (un nombre en lettres) ou en touchant un bouton.
 
-import { numberToWords, numberToWordsTraditional } from '../../core/number-words';
-import { groupDigits, shuffle, type NumberLineFigure, type QuizQuestion } from '../../core/quiz';
+import { fractionToWords, numberToWords, numberToWordsTraditional } from '../../core/number-words';
+import { groupDigits, shuffle, type NumberLineFigure, type PartsFigure, type QuizQuestion } from '../../core/quiz';
 import type { BeltId } from './belts';
 import { pickCalcs } from './calcul-mental';
 
@@ -505,8 +505,7 @@ export function numberLine(label: number, labelAt: number, step: number, labelEv
     step,
     count: 11,
     labels: [labelAt, labelAt + labelEvery],
-    marker,
-    markerName: 'A',
+    markers: [{ at: marker, name: 'A' }],
   };
   const answer = from + marker * step;
   // On part du nombre écrit le plus proche.
@@ -558,6 +557,314 @@ function drawNumberLine(random: () => number, scales: readonly (readonly [number
   const label = between(Math.max(1, lowest / unit), highest / unit, random) * unit;
   const free = Array.from({ length: 11 }, (_, i) => i).filter((i) => i !== labelAt && i !== labelAt + every);
   return numberLine(label, labelAt, step, every, pick(free, random));
+}
+
+// --- Les fractions (leçons N11, N14 à N16 et N20) ---
+
+/** « 3/4 » : l'écran l'écrit en colonne, comme au cahier. */
+const frac = (numerator: number, denominator: number) => `${numerator}/${denominator}`;
+const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+/** « quart », « sixième » : le nom d'une part ; « quarts », « tiers » : de plusieurs. */
+const partName = (denominator: number) => fractionToWords(1, denominator).split(' ')[1]!;
+const partsName = (denominator: number) => fractionToWords(2, denominator).split(' ')[1]!;
+
+/** « 3/4 » → « trois quarts », au clavier de lettres (fiches n° 37 à 39). */
+export function fractionToLetters(numerator: number, denominator: number): NumerationQuestion {
+  const words = fractionToWords(numerator, denominator);
+  const traditional = fractionToWords(numerator, denominator, true);
+  const plural = numerator > 1 && denominator !== 3 ? ', avec un s car il y en a plusieurs' : '';
+  return question({
+    context: 'Écris en lettres',
+    prompt: frac(numerator, denominator),
+    input: 'letters',
+    answer: words,
+    ...(traditional !== words ? { alsoAccepted: [traditional] } : {}),
+    solved: `${frac(numerator, denominator)} : ${words}`,
+    explain: `On lit le numérateur, ${numberToWords(numerator)}, puis le nom des parts : l’unité partagée en ${denominator}, ce sont des ${partsName(denominator)}${plural}.`,
+  });
+}
+
+/** Des fractions qui ressemblent à la bonne : retournée, tiers et quarts confondus, le numérateur d'à côté. */
+function lookalikes(numerator: number, denominator: number, others: readonly [number, number][]): string[] {
+  const value = numerator / denominator;
+  return others
+    .filter(([n, d]) => n > 0 && d >= 2 && Math.abs(n / d - value) > 1e-9)
+    .map(([n, d]) => frac(n, d))
+    .filter((text, i, all) => all.indexOf(text) === i);
+}
+
+/** « neuf tiers » → toucher 9/3 parmi quatre fractions (fiche n° 42). */
+export function lettersToFraction(numerator: number, denominator: number, random: () => number = Math.random): NumerationQuestion {
+  const right = frac(numerator, denominator);
+  const confused = denominator === 3 ? 4 : denominator === 4 ? 3 : denominator + 1;
+  const wrong = lookalikes(numerator, denominator, [
+    [denominator, numerator],
+    [numerator, confused],
+    [numerator + 1, denominator],
+    [numerator, denominator - 1],
+  ]).slice(0, 3);
+  return question({
+    context: 'Touche la fraction',
+    prompt: fractionToWords(numerator, denominator),
+    choices: shuffle([right, ...wrong], random).map((text) => ({ label: text, value: text })),
+    answer: right,
+    solved: `${fractionToWords(numerator, denominator)} : ${right}`,
+    explain: `Des ${partsName(denominator)} : l’unité est partagée en ${denominator}, c’est le dénominateur, en bas. On en prend ${numerator}, c’est le numérateur, en haut.`,
+  });
+}
+
+/** « Le dénominateur de 3/8 est … » (fiches n° 40 et 41). */
+export function fractionPart(numerator: number, denominator: number, which: 'numérateur' | 'dénominateur'): NumerationQuestion {
+  const answer = which === 'numérateur' ? numerator : denominator;
+  return question({
+    context: 'Complète',
+    prompt: `Le ${which} de ${frac(numerator, denominator)} est`,
+    suffix: '',
+    answer,
+    solved: `Le ${which} de ${frac(numerator, denominator)} est ${answer}.`,
+    explain: 'Le numérateur est en haut : combien de parts on prend. Le dénominateur est en bas : en combien de parts égales on partage l’unité.',
+  });
+}
+
+/** Une droite de 0 à `units`, chaque unité partagée en `parts` ; 0, 1, 2… écrits. */
+function fractionLine(units: number, parts: number, markers: NumberLineFigure['markers']): NumberLineFigure {
+  return { from: 0, step: 1 / parts, count: units * parts + 1, labels: Array.from({ length: units + 1 }, (_, i) => i * parts), markers };
+}
+
+/** « À quelle fraction correspond le repère A ? » : A = ?/4 (fiches n° 43 et 44). */
+export function readFractionLine(units: number, parts: number, at: number): NumerationQuestion {
+  return question({
+    context: 'À quelle fraction correspond le repère A ?',
+    prompt: 'A =',
+    suffix: `/${parts}`,
+    figure: fractionLine(units, parts, [{ at, name: 'A' }]),
+    answer: at,
+    solved: `Sur la droite partagée en ${partsName(parts)}, A = ${frac(at, parts)}.`,
+    explain: `De 0 à 1, l’unité est partagée en ${parts} parts égales : chaque graduation vaut un ${partName(parts)}. A est à ${at} graduation${at > 1 ? 's' : ''} de 0 : ${frac(at, parts)}.`,
+  });
+}
+
+const NAMES = ['A', 'B', 'C'];
+
+/** « Quel repère correspond à 3/2 ? » sur une droite en quarts (fiches n° 45 et 46) ; la fraction peut être simplifiée. */
+export function whichMarker(units: number, parts: number, ats: readonly number[], asked: number): NumerationQuestion {
+  const at = ats[asked]!;
+  const divisor = gcd(at, parts);
+  const shown = frac(at / divisor, parts / divisor);
+  const name = NAMES[asked]!;
+  const how =
+    divisor > 1
+      ? `${shown} = ${frac(at, parts)} : on avance de ${at} graduations depuis 0`
+      : `${shown} : on avance de ${at} graduation${at > 1 ? 's' : ''} depuis 0`;
+  return question({
+    context: 'Quel repère correspond à la fraction ?',
+    prompt: shown,
+    figure: fractionLine(units, parts, ats.map((a, i) => ({ at: a, name: NAMES[i]! }))),
+    choices: NAMES.slice(0, ats.length).map((n) => ({ label: n, value: n })),
+    answer: name,
+    solved: `${shown}, c’est le repère ${name}.`,
+    explain: `Chaque graduation vaut un ${partName(parts)}. ${how}, c’est le repère ${name}.`,
+  });
+}
+
+/** « Place 7/6 » : toucher la graduation, sur une droite dont l'unité a `parts` graduations (fiches n° 94 à 100). */
+export function placeFraction(units: number, parts: number, numerator: number, denominator: number): NumerationQuestion {
+  const at = (numerator * parts) / denominator;
+  const line = fractionLine(units, parts, []);
+  const free = Array.from({ length: line.count }, (_, i) => i).filter((i) => !line.labels.includes(i));
+  const shown = frac(numerator, denominator);
+  return question({
+    context: 'Touche la graduation de la fraction',
+    prompt: shown,
+    figure: line,
+    // Le nom de chaque graduation, pour la correction : « C’était 6/8 ».
+    choices: free.map((i) => ({ label: frac(i, parts), value: String(i) })),
+    choiceLayout: 'line',
+    answer: String(at),
+    solved: `${shown} est à ${at} graduation${at > 1 ? 's' : ''} de 0, sur une droite dont l’unité a ${parts} graduations.`,
+    explain:
+      denominator === parts
+        ? `L’unité est partagée en ${parts} : on avance de ${numerator} graduation${numerator > 1 ? 's' : ''} depuis 0.`
+        : `L’unité est partagée en ${parts} : ${shown} = ${frac(at, parts)}, on avance de ${at} graduations depuis 0.`,
+  });
+}
+
+/** « Colorie 2/3 des 12 billes », « 1/4 du rectangle » : toucher les parts (fiches n° 47 à 52, 91 à 93). */
+export function paintFraction(total: number, numerator: number, denominator: number, shape: 'marbles' | 'grid'): NumerationQuestion {
+  const each = total / denominator;
+  const answer = each * numerator;
+  const things = shape === 'marbles' ? 'billes' : 'cases';
+  const figure: PartsFigure = { shape, count: total, columns: 6, colored: 0 };
+  const shown = frac(numerator, denominator);
+  return question({
+    context: 'Touche pour colorier',
+    prompt: shape === 'marbles' ? `Colorie ${shown} des ${total} billes` : `Colorie ${shown} du rectangle`,
+    input: 'paint',
+    figure,
+    answer,
+    solved: `${shown} de ${total} ${things}, c’est ${answer} ${answer > 1 ? things : things.slice(0, -1)}.`,
+    explain: `On partage les ${total} ${things} en ${denominator} parts égales : ${each} par part. ${numerator === 1 ? `On colorie 1 part : ${answer}.` : `On colorie ${numerator} parts : ${numerator} × ${each} = ${answer}.`}`,
+  });
+}
+
+/** « Quelle fraction est coloriée ? » : une barre, un rectangle, ou plusieurs barres (une par unité) (fiches n° 53 et 54). */
+export function readColored(shape: 'grid' | 'bars', count: number, columns: number, colored: number, random: () => number = Math.random): NumerationQuestion {
+  const denominator = shape === 'bars' ? columns : count;
+  const right = frac(colored, denominator);
+  const wrong = lookalikes(colored, denominator, [
+    [denominator - colored, denominator],
+    [colored, denominator - colored],
+    [denominator, colored],
+    [colored, count],
+    [colored, denominator + 1],
+  ]).slice(0, 3);
+  return question({
+    context: 'Quelle fraction est coloriée ?',
+    prompt: '',
+    figure: { shape, count, columns, colored },
+    choices: shuffle([right, ...wrong], random).map((text) => ({ label: text, value: text })),
+    answer: right,
+    solved: `${colored} parts coloriées sur ${denominator} : ${right}.`,
+    explain:
+      shape === 'bars' && count > columns
+        ? `Chaque barre est une unité partagée en ${columns} parts égales : ${colored} parts sont coloriées, c’est ${right}.`
+        : `La forme est partagée en ${denominator} parts égales et ${colored} sont coloriées : ${right}.`,
+  });
+}
+
+/** 3/4 + 1/2 = ?/4, 3/4 − 1/2, 2 × 3/4 (fiches n° 101 et 102, leçon N16). */
+export function fractionCalc(a: number, b: number, op: '+' | '−' | '×', c: number, d: number): NumerationQuestion {
+  // `a/b op c/d`, avec d qui divise b ; « × » : a × c/d.
+  const text = op === '×' ? `${a} × ${frac(c, d)}` : `${frac(a, b)} ${op} ${frac(c, d)}`;
+  const denominator = op === '×' ? d : b;
+  const k = denominator / d;
+  const answer = op === '×' ? a * c : op === '+' ? a + c * k : a - c * k;
+  const same = op !== '×' && k > 1 ? `On met sur le même dénominateur : ${frac(c, d)} = ${frac(c * k, denominator)}. ` : '';
+  const explain =
+    op === '×'
+      ? `${a} × ${frac(c, d)}, c’est ${Array.from({ length: a }, () => frac(c, d)).join(' + ')} : ${a} × ${c} = ${answer}.`
+      : `${same}On ${op === '+' ? 'additionne' : 'soustrait'} les numérateurs et on garde le dénominateur : ${a} ${op} ${c * k} = ${answer}.`;
+  return question({
+    prompt: `${text} =`,
+    suffix: `/${denominator}`,
+    answer,
+    solved: `${text} = ${frac(answer, denominator)}`,
+    explain,
+  });
+}
+
+/** « 9/4 = 2 + ?/4 » ou « 9/4 = ? + 1/4 » : un entier et une fraction (fiches n° 103 et 104). */
+export function wholePlusFraction(numerator: number, denominator: number, hidden: 'whole' | 'part'): NumerationQuestion {
+  const whole = Math.floor(numerator / denominator);
+  const rest = numerator % denominator;
+  const shown = frac(numerator, denominator);
+  return question({
+    context: 'Écris sous la forme d’un entier + une fraction',
+    prompt: hidden === 'whole' ? `${shown} =` : `${shown} = ${whole} +`,
+    suffix: hidden === 'whole' ? `+ ${frac(rest, denominator)}` : `/${denominator}`,
+    answer: hidden === 'whole' ? whole : rest,
+    solved: `${shown} = ${whole} + ${frac(rest, denominator)}`,
+    explain: `Dans la table de ${denominator} : ${numerator} = ${whole} × ${denominator} + ${rest}. ${frac(denominator, denominator)} = 1, donc ${shown} = ${whole} + ${frac(rest, denominator)}.`,
+  });
+}
+
+/** « ? < 11/4 < 3 » : encadrer entre deux entiers qui se suivent (leçon N15). */
+export function frameFraction(numerator: number, denominator: number, hidden: 'low' | 'high'): NumerationQuestion {
+  const low = Math.floor(numerator / denominator);
+  const shown = frac(numerator, denominator);
+  return question({
+    context: 'Encadre entre deux nombres entiers qui se suivent',
+    prompt: hidden === 'low' ? '' : `${low} < ${shown} <`,
+    suffix: hidden === 'low' ? `< ${shown} < ${low + 1}` : '',
+    answer: hidden === 'low' ? low : low + 1,
+    solved: `${low} < ${shown} < ${low + 1}`,
+    explain: `Dans la table de ${denominator} : ${denominator} × ${low} = ${denominator * low} et ${denominator} × ${low + 1} = ${denominator * (low + 1)}. ${numerator} est entre les deux, donc ${shown} est entre ${low} et ${low + 1}.`,
+  });
+}
+
+/** « 1/2 = ?/4 », « 6/8 = ?/4 » : les fractions égales (leçon N20). */
+export function equalFraction(numerator: number, denominator: number, times: number, up: boolean): NumerationQuestion {
+  const [from, to] = up
+    ? [frac(numerator, denominator), [numerator * times, denominator * times] as const]
+    : [frac(numerator * times, denominator * times), [numerator, denominator] as const];
+  return question({
+    context: 'Complète avec une fraction égale',
+    prompt: `${from} =`,
+    suffix: `/${to[1]}`,
+    answer: to[0],
+    solved: `${from} = ${frac(to[0], to[1])}`,
+    explain: up
+      ? `Le dénominateur est multiplié par ${times} : on multiplie aussi le numérateur, ${numerator} × ${times} = ${to[0]}.`
+      : `Le dénominateur est divisé par ${times} : on divise aussi le numérateur, ${numerator * times} : ${times} = ${to[0]}.`,
+  });
+}
+
+/** Comparer deux fractions, ou une fraction et 1 (leçon N14). */
+export function compareFractions(a: number, b: number, c: number, d: number): NumerationQuestion {
+  const [left, right] = [frac(a, b), d === 1 ? String(c) : frac(c, d)];
+  const [x, y] = [a * d, c * b];
+  const symbol = x < y ? '<' : x > y ? '>' : '=';
+  const why =
+    d === 1
+      ? a > b
+        ? 'Le numérateur est plus grand que le dénominateur : la fraction est plus grande que 1.'
+        : a < b
+          ? 'Le numérateur est plus petit que le dénominateur : la fraction est plus petite que 1.'
+          : 'Le numérateur et le dénominateur sont égaux : la fraction vaut 1.'
+      : b === d
+        ? 'Même dénominateur : on compare les numérateurs.'
+        : a === c
+          ? 'Même numérateur : plus le dénominateur est grand, plus les parts sont petites.'
+          : `On met sur le même dénominateur : ${b > d ? `${right} = ${frac((c * b) / d, b)}` : `${left} = ${frac((a * d) / b, d)}`}.`;
+  return question({
+    context: 'Complète avec <, > ou =',
+    prompt: left,
+    suffix: right,
+    choices: SYMBOLS,
+    answer: symbol,
+    solved: `${left} ${symbol} ${right}`,
+    explain: why,
+  });
+}
+
+const COLORS = ['bleu', 'vert', 'orange'] as const;
+
+/** « 12 billes : 1/6 en bleu, 1/4 en vert, 1/3 en orange » : combien de vertes, ou de blanches (fiches n° 105 à 108). */
+export function marblesProblem(total: number, fractions: readonly (readonly [number, number])[], asked: number | 'blanches'): NumerationQuestion {
+  const counts = fractions.map(([n, d]) => (total / d) * n);
+  const list = fractions.map(([n, d], i) => `${frac(n, d)} en ${COLORS[i]}`).join(', ').replace(/, ([^,]*)$/, ' et $1');
+  const share = (i: number) => {
+    const [n, d] = fractions[i]!;
+    return n === 1
+      ? `${frac(n, d)} de ${total}, c’est ${total} : ${d} = ${counts[i]}`
+      : `${frac(n, d)} de ${total}, c’est ${total} : ${d} = ${total / d}, puis ${n} × ${total / d} = ${counts[i]}`;
+  };
+  const white = total - counts.reduce((sum, n) => sum + n, 0);
+  const [askedText, answer, explain] =
+    asked === 'blanches'
+      ? [
+          'Combien de billes restent blanches ?',
+          white,
+          `${fractions.map((_, i) => share(i)).join(' ; ')}. ${counts.join(' + ')} = ${total - white} billes coloriées : ${total} − ${total - white} = ${white}.`,
+        ]
+      : [`Combien de billes en ${COLORS[asked]} ?`, counts[asked]!, `${share(asked)}.`];
+  const text = `${total} billes : ${list}. ${askedText}`;
+  return question({ prompt: text, suffix: 'billes', answer, solved: `${text} ${answer} billes.`, explain });
+}
+
+/** Le triathlon de la leçon N16, et le gâteau : ce qui reste, avec le même dénominateur. */
+export function remainingProblem(name: string, first: number, second: number, denominator: number, cake: boolean): NumerationQuestion {
+  const text = cake
+    ? `${name} mange ${frac(first, denominator)} du gâteau, puis ${frac(second, denominator)}. Quelle fraction du gâteau reste-t-il ?`
+    : `${name} fait ${frac(first, denominator)} de la course à la nage, puis ${frac(second, denominator)} à vélo. Quelle fraction lui reste-t-il à courir ?`;
+  const answer = denominator - first - second;
+  return question({
+    prompt: text,
+    suffix: `/${denominator}`,
+    answer,
+    solved: `${text} ${frac(answer, denominator)}`,
+    explain: `${frac(first, denominator)} + ${frac(second, denominator)} = ${frac(first + second, denominator)}. Le tout, c’est ${frac(denominator, denominator)} : il reste ${denominator} − ${first + second} = ${answer} part${answer > 1 ? 's' : ''}, ${frac(answer, denominator)}.`,
+  });
 }
 
 // --- Les ceintures ---
@@ -637,6 +944,182 @@ function drawDecompose(random: () => number, digits: number): NumerationQuestion
     if (count >= 2 && count <= 3) return decompose(n, between(0, count - 1, random));
   }
 }
+
+/** Une fraction plus petite que 1 : `numerator` de 1 à d − 1, `denominator` parmi ceux donnés. */
+function properFraction(random: () => number, denominators: readonly number[]): [number, number] {
+  const denominator = pick(denominators, random);
+  return [between(1, denominator - 1, random), denominator];
+}
+
+/** Des graduations de la droite, hors des nombres entiers. */
+function offTicks(units: number, parts: number): number[] {
+  return Array.from({ length: units * parts }, (_, i) => i + 1).filter((i) => i % parts !== 0);
+}
+
+/** L'orange : les fractions simples (fiches n° 37 à 54). */
+const ORANGE_KINDS: readonly Draw[] = [
+  (random) =>
+    random() < 0.8
+      ? fractionToLetters(...properFraction(random, [2, 3, 4, 5, 6, 8, 10]))
+      : fractionToLetters(between(5, 40, random), pick([2, 3, 4, 5, 7, 8], random)),
+  (random) => {
+    const denominator = pick([2, 3, 4, 5, 6, 8], random);
+    return lettersToFraction(between(1, 10, random), denominator, random);
+  },
+  (random) => {
+    const [n, d] = random() < 0.5 ? properFraction(random, [3, 4, 5, 7, 8, 10]) : [between(4, 9, random), pick([2, 3], random)];
+    return fractionPart(n, d, random() < 0.5 ? 'numérateur' : 'dénominateur');
+  },
+  (random) => {
+    const [units, parts] = [between(2, 3, random), pick([2, 3, 4], random)];
+    return readFractionLine(units, parts, pick(offTicks(units, parts), random));
+  },
+  (random) => {
+    const [units, parts] = [between(2, 3, random), pick([3, 4], random)];
+    const ats = shuffle(offTicks(units, parts), random).slice(0, 3).sort((a, b) => a - b);
+    return whichMarker(units, parts, ats, between(0, 2, random));
+  },
+  (random) => {
+    const total = pick([10, 12], random);
+    const [n, d] = properFraction(random, total === 10 ? [2, 5] : [2, 3, 4, 6]);
+    return paintFraction(total, n, d, 'marbles');
+  },
+  (random) => {
+    const [n, d] = pick(
+      [
+        [1, 2],
+        [1, 3],
+        [1, 4],
+        [2, 3],
+        [3, 4],
+      ] as const,
+      random,
+    );
+    return paintFraction(24, n, d, 'grid');
+  },
+  (random) => {
+    const kind = between(0, 2, random);
+    if (kind === 0) {
+      const columns = between(3, 8, random);
+      return readColored('bars', columns, columns, between(1, columns - 1, random), random);
+    }
+    if (kind === 1) {
+      const [columns, rows] = pick(
+        [
+          [2, 2],
+          [3, 2],
+          [4, 2],
+          [4, 3],
+        ] as const,
+        random,
+      );
+      return readColored('grid', columns * rows, columns, between(1, columns * rows - 1, random), random);
+    }
+    // Plusieurs barres, une par unité : 13/3 (fiche n° 54).
+    const columns = pick([2, 3, 4], random);
+    const wholes = between(2, 4, random);
+    return readColored('bars', (wholes + 1) * columns, columns, wholes * columns + between(1, columns - 1, random), random);
+  },
+];
+
+/** Les billes des fiches n° 105 à 108 : le nombre de billes, et des fractions dont le total reste plus petit que 1. */
+const MARBLE_SETS = [
+  [12, [[1, 6], [1, 4], [1, 3]]],
+  [15, [[1, 3], [2, 5], [2, 15]]],
+  [12, [[1, 3], [1, 2], [1, 12]]],
+  [15, [[2, 3], [1, 5], [2, 15]]],
+  [20, [[1, 4], [2, 5], [1, 10]]],
+  [24, [[1, 8], [1, 3], [1, 4]]],
+  [18, [[1, 6], [1, 3], [2, 9]]],
+] as const;
+
+/** La violette : manipuler les fractions (fiches n° 91 à 108, leçons N14 à N16 et N20). */
+const VIOLETTE_KINDS: readonly Draw[] = [
+  (random) => {
+    const [n, d] = pick(
+      [
+        [1, 4],
+        [1, 8],
+        [3, 4],
+        [5, 6],
+        [1, 24],
+        [2, 3],
+        [3, 8],
+        [5, 12],
+        [1, 6],
+      ] as const,
+      random,
+    );
+    return paintFraction(24, n, d, 'grid');
+  },
+  (random) => {
+    const parts = pick([4, 6, 8], random);
+    // Au plus 12 graduations, assez larges pour les toucher : 2 unités de 6, une de 8, comme les fiches.
+    const units = parts === 8 ? 1 : parts === 6 ? 2 : between(2, 3, random);
+    const denominator = pick(
+      [2, 3, 4, 6, 8].filter((d) => parts % d === 0),
+      random,
+    );
+    // Pas un nombre entier : 7/6, 2/3, 11/4.
+    const numerators = Array.from({ length: units * denominator - 1 }, (_, i) => i + 1).filter((n) => n % denominator !== 0);
+    return placeFraction(units, parts, pick(numerators, random), denominator);
+  },
+  (random) => {
+    const kind = between(0, 2, random);
+    const denominator = pick([4, 5, 6, 8, 10], random);
+    if (kind === 2) return fractionCalc(between(2, 4, random), denominator, '×', between(1, denominator - 1, random), denominator);
+    // Le même dénominateur, ou la moitié : 3/4 + 1/2.
+    const other = denominator % 2 === 0 && random() < 0.5 ? denominator / 2 : denominator;
+    const k = denominator / other;
+    const c = between(1, other - 1, random);
+    const a = kind === 0 ? between(1, denominator - 1, random) : between(c * k + 1, c * k + denominator - 1, random);
+    return fractionCalc(a, denominator, kind === 0 ? '+' : '−', c, other);
+  },
+  (random) => {
+    const denominator = between(2, 6, random);
+    const numerator = between(denominator + 1, denominator * 4, random);
+    return numerator % denominator === 0
+      ? wholePlusFraction(numerator + 1, denominator, random() < 0.5 ? 'whole' : 'part')
+      : wholePlusFraction(numerator, denominator, random() < 0.5 ? 'whole' : 'part');
+  },
+  (random) => {
+    const [total, fractions] = pick(MARBLE_SETS, random);
+    return marblesProblem(total, fractions, random() < 0.5 ? 'blanches' : between(0, 2, random));
+  },
+  (random) => {
+    const kind = between(0, 3, random);
+    const d = between(3, 9, random);
+    if (kind === 0) return compareFractions(between(1, 2 * d, random), d, 1, 1);
+    if (kind === 1) {
+      const [a, c] = [between(1, 2 * d, random), between(1, 2 * d, random)];
+      return compareFractions(a, d, c, d);
+    }
+    if (kind === 2) {
+      const n = between(1, 5, random);
+      return compareFractions(n, d, n, between(2, 9, random));
+    }
+    const half = pick([2, 3, 4, 5], random);
+    return random() < 0.5
+      ? compareFractions(between(1, 2 * half, random), half, between(1, 4 * half, random), 2 * half)
+      : compareFractions(between(1, 4 * half, random), 2 * half, between(1, 2 * half, random), half);
+  },
+  (random) => {
+    const [n, d] = properFraction(random, [2, 3, 4, 5]);
+    return equalFraction(n, d, between(2, 5, random), random() < 0.6);
+  },
+  (random) => {
+    const denominator = between(2, 8, random);
+    let numerator = between(denominator + 1, denominator * 5, random);
+    if (numerator % denominator === 0) numerator += 1;
+    return frameFraction(numerator, denominator, random() < 0.5 ? 'low' : 'high');
+  },
+  (random) => {
+    const denominator = pick([4, 5, 6, 8, 10], random);
+    const first = between(1, denominator - 2, random);
+    const second = between(1, denominator - first - 1, random);
+    return remainingProblem(pick(['Mathilde', 'Lila', 'Noé', 'Sami', 'Inès'], random), first, second, denominator, random() < 0.5);
+  },
+];
 
 /** La verte : les nombres jusqu'aux millions (fiches n° 67 à 78). */
 const VERT_KINDS: readonly Draw[] = [
@@ -731,6 +1214,19 @@ export const NUMERATION: readonly NumerationBelt[] = [
     kinds: JAUNE_KINDS,
   },
   {
+    belt: 'orange',
+    skill: 'Lire, écrire et représenter les fractions simples, les placer sur une droite graduée',
+    goal: 'CE2',
+    tips: [
+      'Une fraction, c’est une unité partagée en parts égales. Dans 3/4, le dénominateur 4 (en bas) dit en combien de parts on partage ; le numérateur 3 (en haut) dit combien de parts on prend.',
+      'On lit le numérateur puis le nom des parts : un demi, deux tiers, trois quarts, puis cinq sixièmes, sept huitièmes… avec -ième.',
+      'Sur une droite graduée, regarde en combien de parts l’unité est partagée : de 0 à 1 en 4 parts, chaque graduation vaut un quart.',
+      'Pour colorier 2/3 de 12 billes, on partage d’abord les billes en 3 paquets égaux de 4, puis on en colorie 2 : 8 billes.',
+    ],
+    examples: () => [fractionToLetters(3, 4), readFractionLine(2, 4, 3), paintFraction(12, 2, 3, 'marbles'), readColored('bars', 15, 3, 13)],
+    kinds: ORANGE_KINDS,
+  },
+  {
     belt: 'vert',
     skill: 'Lire, écrire, représenter et comparer les nombres jusqu’aux millions',
     goal: 'CM1',
@@ -756,6 +1252,19 @@ export const NUMERATION: readonly NumerationBelt[] = [
     ],
     examples: () => [digitOf(15824000, 4), numberOf(15824000, 4), wordsToDigits(6600006), numberLineChoices(3000000, 0, 100000, 10, 2)],
     kinds: BLEU_KINDS,
+  },
+  {
+    belt: 'violette',
+    skill: 'Manipuler les fractions : comparer, encadrer, entier + fraction, droite graduée, calculs et problèmes, fractions égales',
+    tips: [
+      'Pour placer 7/6 sur une droite, repère l’unité et partage-la en 6 : on avance de 7 graduations. Si l’unité a 6 graduations, 2/3 = 4/6 : 4 graduations.',
+      'Avec le même dénominateur, on additionne les numérateurs et on garde le dénominateur : 3/5 + 2/5 = 5/5 = 1. Sinon, on met d’abord sur le même dénominateur : 1/2 = 2/4.',
+      '9/4 = 2 + 1/4 : dans la table de 4, 9 = 2 × 4 + 1. Donc 2 < 9/4 < 3.',
+      'Pour comparer : avec le même dénominateur, on compare les numérateurs ; avec le même numérateur, plus le dénominateur est grand, plus la fraction est petite.',
+      'Des fractions égales : on multiplie (ou on divise) le numérateur et le dénominateur par le même nombre : 1/2 = 2/4 = 3/6.',
+    ],
+    examples: () => [placeFraction(2, 6, 2, 3), fractionCalc(3, 4, '+', 1, 2), wholePlusFraction(9, 4, 'part'), equalFraction(1, 2, 3, true)],
+    kinds: VIOLETTE_KINDS,
   },
 ];
 

@@ -122,7 +122,30 @@ Orthographe des nombres en lettres : les fiches mettent **des traits d'union par
      tombait sur une 12ᵉ graduation inexistante).
    - Laissés de côté : les étiquettes (n° 70, 71, 87), comme à la jaune.
 3. **Orange et violette** : les fractions (lire, écrire, droite graduée, comparer, entier + fraction, calculs).
-   Nouveaux écrans : placer sur une droite, colorier (selon la réponse 4).
+   Nouveaux écrans : placer sur une droite, colorier (selon la réponse 4). **Faite le 01/11/2026 (0.50.0)** :
+   - `fractionToWords` (core/number-words.ts) : « trois quarts », « un demi », « cinq tiers », « huit cinquièmes »,
+     « vingt-et-un quarts » (la forme traditionnelle « vingt et un quarts » est acceptée) ; tiers ne prend pas de s.
+   - Orange (fiches n° 37 à 54, leçon N11, objectif de fin de CE2) : fraction → lettres ; lettres → toucher la
+     fraction parmi quatre ; numérateur / dénominateur ; lire un repère sur une droite en demis, tiers ou quarts
+     (A = ?/4) ; quel repère (A, B, C) pour une fraction, parfois simplifiée (3/2 sur une droite en quarts) ;
+     colorier une fraction de 10 ou 12 billes, ou du rectangle de 6 × 4 ; quelle fraction est coloriée (une
+     barre, un rectangle, ou plusieurs barres debout comme le 13/3 de la fiche n° 54).
+   - Violette (fiches n° 91 à 108, leçons N14 à N16 et N20) : colorier le rectangle de 6 × 4 (1/4, 5/6, 1/24…) ;
+     **placer une fraction en touchant la graduation** (au plus 12 graduations : 2 unités de 6, 1 de 8, 2 ou 3
+     de 4) ; 3/4 + 1/2, 3/4 − 1/2, 2 × 3/4 (la case est le numérateur, le dénominateur est donné) ; entier +
+     fraction (9/4 = 2 + ?/4 ou ? + 1/4) ; les billes de trois couleurs (combien de vertes, combien de blanches) ;
+     comparer (avec 1, même dénominateur, même numérateur, dénominateur double) ; fractions égales (1/2 = ?/4,
+     6/8 = ?/4) ; encadrer entre deux entiers (? < 11/4 < 3) ; le triathlon de la leçon N16 et le gâteau.
+   - **Ce qui vient de nous, pas des fiches** : comparer, fractions égales et encadrer (le classeur les demande
+     pour la violette, les fiches n'en ont pas : d'après les leçons N14, N15, N20) ; le gâteau ; les billes en
+     trois couleurs deviennent des questions au pavé (on ne colorie qu'une couleur à la fois dans l'app).
+   - Écran : `input: 'paint'` (colorier en touchant les billes ou les cases, puis OK ; la réponse est le nombre de
+     parts coloriées ; après une erreur : « Tu en as colorié 17, il en fallait 18 ») ; `choiceLayout: 'line'`
+     (les graduations sont les boutons, nommées par leur fraction pour la correction) ; la droite graduée a
+     maintenant plusieurs repères (`markers`) ; `components/parts-picture.ts` dessine billes, rectangle et barres
+     (`drawFigure` choisit la droite ou le dessin) ; les fractions s'écrivent en colonne dans les boutons, après
+     la case, dans les astuces et la correction du test. En test, « Revenir à la réponse d'avant » redonne le
+     dessin colorié tel qu'il était.
 4. **Rose et marron** : les décimaux (position des chiffres, fractions décimales, comparer, ranger, droite
    graduée en dixièmes, centièmes, millièmes, suites). Nouvel écran : ranger.
 5. **Noire, bronze, argent** : les pourcentages et le lien fractions / décimaux.

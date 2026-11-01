@@ -81,3 +81,24 @@ export function numberToWordsTraditional(n: number): string {
   }
   return text;
 }
+
+/** « demi », « tiers », « quart », puis « cinquième », « neuvième », « dixième », « centième ». */
+function denominatorWord(d: number): string {
+  if (d === 2) return 'demi';
+  if (d === 3) return 'tiers';
+  if (d === 4) return 'quart';
+  const word = numberToWords(d);
+  if (word.endsWith('cinq')) return `${word}uième`;
+  if (word.endsWith('neuf')) return `${word.slice(0, -1)}vième`;
+  return `${word.endsWith('e') ? word.slice(0, -1) : word}ième`;
+}
+
+/**
+ * Une fraction en lettres, comme sur les fiches de la classe (leçon N11) : « trois quarts », « un demi »,
+ * « vingt-et-un quarts ». Le nom prend un s au pluriel, sauf « tiers ».
+ */
+export function fractionToWords(numerator: number, denominator: number, traditional = false): string {
+  const name = denominatorWord(denominator);
+  const plural = numerator > 1 && !name.endsWith('s') ? `${name}s` : name;
+  return `${traditional ? numberToWordsTraditional(numerator) : numberToWords(numerator)} ${plural}`;
+}

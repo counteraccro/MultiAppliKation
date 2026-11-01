@@ -572,7 +572,7 @@ function numerationCorrections(mistakes: TableMistake<NumerationQuestion>[]): HT
         return h(
           'li',
           {},
-          h('mark', {}, withNbsp(question.solved)),
+          h('mark', {}, ...withFractions(withNbsp(question.solved))),
           given !== undefined && h('small', { class: 'correction-context' }, `Tu avais répondu : ${given}`),
         );
       }),

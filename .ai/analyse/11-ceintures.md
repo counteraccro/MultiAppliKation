@@ -38,7 +38,7 @@ c'est le principe même des ceintures.
 | Tables de multiplication | 13 (+ brillante) | 1 min | **Troisième matière** (0.31.0, sans les divisions) : voir [13-ceintures-tables.md](13-ceintures-tables.md) |
 | Calcul mental | 16 | 2 min, 1 erreur au plus | Plus tard : pavé de chiffres |
 | Accords | 11 | 20 min | Plus tard : transposer des phrases entières (saisie longue) |
-| Numération | 12 (jusqu'à or) | 20 min | **Sixième matière** (commencée le 01/11/2026 : blanche, jaune, verte, bleue) : voir [18-ceintures-numeration.md](18-ceintures-numeration.md) |
+| Numération | 12 (jusqu'à or) | 20 min | **Sixième matière** (commencée le 01/11/2026 : blanche, jaune, orange, verte, bleue, violette) : voir [18-ceintures-numeration.md](18-ceintures-numeration.md) |
 | Grandeurs et mesures | 8 | 20 min | Plus tard : fiches scannées, à recopier |
 | Grammaire | 11 | 20 min | Plus tard : fiches scannées ; reconnaître des mots dans une phrase |
 | Calcul posé | 11 | 20 min | **Quatrième matière** (commencée le 28/10/2026 par la blanche) : voir [15-ceintures-calcul-pose.md](15-ceintures-calcul-pose.md) |

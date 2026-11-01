@@ -10,18 +10,24 @@ const LINE_Y = 40;
 /** Largeur d'un chiffre écrit au-dessus (15 px, gras), pour que « 460 000 000 » ne sorte pas au bord. */
 const CHAR_WIDTH = 9.2;
 
-function svg(tag: string, attributes: Record<string, string | number>, text?: string): SVGElement {
+export function svg(tag: string, attributes: Record<string, string | number>, text?: string): SVGElement {
   const el = document.createElementNS(SVG, tag);
   for (const [name, value] of Object.entries(attributes)) el.setAttribute(name, String(value));
   if (text !== undefined) el.textContent = text;
   return el;
 }
 
+/** Placer une fraction : les graduations `at` se touchent ; chacune est un `.nl-pick` (`data-value` : son rang). */
+export interface LinePick {
+  at: readonly number[];
+  onPick(at: number): void;
+}
+
 /**
  * Une droite graduée comme sur les fiches de la classe : les graduations, quelques nombres écrits
- * au-dessus, une flèche sous le repère à trouver (« A »).
+ * au-dessus, une flèche sous chaque repère (« A », « B »…).
  */
-export function numberLine(figure: NumberLineFigure): SVGElement {
+export function numberLine(figure: NumberLineFigure, pick?: LinePick): SVGElement {
   const text = (i: number) => groupDigits(numberText(Math.round((figure.from + i * figure.step) * 1e6) / 1e6));
   // Un grand nombre écrit au bout de la droite : on la raccourcit pour qu'il tienne.
   const half = (i: number) => (text(i).length * CHAR_WIDTH) / 2;
@@ -33,7 +39,7 @@ export function numberLine(figure: NumberLineFigure): SVGElement {
     class: 'number-line',
     viewBox: `0 0 ${WIDTH} ${HEIGHT}`,
     role: 'img',
-    'aria-label': `Droite graduée, repère ${figure.markerName}`,
+    'aria-label': `Droite graduée${figure.markers.length > 0 ? `, repères ${figure.markers.map((m) => m.name).join(', ')}` : ''}`,
   });
   root.append(
     svg('line', { x1: 4, y1: LINE_Y, x2: WIDTH - 6, y2: LINE_Y, class: 'nl-axis' }),
@@ -47,10 +53,22 @@ export function numberLine(figure: NumberLineFigure): SVGElement {
       root.append(svg('text', { x: x(i), y: LINE_Y - 15, class: 'nl-label' }, text(i)));
     }
   }
-  const mx = x(figure.marker);
-  root.append(
-    svg('path', { d: `M ${mx} ${LINE_Y + 10} l -6 9 h 4 v 9 h 4 v -9 h 4 z`, class: 'nl-marker' }),
-    svg('text', { x: mx, y: LINE_Y + 46, class: 'nl-marker-name' }, figure.markerName),
-  );
+  for (const { at, name } of figure.markers) {
+    const mx = x(at);
+    root.append(
+      svg('path', { d: `M ${mx} ${LINE_Y + 10} l -6 9 h 4 v 9 h 4 v -9 h 4 z`, class: 'nl-marker' }),
+      svg('text', { x: mx, y: LINE_Y + 46, class: 'nl-marker-name' }, name),
+    );
+  }
+  // Toucher une graduation : une zone large autour d'elle, et une pastille qui s'allume.
+  for (const at of pick?.at ?? []) {
+    const target = svg('g', { class: 'nl-pick', 'data-value': at, role: 'button', 'aria-label': `Graduation ${at}` });
+    target.append(
+      svg('rect', { x: x(at) - gap / 2, y: 0, width: gap, height: HEIGHT, class: 'nl-hit' }),
+      svg('circle', { cx: x(at), cy: LINE_Y, r: Math.min(8, gap / 2.4), class: 'nl-spot' }),
+    );
+    target.addEventListener('click', () => pick!.onPick(at));
+    root.append(target);
+  }
   return root;
 }

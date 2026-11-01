@@ -13,17 +13,22 @@ export interface QuizQuestion {
   alsoAccepted?: readonly string[];
   /** L'astuce, montrée après une erreur (« + 9, c'est + 10 − 1 : … »). */
   explain?: string;
-  /** Pavé ou clavier de lettres, quand la série mélange les deux (numération). */
-  input?: 'digits' | 'letters';
+  /** Pavé, clavier de lettres, ou colorier en touchant le dessin (`paint` : la réponse est le nombre de parts coloriées). */
+  input?: 'digits' | 'letters' | 'paint';
   /** Répondre en touchant un bouton (« < », « oui ») ; la réponse attendue est la `value` du bon. */
   choices?: readonly Choice[];
-  /** `number` : les boutons sont les chiffres du nombre, à toucher dans le nombre (« le chiffre des dizaines »). */
-  choiceLayout?: 'number';
+  /**
+   * `number` : les boutons sont les chiffres du nombre, à toucher dans le nombre (« le chiffre des dizaines ») ;
+   * `line` : ce sont les graduations de la droite (`value` : leur rang), à toucher pour placer une fraction.
+   */
+  choiceLayout?: 'number' | 'line';
   /** La question résolue, pour les listes et la correction : « Dans 54, le chiffre des dizaines est 5. » */
   solved?: string;
-  /** Une droite graduée, dessinée au-dessus de la question. */
-  figure?: NumberLineFigure;
+  /** Une droite graduée ou un dessin (billes, rectangle), au-dessus de la question. */
+  figure?: Figure;
 }
+
+export type Figure = NumberLineFigure | PartsFigure;
 
 export interface Choice {
   label: string;
@@ -32,16 +37,28 @@ export interface Choice {
 
 /**
  * Une droite graduée : `count` graduations, `step` de l'une à l'autre à partir de `from` ;
- * les nombres écrits au-dessus des graduations `labels` (leur rang), le repère `markerName` sur `marker`.
+ * les nombres écrits au-dessus des graduations `labels` (leur rang), les repères (« A » sur la graduation `at`).
  */
 export interface NumberLineFigure {
   from: number;
   step: number;
   count: number;
   labels: readonly number[];
-  marker: number;
-  markerName: string;
+  markers: readonly { at: number; name: string }[];
 }
+
+/**
+ * Un dessin partagé en `count` parts égales, dont `colored` coloriées (fractions) : des billes,
+ * un rectangle quadrillé de `columns` colonnes, ou des barres de `columns` parts (une barre = une unité).
+ */
+export interface PartsFigure {
+  shape: 'marbles' | 'grid' | 'bars';
+  count: number;
+  columns: number;
+  colored: number;
+}
+
+export const isNumberLine = (figure: Figure): figure is NumberLineFigure => 'step' in figure;
 
 export interface QuizSession<Q extends QuizQuestion = QuizQuestion> {
   /** Nombre de questions de la série (sans compter celles qui reviennent). */

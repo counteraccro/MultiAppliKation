@@ -1,5 +1,6 @@
 import { withFractions } from '../../components/fraction';
-import { numberLine } from '../../components/number-line';
+import { drawFigure } from '../../components/parts-picture';
+import { isNumberLine } from '../../core/quiz';
 import { topbar } from '../../components/topbar';
 import { h } from '../../core/dom';
 import type { ActivityContext } from '../types';
@@ -200,7 +201,7 @@ function numerationCards(belt: NumerationBelt): HTMLElement[] {
       'article',
       { class: 'lesson-card' },
       h('h2', {}, 'Les astuces'),
-      h('ul', { class: 'lesson-rules' }, ...belt.tips.map((tip) => h('li', {}, withNbsp(tip)))),
+      h('ul', { class: 'lesson-rules' }, ...belt.tips.map((tip) => h('li', {}, ...withFractions(withNbsp(tip))))),
     ),
     h(
       'article',
@@ -213,10 +214,11 @@ function numerationCards(belt: NumerationBelt): HTMLElement[] {
           h(
             'li',
             {},
-            question.figure && numberLine(question.figure),
-            h('strong', {}, withNbsp(question.solved)),
+            // Colorier : l'exemple montre le dessin colorié.
+            question.figure && drawFigure(question.input === 'paint' && !isNumberLine(question.figure) ? { ...question.figure, colored: question.answer as number } : question.figure),
+            h('strong', {}, ...withFractions(withNbsp(question.solved))),
             h('br'),
-            withNbsp(question.explain),
+            ...withFractions(withNbsp(question.explain)),
           ),
         ),
       ),
