@@ -1,9 +1,10 @@
 import { closestAnswer, diffParts } from '../core/diff';
 import { h } from '../core/dom';
-import { acceptedAnswers, normalizeAnswer, type QuizSession } from '../core/quiz';
+import { acceptedAnswers, answerText, normalizeAnswer, type QuizSession } from '../core/quiz';
 import { sounds } from '../core/sound';
 import { createChrono } from './chrono';
 import { createCountdown } from './countdown';
+import { fraction, withFractions } from './fraction';
 import { createKeyboard } from './keyboard';
 import { createKeypad } from './keypad';
 import { createRace } from './race';
@@ -45,6 +46,8 @@ export interface QuestionScreenOptions {
   timeLimitMs?: number;
   /** Chiffres qu'on peut taper (3 par défaut ; calcul mental : 45 × 1000 = 45000). */
   maxDigits?: number;
+  /** Nombres décimaux : la touche virgule au pavé (elle compte dans `maxDigits`). */
+  decimal?: boolean;
   onDone(summary: SeriesSummary): void;
   onQuit(): void;
 }
@@ -124,7 +127,13 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
         typed += char;
       } else {
         if (typed.length >= (options.maxDigits ?? MAX_DIGITS)) return;
-        typed = typed === '0' ? char : typed + char;
+        if (char === ',') {
+          // Une seule virgule ; tapée en premier, elle suit un 0 (« 0,5 »).
+          if (typed.includes(',')) return;
+          typed = (typed || '0') + char;
+        } else {
+          typed = typed === '0' ? char : typed + char;
+        }
       }
       renderAnswer();
     },
@@ -172,8 +181,10 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
           answerBox.replaceChildren(start, diff ? h('mark', {}, diff) : '', end);
           feedback.textContent = `C’était « ${shown} ». ${wrongHint}`;
         } else {
-          answerBox.textContent = String(question.answer);
-          feedback.textContent = `C’était ${question.answer}. ${question.explain ? `${question.explain} ` : ''}${wrongHint}`;
+          answerBox.textContent = answerText(question);
+          feedback.replaceChildren(
+            ...withFractions(`C’était ${answerText(question)}. ${question.explain ? `${question.explain} ` : ''}${wrongHint}`),
+          );
         }
         keypad.setSubmitLabel('→');
         if (chrono) chrono.addPenalty(options.chrono!.penaltyMs);
@@ -184,7 +195,11 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
   };
   const keypad = letters
     ? createKeyboard(handlers)
-    : createKeypad({ ...handlers, onDigit: (digit) => handlers.onChar(String(digit)) });
+    : createKeypad({
+        ...handlers,
+        onDigit: (digit) => handlers.onChar(String(digit)),
+        onComma: options.decimal ? () => handlers.onChar(',') : undefined,
+      });
 
   function renderAnswer() {
     answerBox.textContent = typed || '?';
@@ -224,9 +239,12 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
     typed = '';
     // Nombre caché : la case est au milieu (« 7 × ? = 56 »), l'opération plus longue s'affiche plus petit.
     // En mots, pas de « = » : « nous [ mangerons ] ».
-    prompt.textContent = question.suffix === undefined && !letters ? `${question.prompt} =` : question.prompt;
+    prompt.replaceChildren(...withFractions(question.suffix === undefined && !letters ? `${question.prompt} =` : question.prompt));
     context.textContent = question.context ?? '';
-    suffix.textContent = question.suffix ?? '';
+    // « 8,37 = ?/100 » : la case est le numérateur d'une fraction.
+    const denominator = /^\/(\d+)$/.exec(question.suffix ?? '')?.[1];
+    suffix.textContent = denominator === undefined ? (question.suffix ?? '') : '';
+    equation.replaceChildren(prompt, denominator === undefined ? answerBox : fraction(answerBox, denominator), suffix);
     equation.classList.toggle('long', question.suffix !== undefined);
     answerBox.className = 'answer-box';
     feedback.textContent = '';

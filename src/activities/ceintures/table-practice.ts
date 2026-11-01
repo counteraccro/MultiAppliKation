@@ -3,7 +3,7 @@
 // minute, 30 à la brillante, réussi à 90 % ; calcul mental : 20 calculs en 2 minutes, une erreur au plus),
 // sans correction pendant ; ceux qu'on n'a pas eu le temps de faire comptent faux.
 
-import { isCorrect, shuffle, type QuizQuestion, type QuizSession } from '../../core/quiz';
+import { answerText, isCorrect, shuffle, type QuizQuestion, type QuizSession } from '../../core/quiz';
 import { Series } from '../../core/series';
 import { MULTIPLICATION, questionFromKey, type Calculation } from '../tables/questions';
 import { beltFacts, type TableBelt } from './tables';
@@ -28,9 +28,11 @@ export function pickFacts(belt: TableBelt, count: number, seen: readonly string[
   return picked;
 }
 
-/** « 7 × 8 = 56 », « 37 + 63 = 100 » (la case au milieu), pour les listes du résultat. */
+/** « 7 × 8 = 56 », « 37 + 63 = 100 » (la case au milieu), « 8,37 = 837/100 », pour les listes du résultat. */
 export const factText = (question: QuizQuestion) =>
-  question.suffix === undefined ? `${question.prompt} = ${question.answer}` : `${question.prompt} ${question.answer} ${question.suffix}`;
+  question.suffix === undefined
+    ? `${question.prompt} = ${answerText(question)}`
+    : `${question.prompt} ${answerText(question)}${question.suffix.startsWith('/') ? '' : ' '}${question.suffix}`;
 
 export interface TablePracticeResult {
   /** Calculs justes au premier essai. */

@@ -1464,6 +1464,36 @@ button {
   box-shadow: 0 2px 0 var(--primary-dark);
 }
 
+/* Avec la virgule, OK prend toute la dernière ligne. */
+.key-wide {
+  grid-column: 1 / -1;
+}
+
+/* Une fraction en colonne : le numérateur, le trait, le dénominateur. */
+.fraction {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: middle;
+  line-height: 1.1;
+}
+
+.fraction-top {
+  border-bottom: 0.08em solid currentColor;
+  padding: 0 0.15em 0.05em;
+}
+
+.fraction-bottom {
+  padding: 0.05em 0.15em 0;
+}
+
+/* Dans une phrase (astuce, correction), la fraction reste petite. */
+.feedback .fraction,
+.lesson-rules .fraction,
+.to-practice .fraction {
+  font-size: 0.85em;
+}
+
 /* Écran large en paysage (iPad, ordinateur) : question à gauche, pavé à droite. */
 @media (orientation: landscape) and (min-width: 700px) {
   .play {

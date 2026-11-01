@@ -1,6 +1,7 @@
 import { h } from '../core/dom';
 import { sounds } from '../core/sound';
 import { launchConfetti } from './confetti';
+import { withFractions } from './fraction';
 
 export interface ResultAction {
   label: string;
@@ -57,7 +58,7 @@ export function renderResult(root: HTMLElement, options: ResultOptions): void {
           'div',
           { class: `to-practice${options.practiceAsSentences ? ' sentences' : ''}` },
           h('h2', {}, 'À retravailler'),
-          h('ul', {}, ...practice.map((item) => h('li', {}, item))),
+          h('ul', {}, ...practice.map((item) => h('li', {}, ...withFractions(item)))),
         ),
       h(
         'div',

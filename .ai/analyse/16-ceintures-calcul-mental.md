@@ -4,6 +4,7 @@ Cinquième matière de l'activité « Ceintures » (voir [11-ceintures.md](11-ce
 Homophones, la Conjugaison, les Tables et le Calcul posé. Analyse du 31/10/2026, à partir du classeur
 (« Ceintures de calcul mental », p. 14 du suivi) et des leçons de la classe Calc 14 et Calc 15
 (« Techniques de calcul mental », p. 20 et 21 de « Leçons Joliot Curie.pdf »). Pas de fiche d'entraînement.
+Pour les décimaux (étape 2, 01/11/2026) : leçons Calc 12 (p. 18), Calc 13 (p. 19) et N19 (p. 42).
 
 ## Décisions du 31/10/2026
 
@@ -34,11 +35,11 @@ Homophones, la Conjugaison, les Tables et le Calcul posé. Analyse du 31/10/2026
 | Rouge | Multiplier et diviser un entier par 10, 100, 1000 | étape 1, faite |
 | Rose | Double, triple, quadruple d'un entier | étape 1, faite |
 | Violette | Multiplier un entier par 20, 300, 4000… | étape 1, faite |
-| Bleu clair | Passer d'une écriture décimale à une fraction décimale et inversement | étape 2 |
-| Bleu foncé | Ajouter deux nombres décimaux | étape 2 |
-| Vert clair | Soustraire deux nombres décimaux — **objectif de fin de CM1** | étape 2 |
-| Vert foncé | Calculer le complément d'un décimal pour aller vers l'entier supérieur | étape 2 |
-| Marron | Multiplier et diviser un nombre décimal par 10, 100, 1000… | étape 2 |
+| Bleu clair | Passer d'une écriture décimale à une fraction décimale et inversement | **étape 2, faite** |
+| Bleu foncé | Ajouter deux nombres décimaux | étape 2, faite |
+| Vert clair | Soustraire deux nombres décimaux — **objectif de fin de CM1** | étape 2, faite |
+| Vert foncé | Calculer le complément d'un décimal pour aller vers l'entier supérieur | étape 2, faite |
+| Marron | Multiplier et diviser un nombre décimal par 10, 100, 1000… | étape 2, faite |
 | Gris | Tiers, quart et moitié d'un entier | étape 3 |
 | Noire | Passer d'une fraction à un nombre décimal — **objectif de fin de CM2** | étape 3 |
 | Brillante | Additions astucieuses, fraction = entier + fraction, additionner des fractions, pourcentage | étape 3 |
@@ -61,11 +62,37 @@ Une série alterne les sortes de calculs de la ceinture (`index` dans la série)
   de 30 et le double de 4 ; quadruple = double du double).
 - **Violette** : un nombre de 2 à 9 × 20, 300, 4000… (« 6 × 3 = 18, et on ajoute le nombre de zéros : 180 »).
 
+## Les calculs (étape 2 : les décimaux)
+
+Jusqu'aux millièmes, comme dans la classe (6,791 ou 0,003 dans N19, 0,273 × 1000 dans Calc 12).
+
+- **Bleu clair** (leçon N19) : « 8,37 = ?/100 », la case est le numérateur (« 2 chiffres après la virgule,
+  on l'écrit sans la virgule et on met 100 au dénominateur »), puis « 12/10 = ? » (« 10 a un 0 : 1 chiffre
+  après la virgule » ; « 3/1000 = 0,003 » : on complète par des 0 devant). Dixièmes, centièmes, millièmes
+  à tour de rôle. Le nombre ne finit jamais par 0, pour que sa fraction soit unique.
+- **Bleu foncé** (Calc 13) : en dixièmes sans retenue (7,2 + 2,5), avec retenue (3,7 + 0,6 : 13 dixièmes,
+  1 unité et 3 dixièmes), puis un nombre en centièmes avec un dixième ou un entier (1,25 + 0,5 : on complète
+  par des 0, 0,50).
+- **Vert clair** (Calc 13) : en dixièmes (6,4 − 3,1), sans assez de dixièmes (4,2 − 0,5 : on prend 1 unité,
+  ou 3 − 0,4), puis un dixième moins un centième (2,5 − 1,25).
+- **Vert foncé** : « 3,6 + ? = 4 » (il manque 4 dixièmes), « 7,25 + ? = 8 » (d'abord au dixième : 7,25 + 0,05
+  = 7,3, puis 7,3 + 0,7 = 8), comme le complément à 100 de la jaune.
+- **Marron** (Calc 12) : « on décale la virgule de 1, 2 ou 3 rangs vers la droite / la gauche », on ajoute
+  des 0 quand on ne peut plus la décaler (4,2 × 100 = 420) ou devant (7 : 100 = 0,07). Pas plus que des
+  millièmes au résultat.
+
+**Une réponse avec des 0 inutiles est juste** (3,50 pour 3,5) : c'est le même nombre (N12 : « 48 = 48,0 »).
+
 ## Les écrans
 
 Les mêmes que les Tables : un calcul à la fois au pavé (« 37 + ? = 100 » pour un complément), le compte à
 rebours en conditions réelles (2 minutes), la correction à la fin (« Pas eu le temps : … »).
 Leçon : les astuces de la classe, puis quelques calculs expliqués (un par sorte de calcul).
+
+Décimaux : une **touche virgule** au pavé (en bas à gauche, OK passe sur toute la dernière ligne ; « , » ou « . »
+au clavier), seulement pour les ceintures qui en ont besoin. Les nombres s'écrivent avec la virgule partout
+(« C'était 1,2 »). Les fractions s'écrivent **en colonne**, comme au cahier, dans la question, l'astuce, la
+leçon et la correction.
 
 ## Code
 
@@ -82,4 +109,7 @@ changer). Le pavé accepte plus de chiffres (`maxDigits`) : 45 × 1000 = 45000.
    `CalcTestSession`), l'astuce après une erreur (`explain` des questions), couleurs beige, rouge et grise.
    La matière reste « pas finie » (`unfinished`) tant que les décimaux et les fractions manquent.
 2. **Bleu clair → marron : les décimaux** (touche virgule au pavé, fractions décimales).
+   Faite le 01/11/2026 (0.46.0) : `decimal` des ceintures (la virgule au pavé), les nombres comptés dans leur
+   plus petit rang pour calculer juste (0,1 + 0,2 = 0,3), `numberText` / `answerText` (la virgule à
+   l'affichage), `components/fraction.ts` (la fraction en colonne, la case en numérateur).
 3. **Gris → brillante : les fractions et les pourcentages** (saisie d'une fraction à préciser).

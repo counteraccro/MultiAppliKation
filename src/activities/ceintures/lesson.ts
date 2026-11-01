@@ -1,3 +1,4 @@
+import { withFractions } from '../../components/fraction';
 import { topbar } from '../../components/topbar';
 import { h } from '../../core/dom';
 import type { ActivityContext } from '../types';
@@ -171,7 +172,7 @@ function mentalCards(belt: MentalBelt): HTMLElement[] {
       'article',
       { class: 'lesson-card' },
       h('h2', {}, 'Les astuces'),
-      h('ul', { class: 'lesson-rules' }, ...belt.tips.map((tip) => h('li', {}, withNbsp(tip)))),
+      h('ul', { class: 'lesson-rules' }, ...belt.tips.map((tip) => h('li', {}, ...withFractions(withNbsp(tip))))),
     ),
     h(
       'article',
@@ -180,7 +181,9 @@ function mentalCards(belt: MentalBelt): HTMLElement[] {
       h(
         'ul',
         { class: 'lesson-rules' },
-        ...belt.examples().map((question) => h('li', {}, h('strong', {}, factText(question)), h('br'), withNbsp(question.explain))),
+        ...belt.examples().map((question) =>
+          h('li', {}, h('strong', {}, ...withFractions(factText(question))), h('br'), ...withFractions(withNbsp(question.explain))),
+        ),
       ),
     ),
   ];

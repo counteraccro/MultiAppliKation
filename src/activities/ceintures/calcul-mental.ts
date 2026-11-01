@@ -3,7 +3,7 @@
 // « Je calcule rapidement (2 minutes par ceinture, maximum 1 erreur) » : pas de fiche, les calculs se
 // tirent au hasard sur le modèle des exercices des leçons de la classe (Calc 14 et Calc 15).
 
-import { shuffle, type QuizQuestion } from '../../core/quiz';
+import { numberText as fr, shuffle, type QuizQuestion } from '../../core/quiz';
 import type { BeltId } from './belts';
 
 /** Un calcul de tête, avec l'astuce de la leçon pour le trouver. */
@@ -18,6 +18,8 @@ export interface MentalBelt {
   belt: BeltId;
   /** Ce que demande la ceinture, comme dans le classeur. */
   skill: string;
+  /** Nombres décimaux : la touche virgule au pavé. */
+  decimal?: boolean;
   /** « Objectif de fin de CE2 » dans le classeur. */
   goal?: 'CE2' | 'CM1' | 'CM2';
   /** Les astuces de la leçon. */
@@ -49,6 +51,10 @@ function calc(prompt: string, answer: number, explain: string, suffix?: string):
 /** 3 dizaines, 2 centaines… : les noms des rangs. */
 const RANKS = ['unités', 'dizaines', 'centaines', 'milliers', 'dizaines de milliers'];
 const ZEROS = ['', 'un 0', 'deux 0', 'trois 0', 'quatre 0'];
+/** Les rangs après la virgule, et combien de chiffres il y a. */
+const PLACES = ['unités', 'dixièmes', 'centièmes', 'millièmes'];
+const DIGITS = ['', '1 chiffre', '2 chiffres', '3 chiffres'];
+const shifts = (z: number) => `${z} rang${z > 1 ? 's' : ''}`;
 
 // --- Blanche : additionner et soustraire des petits nombres ---
 
@@ -218,6 +224,187 @@ function drawTimesRound(random: () => number, index: number): MentalQuestion {
   return timesRound(between(2, 9, random), between(2, 9, random) * 10 ** zeros);
 }
 
+// --- Les décimaux : chaque nombre est compté dans son plus petit rang, pour calculer juste ---
+
+/** Chiffres après la virgule : 2 pour 8,37. */
+const placesOf = (x: number) => (String(x).split('.')[1] ?? '').length;
+/** 8,37 en centièmes : 837 (`places` = 2). */
+const unitsOf = (x: number, places: number) => Math.round(x * 10 ** places);
+/** Un nombre qui ne finit pas par 0 : sa fraction décimale est unique (8,37 et pas 8,370). */
+function noTrailingZero(min: number, max: number, random: () => number): number {
+  for (;;) {
+    const n = between(min, max, random);
+    if (n % 10 !== 0) return n;
+  }
+}
+
+// --- Bleu clair : écriture décimale et fraction décimale (leçon N19) ---
+
+/** « 8,37 = ?/100 » : 2 chiffres après la virgule, 100 au dénominateur. */
+export function decimalToFraction(numerator: number, places: 1 | 2 | 3): MentalQuestion {
+  const n = numerator / 10 ** places;
+  const denominator = 10 ** places;
+  const explain = `${fr(n)} a ${DIGITS[places]} après la virgule, il s’arrête aux ${PLACES[places]}. On l’écrit sans la virgule, ${numerator}, et on met ${denominator} au dénominateur : ${numerator}/${denominator}.`;
+  return calc(`${fr(n)} =`, numerator, explain, `/${denominator}`);
+}
+
+/** « 12/10 = ? » : 10 a un 0, il y aura 1 chiffre après la virgule. */
+export function fractionToDecimal(numerator: number, places: 1 | 2 | 3): MentalQuestion {
+  const denominator = 10 ** places;
+  const answer = numerator / denominator;
+  const start = `${denominator} a ${ZEROS[places]} : il y aura ${DIGITS[places]} après la virgule.`;
+  const end =
+    String(numerator).length <= places
+      ? `On complète par des 0 devant ${numerator} : ${fr(answer)}.`
+      : `On place la virgule dans ${numerator} : ${fr(answer)}.`;
+  return calc(`${numerator}/${denominator}`, answer, `${start} ${end}`);
+}
+
+function drawDecimalFraction(random: () => number, index: number): MentalQuestion {
+  const places = ((Math.floor(index / 2) % 3) + 1) as 1 | 2 | 3;
+  // Des nombres de 1 chiffre (0,7) jusqu'à 4 chiffres (99,99 ou 9,999).
+  const digits = between(1, Math.min(places + 2, 4), random);
+  const numerator = noTrailingZero(10 ** (digits - 1), 10 ** digits - 1, random);
+  return index % 2 === 0 ? decimalToFraction(numerator, places) : fractionToDecimal(numerator, places);
+}
+
+// --- Bleu foncé et vert clair : ajouter et soustraire deux décimaux (leçon Calc 13) ---
+
+/** « 0,5 = 0,50 » : on complète par des 0 pour avoir autant de chiffres après la virgule. */
+function padded(numbers: number[], places: number): string {
+  const pads = numbers.filter((x) => placesOf(x) > 0 && placesOf(x) < places);
+  if (pads.length === 0) return '';
+  const zeros = (x: number) => '0'.repeat(places - placesOf(x));
+  return `On complète par des 0 : ${pads.map((x) => `${fr(x)} = ${fr(x)}${zeros(x)}`).join(', ')}. `;
+}
+
+export function addDecimals(a: number, b: number): MentalQuestion {
+  const places = Math.max(placesOf(a), placesOf(b));
+  const unit = 10 ** places;
+  const [x, y] = [unitsOf(a, places), unitsOf(b, places)];
+  const answer = (x + y) / unit;
+  const [ai, bi, ad, bd] = [Math.floor(x / unit), Math.floor(y / unit), x % unit, y % unit];
+  const name = PLACES[places]!;
+  const carry =
+    ad + bd >= unit
+      ? `, c’est 1 unité et ${ad + bd - unit} ${name}. ${ai + bi} + 1 = ${ai + bi + 1} unités`
+      : '';
+  const explain = `${padded([a, b], places)}Les unités : ${ai} + ${bi} = ${ai + bi}. Les ${name} : ${ad} + ${bd} = ${ad + bd}${carry}. Donc ${fr(answer)}.`;
+  return calc(`${fr(a)} + ${fr(b)}`, answer, explain);
+}
+
+export function subtractDecimals(a: number, b: number): MentalQuestion {
+  const places = Math.max(placesOf(a), placesOf(b));
+  const unit = 10 ** places;
+  const [x, y] = [unitsOf(a, places), unitsOf(b, places)];
+  const answer = (x - y) / unit;
+  const [ai, bi, ad, bd] = [Math.floor(x / unit), Math.floor(y / unit), x % unit, y % unit];
+  const name = PLACES[places]!;
+  // 3 − 0,4 : l'entier s'écrit 3,0.
+  const whole = placesOf(a) === 0 ? `${fr(a)} = ${fr(a)},${'0'.repeat(places)}. ` : '';
+  const steps =
+    ad >= bd
+      ? `Les unités : ${ai} − ${bi} = ${ai - bi}. Les ${name} : ${ad} − ${bd} = ${ad - bd}.`
+      : `Les ${name} : ${ad} − ${bd}, pas possible : on prend 1 unité, ${ad + unit} − ${bd} = ${ad + unit - bd}. Les unités : ${ai} − 1 − ${bi} = ${ai - 1 - bi}.`;
+  return calc(`${fr(a)} − ${fr(b)}`, answer, `${whole}${padded([a, b], places)}${steps} Donc ${fr(answer)}.`);
+}
+
+/** Les deux nombres d'une série : en dixièmes, avec ou sans retenue, puis avec des centièmes. */
+function drawAddition(random: () => number, index: number): MentalQuestion {
+  const tenths = (i: number, d: number) => (i * 10 + d) / 10;
+  if (index % 3 === 0) {
+    const ad = between(1, 8, random);
+    return addDecimals(tenths(between(1, 9, random), ad), tenths(between(0, 9, random), between(1, 9 - ad, random)));
+  }
+  if (index % 3 === 1) {
+    const ad = between(2, 9, random);
+    return addDecimals(tenths(between(0, 9, random), ad), tenths(between(0, 9, random), between(10 - ad, 9, random)));
+  }
+  const a = noTrailingZero(1, 999, random) / 100;
+  const b = random() < 0.3 ? between(1, 9, random) : tenths(between(0, 9, random), between(1, 9, random));
+  return random() < 0.5 ? addDecimals(a, b) : addDecimals(b, a);
+}
+
+function drawSubtraction(random: () => number, index: number): MentalQuestion {
+  const tenths = (i: number, d: number) => (i * 10 + d) / 10;
+  const ai = between(2, 9, random);
+  const bi = between(0, ai - 1, random);
+  if (index % 3 === 0) {
+    const ad = between(2, 9, random);
+    return subtractDecimals(tenths(ai, ad), tenths(bi, between(1, ad - 1, random)));
+  }
+  if (index % 3 === 1) {
+    // Pas assez de dixièmes ; 0 dixième : on enlève un décimal à un entier (3 − 0,4).
+    const ad = between(0, 8, random);
+    return subtractDecimals(tenths(ai, ad), tenths(bi, between(ad + 1, 9, random)));
+  }
+  return subtractDecimals(tenths(ai, between(1, 9, random)), (bi * 100 + noTrailingZero(1, 99, random)) / 100);
+}
+
+// --- Vert foncé : le complément jusqu'à l'entier supérieur ---
+
+/** « 7,25 + ? = 8 » : d'abord jusqu'au dixième, puis jusqu'à l'entier (comme le complément à 100). */
+export function complementToUnit(x: number): MentalQuestion {
+  const places = placesOf(x);
+  const unit = 10 ** places;
+  const n = unitsOf(x, places);
+  const target = Math.ceil(n / unit);
+  const answer = (target * unit - n) / unit;
+  let explain: string;
+  if (places === 1) {
+    explain = `${fr(x)}, c’est ${n % 10} dixièmes après ${Math.floor(x)} : il en manque ${10 - (n % 10)} pour faire 1 unité. ${fr(x)} + ${fr(answer)} = ${target}.`;
+  } else {
+    const up = (10 - (n % 10)) / 100;
+    const tenth = (n + 10 - (n % 10)) / 100;
+    explain =
+      tenth === target
+        ? `On va jusqu’au dixième : ${fr(x)} + ${fr(up)} = ${target}. C’est déjà l’entier : ${fr(answer)}.`
+        : `On va d’abord au dixième : ${fr(x)} + ${fr(up)} = ${fr(tenth)}, puis ${fr(tenth)} + ${fr((target * 10 - tenth * 10) / 10)} = ${target}. ${fr(up)} + ${fr((target * 10 - tenth * 10) / 10)} = ${fr(answer)}.`;
+  }
+  return calc(`${fr(x)} +`, answer, explain, `= ${target}`);
+}
+
+function drawComplementToUnit(random: () => number, index: number): MentalQuestion {
+  const whole = between(0, 19, random);
+  // Construit depuis des entiers : 3 + 0,6 ne tombe pas toujours juste avec les nombres de l'ordinateur.
+  return complementToUnit(index % 2 === 0 ? (whole * 10 + between(1, 9, random)) / 10 : (whole * 100 + noTrailingZero(1, 99, random)) / 100);
+}
+
+// --- Marron : multiplier et diviser un décimal par 10, 100, 1000 (leçon Calc 12) ---
+
+/** « 5,447 × 100 » : on décale la virgule de 2 rangs vers la droite ; plus de virgule, on ajoute des 0. */
+export function shiftTimes(x: number, power: number): MentalQuestion {
+  const zeros = String(power).length - 1;
+  const places = placesOf(x);
+  const answer = (unitsOf(x, places) * power) / 10 ** places;
+  const added = zeros > places ? `, on ne peut plus la décaler, on ajoute ${ZEROS[zeros - places]}` : '';
+  const explain = `× ${power} : on décale la virgule de ${shifts(zeros)} vers la droite${added} : ${fr(answer)}.`;
+  return calc(`${fr(x)} × ${power}`, answer, explain);
+}
+
+/** « 651 : 100 » : on décale la virgule de 2 rangs vers la gauche ; s'il manque des chiffres, des 0 devant. */
+export function shiftDivided(x: number, power: number): MentalQuestion {
+  const zeros = String(power).length - 1;
+  const places = placesOf(x);
+  const n = unitsOf(x, places);
+  const answer = n / 10 ** (places + zeros);
+  const added = String(n).length <= places + zeros ? ', on ajoute des 0 devant' : '';
+  const explain = `: ${power} : on décale la virgule de ${shifts(zeros)} vers la gauche${added} : ${fr(answer)}.`;
+  return calc(`${fr(x)} : ${power}`, answer, explain);
+}
+
+function drawShift(random: () => number, index: number): MentalQuestion {
+  const zeros = between(1, 3, random);
+  if (index % 2 === 0) {
+    // Jusqu'à 3 chiffres après la virgule (0,273 × 1000), le résultat reste court.
+    const places = between(1, 3, random);
+    return shiftTimes(noTrailingZero(2, zeros === 3 ? 999 : 9999, random) / 10 ** places, 10 ** zeros);
+  }
+  // Un entier ou un décimal, et pas plus que des millièmes au résultat.
+  const places = between(0, 3 - zeros, random);
+  return shiftDivided(noTrailingZero(2, 9999, random) / 10 ** places, 10 ** zeros);
+}
+
 export const CALCUL_MENTAL: readonly MentalBelt[] = [
   {
     belt: 'blanche',
@@ -299,6 +486,73 @@ export const CALCUL_MENTAL: readonly MentalBelt[] = [
     ],
     examples: () => [timesRound(6, 30), timesRound(2, 300)],
     drawCalc: drawTimesRound,
+  },
+  {
+    belt: 'bleu-clair',
+    skill: 'Passer d’une écriture décimale à une fraction décimale et inversement',
+    decimal: true,
+    tips: [
+      'Une fraction décimale a 10, 100 ou 1000 au dénominateur.',
+      'Autant de 0 au dénominateur que de chiffres après la virgule : 10 → 1 chiffre, 100 → 2, 1000 → 3.',
+      'Du nombre à la fraction : 8,37 a 2 chiffres après la virgule. On l’écrit sans la virgule, 837, et on met 100 au dénominateur : 837/100.',
+      'De la fraction au nombre : 12/10, 10 a un 0, il y aura 1 chiffre après la virgule : 1,2.',
+      'S’il manque des chiffres, on complète par des 0 devant : 3/1000 = 0,003.',
+    ],
+    examples: () => [decimalToFraction(837, 2), fractionToDecimal(12, 1), fractionToDecimal(3, 3)],
+    drawCalc: drawDecimalFraction,
+  },
+  {
+    belt: 'bleu-fonce',
+    skill: 'Ajouter deux nombres décimaux',
+    decimal: true,
+    tips: [
+      'On ajoute les unités avec les unités, les dixièmes avec les dixièmes : 7,2 + 2,5 = 9,7.',
+      '10 dixièmes font 1 unité : 3,7 + 0,6, c’est 13 dixièmes, donc 1 unité et 3 dixièmes : 4,3.',
+      'Pas autant de chiffres après la virgule ? On complète par des 0 : 1,25 + 0,5, c’est 1,25 + 0,50 = 1,75.',
+      'N’oublie pas la virgule au résultat !',
+    ],
+    examples: () => [addDecimals(7.2, 2.5), addDecimals(3.7, 0.6), addDecimals(1.25, 0.5)],
+    drawCalc: drawAddition,
+  },
+  {
+    belt: 'vert-clair',
+    skill: 'Soustraire deux nombres décimaux',
+    goal: 'CM1',
+    decimal: true,
+    tips: [
+      'On soustrait les unités des unités, les dixièmes des dixièmes : 6,4 − 3,1 = 3,3.',
+      'Pas assez de dixièmes ? On prend 1 unité, qui fait 10 dixièmes : 4,2 − 0,5, c’est 12 − 5 = 7 dixièmes et 3 unités : 3,7.',
+      'Un entier est aussi un décimal : 3 = 3,0, donc 3 − 0,4 = 2,6.',
+      'On complète par des 0 : 2,5 − 1,25, c’est 2,50 − 1,25 = 1,25.',
+    ],
+    examples: () => [subtractDecimals(6.4, 3.1), subtractDecimals(4.2, 0.5), subtractDecimals(2.5, 1.25)],
+    drawCalc: drawSubtraction,
+  },
+  {
+    belt: 'vert-fonce',
+    skill: 'Calculer le complément d’un décimal pour aller vers l’entier supérieur',
+    decimal: true,
+    tips: [
+      'Il faut 10 dixièmes pour faire 1 unité : 3,6, c’est 6 dixièmes, il en manque 4. 3,6 + 0,4 = 4.',
+      'Avec des centièmes, va d’abord au dixième : 7,25 + 0,05 = 7,3.',
+      'Puis du dixième jusqu’à l’entier : 7,3 + 0,7 = 8.',
+      'La réponse, c’est les deux ensemble : 0,05 + 0,7 = 0,75.',
+    ],
+    examples: () => [complementToUnit(3.6), complementToUnit(7.25)],
+    drawCalc: drawComplementToUnit,
+  },
+  {
+    belt: 'marron',
+    skill: 'Multiplier et diviser un nombre décimal par 10, 100, 1000…',
+    decimal: true,
+    tips: [
+      '× 10, 100, 1000 : on décale la virgule de 1, 2 ou 3 rangs vers la droite. 12,3 × 10 = 123.',
+      'Si on ne peut plus décaler la virgule, on ajoute des 0 : 4,2 × 100 = 420.',
+      ': 10, 100, 1000 : on décale la virgule de 1, 2 ou 3 rangs vers la gauche. 12,3 : 10 = 1,23.',
+      'S’il n’y a plus de chiffre, on ajoute des 0 devant : 7 : 100 = 0,07.',
+    ],
+    examples: () => [shiftTimes(5.447, 100), shiftTimes(4.2, 100), shiftDivided(651, 100), shiftDivided(7, 100)],
+    drawCalc: drawShift,
   },
 ];
 

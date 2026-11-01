@@ -1,8 +1,10 @@
 import { openAdultCheck } from '../../components/adult-check';
 import { renderAlbum } from '../../components/album';
+import { fraction, withFractions } from '../../components/fraction';
 import { renderQuestionScreen } from '../../components/question-screen';
 import { renderResult } from '../../components/result';
 import { h } from '../../core/dom';
+import { answerText, type QuizQuestion } from '../../core/quiz';
 import { dayOf } from '../../core/play-days';
 import type { Sticker } from '../../core/stickers';
 import type { Activity } from '../types';
@@ -122,8 +124,8 @@ export const ceintures: Activity = {
       );
 
     const label = (belt: SubjectBelt) => `Ceinture ${beltOf(belt.belt).label}`;
-    /** Calcul mental : 45 × 1000 = 45000. */
-    const MENTAL_MAX_DIGITS = 6;
+    /** Calcul mental : 45 × 1000 = 45000, 0,5447 avec la virgule. */
+    const MENTAL_MAX_DIGITS = 7;
 
     /** Une ceinture pas encore réussie (sauf juste après un échec, sans entraînement depuis). */
     const canTest = (subject: Subject, belt: SubjectBelt) => {
@@ -219,6 +221,7 @@ export const ceintures: Activity = {
           session,
           label: label(belt),
           maxDigits: MENTAL_MAX_DIGITS,
+          decimal: belt.decimal,
           onQuit: () => ladder(subject),
           onDone: ({ bestStreak }) => {
             const result = session.result();
@@ -324,6 +327,7 @@ export const ceintures: Activity = {
           test: true,
           timeLimitMs: MENTAL_TEST_TIME_MS,
           maxDigits: MENTAL_MAX_DIGITS,
+          decimal: belt.decimal,
           label: `En conditions réelles · ${label(belt)}`,
           onQuit: () => ladder(subject),
           onDone: () => {
@@ -478,15 +482,22 @@ function tableCorrections(mistakes: TableMistake[]): HTMLElement {
             'li',
             {},
             // « 37 + [12 63] = 100 » : la case au milieu pour un complément.
-            question.suffix === undefined ? `${question.prompt} = ` : `${question.prompt} `,
-            h('span', { class: 'correction' }, h('s', {}, typed!), h('mark', {}, String(question.answer))),
-            question.suffix === undefined ? '' : ` ${question.suffix}`,
+            ...withFractions(question.suffix === undefined ? `${question.prompt} = ` : `${question.prompt} `),
+            ...correction(question, typed!),
           ),
         ),
       ),
     missing.length > 0 && h('p', { class: 'correction-context' }, 'Pas eu le temps :'),
-    missing.length > 0 && h('ul', {}, ...missing.map(({ question }) => h('li', {}, factText(question)))),
+    missing.length > 0 && h('ul', {}, ...missing.map(({ question }) => h('li', {}, ...withFractions(factText(question))))),
   );
+}
+
+/** « [12 63] = 100 », ou la fraction dont le numérateur est corrigé : « 8,37 = [873 837]/100 ». */
+function correction(question: QuizQuestion, typed: string): (HTMLElement | string)[] {
+  const fixed = h('span', { class: 'correction' }, h('s', {}, typed), h('mark', {}, answerText(question)));
+  const denominator = /^\/(\d+)$/.exec(question.suffix ?? '')?.[1];
+  if (denominator !== undefined) return [fraction(fixed, denominator)];
+  return question.suffix === undefined ? [fixed] : [fixed, ` ${question.suffix}`];
 }
 
 /** La correction d'un test de calcul posé : chaque opération fausse, le résultat écrit barré et le bon surligné. */

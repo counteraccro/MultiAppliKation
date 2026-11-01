@@ -23,3 +23,4 @@ Conjugaison, étape 5 : Mélange (temps et verbes au choix, 15 questions au plus
 Conjugaison, étape 6 : Mes progrès (20 verbes × 4 temps), album de 16 autocollants, phrase selon la classe (24/10/2026).
 Les Additions : quatrième activité, tables d'addition de 1 à 10 avec tous les modes des Tables, code commun (28/10/2026).
 Mesure d'audience anonyme (GoatCounter, sans cookie ni prénom) ajoutée le 31/10/2026.
+Ceintures, Calcul mental, étape 2 : les décimaux, de la bleu clair à la marron (virgule au pavé, fractions en colonne) (01/11/2026).

@@ -41,7 +41,7 @@ puis la jaune… Une matière à la fois, d'autres viendront.
 | Conjugaison | blanche → marron | taper les formes d'un verbe, du présent au plus-que-parfait |
 | Tables | blanche → bleu foncé, noire, brillante | 20 multiplications en 1 minute (les divisions viendront plus tard) |
 | Calcul posé | blanche → marron | poser l'opération à l'écran, un chiffre à la fois, comme en classe : additions, soustractions, multiplications, divisions, nombres décimaux |
-| Calcul mental | blanche → violette | calculer de tête avec les astuces de la classe (les décimaux et les fractions viendront ensuite) |
+| Calcul mental | blanche → marron | calculer de tête avec les astuces de la classe, entiers puis décimaux (les fractions viendront ensuite) |
 
 - Pour chaque ceinture : **la leçon**, **l'entraînement** (corrigé tout de suite, avec l'explication)
   et **l'entraînement en conditions réelles**, comme le jour du passage (sans aide, corrigé à la fin).
