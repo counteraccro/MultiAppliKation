@@ -1,10 +1,12 @@
 import { openAdultCheck } from '../../components/adult-check';
 import { renderAlbum } from '../../components/album';
+import { answerWithFixes, typedWithMistakes } from '../../components/correction';
 import { fraction, withFractions } from '../../components/fraction';
 import { renderQuestionScreen } from '../../components/question-screen';
 import { renderResult } from '../../components/result';
+import { closestAnswer } from '../../core/diff';
 import { h } from '../../core/dom';
-import { answerText, groupDigits, type QuizQuestion } from '../../core/quiz';
+import { acceptedAnswers, answerText, groupDigits, normalizeAnswer, type QuizQuestion } from '../../core/quiz';
 import { dayOf } from '../../core/play-days';
 import type { Sticker } from '../../core/stickers';
 import type { Activity } from '../types';
@@ -558,7 +560,10 @@ function correction(question: QuizQuestion, typed: string): (HTMLElement | strin
   return question.suffix === undefined ? [fixed] : [fixed, ` ${question.suffix}`];
 }
 
-/** La correction d'un test de numération : chaque question fausse résolue, et ce qui avait été répondu. */
+/**
+ * La correction d'un test de numération : pour chaque question fausse, ce qui avait été répondu, puis la
+ * question résolue. Un nombre écrit en lettres : ses fautes barrées, et dans la correction ce qui diffère surligné.
+ */
 function numerationCorrections(mistakes: TableMistake<NumerationQuestion>[]): HTMLElement {
   return h(
     'div',
@@ -568,14 +573,28 @@ function numerationCorrections(mistakes: TableMistake<NumerationQuestion>[]): HT
       'ul',
       {},
       ...mistakes.map(({ question, typed }) => {
+        const solved = withNbsp(question.solved);
+        if (typeof question.answer === 'string' && !question.choices && typed !== undefined) {
+          const given = normalizeAnswer(typed);
+          const shown = closestAnswer(given, acceptedAnswers(question));
+          const at = solved.lastIndexOf(shown);
+          return h(
+            'li',
+            {},
+            h('small', { class: 'correction-context' }, 'Tu avais écrit : ', h('s', {}, typedWithMistakes(given, shown))),
+            at === -1
+              ? h('mark', {}, solved)
+              : h('span', { class: 'correction-line' }, solved.slice(0, at), answerWithFixes(given, shown), solved.slice(at + shown.length)),
+          );
+        }
         // Un bouton touché : ce qu'il montrait (« < », le chiffre), pas sa valeur.
         // Un nombre tapé : par classes, comme la correction.
         const given = question.choices?.find((c) => c.value === typed)?.label ?? (typeof question.answer === 'number' && typed !== undefined ? groupDigits(typed) : typed);
         return h(
           'li',
           {},
-          h('mark', {}, ...withFractions(withNbsp(question.solved))),
-          given !== undefined && h('small', { class: 'correction-context' }, `Tu avais répondu : ${given}`),
+          given !== undefined && h('small', { class: 'correction-context' }, 'Tu avais répondu : ', h('s', {}, ...withFractions(given))),
+          h('mark', {}, ...withFractions(solved)),
         );
       }),
     ),
@@ -631,7 +650,12 @@ function verbCorrections(mistakes: VerbMistake[]): HTMLElement {
               'span',
               { class: 'correction-line' },
               question.full.slice(0, at),
-              h('span', { class: 'correction' }, typed && h('s', {}, typed), h('mark', {}, question.answer)),
+              h(
+                'span',
+                { class: 'correction' },
+                typed && h('s', {}, typedWithMistakes(normalizeAnswer(typed), question.answer)),
+                answerWithFixes(normalizeAnswer(typed), question.answer),
+              ),
               question.full.slice(at + question.answer.length),
             );
           }),

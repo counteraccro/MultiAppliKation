@@ -21,7 +21,13 @@
    le chrono en défi. Au nombre caché, la case réponse est au milieu : « 7 × ? = 56 ».
    En conjugaison : le verbe et le temps en petit au-dessus, « nous [ mangerons ] »,
    et un **clavier de lettres** AZERTY avec une rangée d'accents, toujours sous la question.
-   Après une erreur, la partie de la bonne forme qui diffère est surlignée.
+   Après une erreur, la case garde sa réponse en haut et montre la bonne en dessous :
+   en haut, les lettres ou chiffres en trop ou faux barrés en rouge, un petit trait rouge
+   là où il en manque ; en dessous, tout ce qui diffère surligné, même plusieurs fautes
+   éloignées (« huit[s]-cent-quarante-un » / « huit-cent-quarante-[et]-un »).
+   Boutons et nombres à ranger : sa réponse barrée en haut, la bonne en dessous.
+   Phrases à trous : le mot choisi barré, puis le bon surligné. Calcul posé :
+   « Tu as écrit 7, c'était 8. ». Corrections des tests : ce qui avait été répondu, puis la correction.
 5. **Résultat** : étoiles gagnées ou nouveau record, multiplications (ou formes : « nous sommes ») à retravailler.
 6. **Mes progrès** (carte sous les boutons, avec une barre aux couleurs de la grille, à côté de la carte « Mes autocollants ») : grille 10×10
    colorée selon la boîte de chaque multiplication — pas encore vue (gris),

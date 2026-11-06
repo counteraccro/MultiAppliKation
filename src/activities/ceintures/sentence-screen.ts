@@ -30,7 +30,7 @@ interface Filled {
 
 /**
  * Phrases à trous : l'enfant touche le bon mot pour chaque trou, dans l'ordre.
- * Une erreur montre le bon mot surligné et l'astuce de la famille de mots, sans gronder ;
+ * Une erreur montre le mot choisi barré, le bon surligné, et l'astuce de la famille de mots, sans gronder ;
  * l'enfant continue avec « Continuer ». En test, rien n'est corrigé pendant.
  * Renvoie la fonction de nettoyage.
  */
@@ -68,7 +68,6 @@ export function renderSentenceScreen(root: HTMLElement, options: SentenceScreenO
     if (state !== 'asking' || !item) return;
     const firstTry = !session.isRetry();
     const correct = session.choose(word);
-    const answer = parseBlanks(item)[filled.length]!.answer;
     filled.push({ word, correct });
     const sentenceDone = filled.length === parseBlanks(item).length;
     if (options.test) {
@@ -92,7 +91,7 @@ export function renderSentenceScreen(root: HTMLElement, options: SentenceScreenO
       streak = 0;
       sounds.wrong();
       renderStreak(false);
-      feedback.textContent = withNbsp(`C’était « ${answer} ». ${item.group.tip}`);
+      feedback.textContent = withNbsp(item.group.tip);
       renderSentence();
       buttons.replaceChildren(
         h('button', { class: 'button primary continue', type: 'button', onclick: () => cont(sentenceDone) }, 'Continuer →'),
@@ -136,8 +135,11 @@ export function renderSentenceScreen(root: HTMLElement, options: SentenceScreenO
         if (done && options.test) {
           return h('span', { class: 'blank is-placed' }, segment.capital ? capitalize(done.word) : done.word);
         }
+        if (done?.correct) return h('span', { class: 'blank is-correct' }, word);
         if (done) {
-          return h('span', { class: `blank ${done.correct ? 'is-correct' : 'is-wrong'}` }, done.correct ? word : h('mark', {}, word));
+          // Son mot barré, puis le bon surligné.
+          const chosen = segment.capital ? capitalize(done.word) : done.word;
+          return h('span', { class: 'blank is-wrong' }, h('s', {}, chosen), ' ', h('mark', {}, word));
         }
         const isCurrent = index === filled.length && state === 'asking';
         return h('span', { class: `blank${isCurrent ? ' current' : ''}`, 'aria-label': isCurrent ? 'trou à remplir' : 'trou' }, '…');

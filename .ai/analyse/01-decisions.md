@@ -15,6 +15,7 @@
 | Appareils | Navigateur (ordinateur), iPhone, iPad |
 | Classe du profil | CP à 6ᵉ, guide la difficulté sans rien bloquer ; changement protégé par un adulte |
 | Conjugaison (CM1) | Présent, futur, imparfait, passé composé ; **accent faux = faux** ; réponse tapée sur un clavier de lettres dessiné dans l'appli |
+| Correction d'une erreur | **Partout, et pour toute nouvelle ceinture ou activité** : sa réponse reste visible, ses fautes barrées en rouge (un trait rouge là où il manque quelque chose), la bonne réponse en dessous avec toutes les différences surlignées. Outils communs : `diff` (`src/core/diff.ts`), `typedWithMistakes` / `answerWithFixes` (`src/components/correction.ts`) |
 | Dépôt | github.com/counteraccro/MultiAppliKation, dossier `~/Documents/htdocs/MultiAppliKation` |
 
 ## Écarté

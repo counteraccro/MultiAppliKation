@@ -295,6 +295,7 @@ export function renderPosedScreen(root: HTMLElement, options: PosedScreenOptions
     const current = session.current();
     if (!current) return;
     const index = current.operation.placed.length;
+    const written = typed;
     const correct = session.answer(Number(typed));
     typed = '';
     if (session.test) {
@@ -319,7 +320,7 @@ export function renderPosedScreen(root: HTMLElement, options: PosedScreenOptions
       corrected.set(current.operation, (corrected.get(current.operation) ?? new Set()).add(index));
       state = 'wrong';
       render('wrong');
-      feedback.textContent = `C’était ${current.step.expected}. ${current.step.explain}`;
+      feedback.textContent = `Tu as écrit ${written}, c’était ${current.step.expected}. ${current.step.explain}`;
       keypad.setSubmitLabel('→');
     }
   }

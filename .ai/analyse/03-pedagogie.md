@@ -19,5 +19,6 @@ Le temps de réponse compte autant que la justesse (étoiles, révision).
 ## Répondre
 
 - La réponse se **tape** sur un pavé numérique (pas de QCM : on devine).
-- Erreur : la bonne réponse s'affiche tout de suite, sans écran rouge qui gronde.
+- Erreur : la bonne réponse s'affiche tout de suite, sans écran rouge qui gronde,
+  **sous sa propre réponse**, pour qu'il voie ce qui ne va pas (toutes les fautes, pas seulement la première).
   La question revient plus tard dans la série.

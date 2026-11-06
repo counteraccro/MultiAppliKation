@@ -1,4 +1,4 @@
-import { closestAnswer, diffParts } from '../core/diff';
+import { closestAnswer } from '../core/diff';
 import { h } from '../core/dom';
 import {
   acceptedAnswers,
@@ -13,6 +13,7 @@ import {
 import { sounds } from '../core/sound';
 import { createChrono } from './chrono';
 import { createCountdown } from './countdown';
+import { answerWithFixes, typedWithMistakes } from './correction';
 import { fraction, withFractions } from './fraction';
 import { createKeyboard } from './keyboard';
 import { createKeypad, type Keypad } from './keypad';
@@ -231,20 +232,21 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
           // Colorier : le nombre de parts suffit, l'astuce dit comment partager.
           const told = `Tu en as colorié ${typed}, il en fallait ${answerText(question)}.`;
           feedback.replaceChildren(...withFractions(`${told} ${question.explain ? `${question.explain} ` : ''}${wrongHint}`));
-        } else if (mode === 'letters') {
-          // La bonne forme, avec ce qui diffère de ce qu'elle a tapé surligné (« commen[ç]ons »).
-          const shown = closestAnswer(normalizeAnswer(typed), acceptedAnswers(question));
-          const [start, diff, end] = diffParts(normalizeAnswer(typed), shown);
-          answerBox.replaceChildren(start, diff ? h('mark', {}, diff) : '', end);
-          feedback.textContent = `C’était « ${shown} ». ${question.explain ? `${question.explain} ` : ''}${wrongHint}`;
         } else {
-          answerBox.textContent = shownAnswer(question);
+          // Dans la case : sa réponse en haut, ses fautes barrées ; la bonne en dessous, ce qui diffère surligné.
+          const shown = mode === 'letters' ? closestAnswer(normalizeAnswer(typed), acceptedAnswers(question)) : shownAnswer(question);
+          const given = mode === 'letters' ? normalizeAnswer(typed) : typedLabel();
+          answerBox.replaceChildren(
+            ...((mode === 'letters' || mode === 'digits') && !shown.includes('/')
+              ? [typedWithMistakes(given, shown), answerWithFixes(given, shown)]
+              : [h('span', { class: 'typed-answer' }, h('s', {}, ...withFractions(given))), h('span', { class: 'fixed-answer' }, ...withFractions(shown))]),
+          );
           // Boutons : le choisi barré, le bon mis en avant.
           choiceButton(typed)?.classList.add('is-wrong');
           choiceButton(String(question.answer))?.classList.add('is-answer');
-          feedback.replaceChildren(
-            ...withFractions(`C’était ${shownAnswer(question)}. ${question.explain ? `${question.explain} ` : ''}${wrongHint}`),
-          );
+          // Sans case (« Touche le chiffre des dizaines »), la phrase dit la bonne réponse.
+          const told = equation.contains(answerBox) ? '' : `C’était ${mode === 'letters' ? `« ${shown} »` : shown}. `;
+          feedback.replaceChildren(...withFractions(`${told}${question.explain ? `${question.explain} ` : ''}${wrongHint}`));
         }
         input?.setSubmitLabel('→');
         if (chrono) chrono.addPenalty(options.chrono!.penaltyMs);
@@ -412,15 +414,17 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
     };
   }
 
+  /** Ce qui est tapé, comme dans la case : un bouton touché écrit ce qu'il montre (« < »), pas sa valeur. */
+  function typedLabel(): string {
+    return mode === 'choices'
+      ? (asked?.choices?.find((c) => c.value === typed)?.label ?? typed)
+      : mode === 'digits' && options.classes
+        ? groupDigits(typed)
+        : typed;
+  }
+
   function renderAnswer() {
-    // Un bouton touché : on écrit ce qu'il montre (« < »), pas sa valeur.
-    const label =
-      mode === 'choices'
-        ? (asked?.choices?.find((c) => c.value === typed)?.label ?? typed)
-        : mode === 'digits' && options.classes
-          ? groupDigits(typed)
-          : typed;
-    answerBox.replaceChildren(...withFractions(label || '?'));
+    answerBox.replaceChildren(...withFractions(typedLabel() || '?'));
     answerBox.classList.toggle('is-empty', typed === '');
   }
 

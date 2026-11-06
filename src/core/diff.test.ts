@@ -1,22 +1,38 @@
 import { describe, expect, it } from 'vitest';
-import { closestAnswer, diffParts } from './diff';
+import { closestAnswer, diff } from './diff';
 import { isCorrect, normalizeAnswer } from './quiz';
 
-describe('diffParts', () => {
-  it('surligne la lettre qui diffère', () => {
-    expect(diffParts('commencons', 'commençons')).toEqual(['commen', 'ç', 'ons']);
+describe('diff', () => {
+  it('trouve la lettre qui diffère', () => {
+    expect(diff('commencons', 'commençons')).toEqual([
+      { kind: 'same', text: 'commen' },
+      { kind: 'missing', text: 'ç' },
+      { kind: 'extra', text: 'c' },
+      { kind: 'same', text: 'ons' },
+    ]);
   });
 
-  it('surligne la lettre oubliée', () => {
-    expect(diffParts('mangons', 'mangeons')).toEqual(['mang', 'e', 'ons']);
+  it('trouve la lettre oubliée et la lettre en trop', () => {
+    expect(diff('mangons', 'mangeons')).toEqual([
+      { kind: 'same', text: 'mang' },
+      { kind: 'missing', text: 'e' },
+      { kind: 'same', text: 'ons' },
+    ]);
+    expect(diff('mangeeons', 'mangeons')).toEqual([
+      { kind: 'same', text: 'mange' },
+      { kind: 'extra', text: 'e' },
+      { kind: 'same', text: 'ons' },
+    ]);
   });
 
-  it('ne surligne rien quand une lettre est en trop', () => {
-    expect(diffParts('mangeeons', 'mangeons')).toEqual(['mange', '', 'ons']);
+  it('trouve toutes les fautes, même éloignées', () => {
+    const parts = diff('huits-cent-quarante-un', 'huit-cent-quarante-et-un');
+    expect(parts.filter((p) => p.kind === 'extra').map((p) => p.text)).toEqual(['s']);
+    expect(parts.filter((p) => p.kind === 'missing').map((p) => p.text).join('')).toBe('et-');
   });
 
-  it('surligne tout quand rien ne correspond', () => {
-    expect(diffParts('', 'ont')).toEqual(['', 'ont', '']);
+  it('tout manque quand rien n’a été tapé', () => {
+    expect(diff('', 'ont')).toEqual([{ kind: 'missing', text: 'ont' }]);
   });
 });
 

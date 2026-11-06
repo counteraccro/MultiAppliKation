@@ -1403,10 +1403,43 @@ button {
   animation: pop 0.25s ease-out;
 }
 
-/* Erreur : la bonne réponse, en couleur douce, sans écran rouge. */
+/* Erreur : sa réponse en haut, la bonne en dessous, en couleur douce, sans écran rouge. */
 .answer-box.is-wrong {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
   background: #fff1d6;
   color: #b86e00;
+}
+
+.answer-box.is-wrong .typed-answer,
+.answer-box.is-wrong .fixed-answer {
+  font-size: 0.8em;
+}
+
+.answer-box.is-wrong .typed-answer {
+  color: var(--text-soft);
+}
+
+.answer-box.is-wrong .fixed-answer {
+  width: 100%;
+  border-top: 0.05em dashed currentColor;
+}
+
+/* Ses fautes : les lettres en trop barrées en rouge, un trait rouge là où il en manque. */
+/* Le trait foncé, pour qu'il se voie sur les lettres rouges. */
+.typed-answer s,
+.blank s {
+  color: #d63031;
+  text-decoration-color: #6b1414;
+  text-decoration-thickness: 0.1em;
+}
+
+.typed-answer .missing {
+  display: inline-block;
+  width: 0.35em;
+  height: 0.8em;
+  border-bottom: 0.1em solid #d63031;
 }
 
 .feedback {
@@ -2038,16 +2071,30 @@ button.belt-row:active {
   font-weight: 600;
 }
 
-.correction s {
+.correction > s {
   margin-right: 0.25em;
   color: var(--text-soft);
 }
 
-.correction mark {
+.correction mark,
+.correction-line mark {
   padding: 0 0.15em;
   border-radius: 0.2em;
   background: #ffcf70;
   color: inherit;
+}
+
+/* Une forme corrigée lettre par lettre : sur fond doux, ce qui diffère en plus fort. */
+.correction .fixed-answer,
+.correction-line .fixed-answer {
+  padding: 0 0.15em;
+  border-radius: 0.2em;
+  background: #fff1d6;
+}
+
+.correction .fixed-answer mark,
+.correction-line .fixed-answer mark {
+  padding: 0;
 }
 
 /* Ceintures : ceintures obtenues en classe (pour l'adulte) */
@@ -2247,7 +2294,7 @@ button.belt-row:active {
   animation: pop 0.35s ease-out;
 }
 
-/* Erreur : le bon mot, surligné en couleur douce, comme à la Conjugaison. */
+/* Erreur : son mot barré, puis le bon, surligné en couleur douce, comme à la Conjugaison. */
 .blank.is-wrong {
   border-bottom: 0;
   background: #fff1d6;

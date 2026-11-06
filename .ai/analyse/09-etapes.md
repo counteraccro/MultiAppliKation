@@ -25,3 +25,4 @@ Les Additions : quatrième activité, tables d'addition de 1 à 10 avec tous les
 Mesure d'audience anonyme (GoatCounter, sans cookie ni prénom) ajoutée le 31/10/2026.
 Ceintures, Calcul mental, étape 2 : les décimaux, de la bleu clair à la marron (virgule au pavé, fractions en colonne) (01/11/2026).
 Ceintures, Calcul mental, étape 3 : les fractions et les pourcentages, de la grise à la brillante ; la matière est complète (01/11/2026).
+Partout, après une erreur : sa réponse en haut, ses fautes barrées, la bonne en dessous, toutes les différences surlignées (06/11/2026).
