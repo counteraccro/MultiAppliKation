@@ -2758,3 +2758,283 @@ button.belt-row:active {
   min-height: 64px;
   font-size: 1.4rem;
 }
+
+/* Grammaire : les crayons de couleur de la classe (leçon G5). Le verbe surligné en jaune, le sujet
+   souligné en bleu (la flèche bleue de la classe), le pronom entouré. */
+
+.gram-instruction {
+  margin: 0;
+  font-weight: 800;
+  color: var(--text-soft);
+}
+
+.gram-sentences {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 24em;
+  font-size: clamp(1.3rem, 5vw, 2rem);
+}
+
+.gram-sentences.long {
+  font-size: clamp(1.05rem, 3.8vw, 1.45rem);
+}
+
+.gram-sentence {
+  margin: 0;
+  font-weight: 700;
+  /* De la place sous chaque ligne pour l'étiquette (S). */
+  line-height: 2.3;
+  text-align: left;
+}
+
+.gram-sentence.is-correct {
+  animation: pop 0.35s ease-out;
+}
+
+.gram-fix-title {
+  margin: 0;
+  font-size: 0.6em;
+  font-weight: 800;
+  color: var(--text-soft);
+  text-align: left;
+}
+
+.gram-word.tappable {
+  border-radius: 0.2em;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+/* Un mot pas encore colorié : un pointillé discret, pour montrer qu'il se touche. */
+.gram-word.tappable[aria-pressed='false'] {
+  text-decoration: underline dotted var(--border);
+  text-underline-offset: 0.3em;
+}
+
+.gram-group {
+  position: relative;
+  padding: 0.05em 0;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.gram-group[data-label]::after {
+  content: attr(data-label);
+  position: absolute;
+  left: 0;
+  top: 100%;
+  margin-top: 0.15em;
+  font-size: 0.55em;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--gram-color, var(--text-soft));
+}
+
+.gram-V {
+  border-radius: 0.15em;
+  background: #ffe14d;
+}
+
+.gram-S {
+  --gram-color: #2f6fdc;
+  text-decoration: underline 0.12em #2f6fdc;
+  text-underline-offset: 0.22em;
+}
+
+.gram-P {
+  padding: 0 0.15em;
+  border: 0.08em solid #c0392b;
+  border-radius: 0.7em;
+}
+
+/* Les COD et COI soulignés en noir, les CC en vert, l'attribut en rose, comme en classe. */
+.gram-COD,
+.gram-COI {
+  --gram-color: #2d2a32;
+  text-decoration: underline 0.1em #2d2a32;
+  text-underline-offset: 0.22em;
+}
+
+.gram-COI {
+  text-decoration-style: double;
+}
+
+.gram-CCT,
+.gram-CCL,
+.gram-CCC {
+  --gram-color: #2e8b3e;
+  text-decoration: underline 0.12em #2e8b3e;
+  text-underline-offset: 0.22em;
+}
+
+.gram-AdS {
+  --gram-color: #d6337f;
+  text-decoration: underline 0.12em #d6337f;
+  text-underline-offset: 0.22em;
+}
+
+/* Le complément du nom, dans son groupe : en violet, son étiquette un peu plus bas que celle du groupe. */
+.gram-CdN {
+  --gram-color: #7b3fbf;
+  color: #7b3fbf;
+}
+
+.gram-group .gram-CdN[data-label]::after {
+  margin-top: 0.75em;
+}
+
+/* Les natures : chaque mot souligné, sa nature écrite dessous, dans la couleur de son pétale (leçon G5). */
+.gram-unit {
+  --nature: var(--border);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: baseline;
+  line-height: 1.3;
+}
+
+.gram-unit-text {
+  border-bottom: 0.1em solid var(--text);
+  white-space: nowrap;
+}
+
+.gram-unit .gram-word.tappable {
+  text-decoration: none;
+}
+
+.gram-unit-label {
+  margin-top: 0.15em;
+  padding: 0.1em 0.4em;
+  border-radius: 0.6em;
+  background: var(--nature);
+  font-size: 0.45em;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+  color: var(--nature-text, var(--text));
+}
+
+.gram-unit.current .gram-unit-text {
+  border-radius: 0.2em;
+  outline: 0.12em solid var(--primary);
+  outline-offset: 0.08em;
+  background: #e8f1ff;
+}
+
+.gram-unit:not([class*='gram-nature-']) .gram-unit-label {
+  color: var(--text-soft);
+}
+
+.gram-nature-PP { --nature: #c96a5a; --nature-text: #fff; }
+.gram-nature-PREP { --nature: #f2d5cf; }
+.gram-nature-ADJ { --nature: #7b4f8c; --nature-text: #fff; }
+.gram-nature-NC,
+.gram-nature-NP { --nature: #6f95c9; --nature-text: #fff; }
+.gram-nature-AD,
+.gram-nature-AI,
+.gram-nature-DP,
+.gram-nature-DD { --nature: #8dbb5f; }
+.gram-nature-ADV { --nature: #8b6245; --nature-text: #fff; }
+.gram-nature-VC { --nature: #ebc94e; }
+.gram-nature-CONJ { --nature: #e59a3c; }
+
+.natures {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.nature {
+  min-height: 48px;
+  padding: 4px 6px;
+  border: 0;
+  border-left: 8px solid var(--nature);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 3px 0 var(--border);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--text);
+}
+
+.nature:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--border);
+}
+
+/* Sa phrase après une erreur : le mot colorié à tort barré en rouge, l'oubli marqué d'un trait rouge. */
+.gram-word.is-wrong {
+  color: #d63031;
+  text-decoration: line-through 0.1em #6b1414;
+}
+
+.gram-word.is-missed {
+  text-decoration: underline wavy #d63031;
+  text-underline-offset: 0.25em;
+}
+
+/* La correction : les mots qui changent écrits en orange foncé. */
+.gram-word.is-fix {
+  color: #b85c00;
+}
+
+.gram-buttons {
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.gram-buttons .continue,
+.gram-ok {
+  min-height: 64px;
+  font-size: 1.3rem;
+}
+
+.pencils {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.pencil {
+  min-height: 52px;
+  padding: 0 4px;
+  border: 3px solid transparent;
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: 0 4px 0 var(--border);
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.pencil[aria-pressed='true'] {
+  border-color: var(--primary);
+  background: #e8f1ff;
+}
+
+.gram-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-weight: 800;
+}
+
+.gram-examples .gram-sentence,
+.gram-correction .gram-sentence {
+  display: block;
+  font-size: 1.15rem;
+  line-height: 2.4;
+}
+
+.gram-correction .gram-fixed {
+  margin-top: -0.4em;
+}

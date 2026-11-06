@@ -13,9 +13,11 @@ import { capitalize, parseSentence, withNbsp } from './sentence';
 import type { PosedBelt } from './calcul-pose';
 import { PosedDivision, solve, type PosedOperation } from './posed';
 import { posedGrid } from './posed-screen';
-import { isHomophoneBelt, isMentalBelt, isNumerationBelt, isPosedBelt, isTableBelt, type SubjectBelt } from './subjects';
+import { isGrammarBelt, isHomophoneBelt, isMentalBelt, isNumerationBelt, isPosedBelt, isTableBelt, type SubjectBelt } from './subjects';
 import type { MentalBelt } from './calcul-mental';
 import type { NumerationBelt } from './numeration';
+import { grammarQuestion, TAGS, type GrammarBelt } from './grammaire';
+import { drawSentence } from './grammar-screen';
 import { factText } from './table-practice';
 import { MAX_FACTOR, newTables, type TableBelt } from './tables';
 
@@ -32,6 +34,7 @@ export interface LessonActions {
  * Calcul posé : la méthode, et une opération posée en entier, chaque colonne expliquée.
  * Calcul mental : les astuces de la classe, et des calculs expliqués.
  * Numération : les astuces des leçons de la classe, et des questions expliquées.
+ * Grammaire : les règles des leçons G de la classe, et des phrases coloriées comme en classe.
  */
 export function renderLesson(
   root: HTMLElement,
@@ -58,7 +61,9 @@ export function renderLesson(
               ? mentalCards(belt)
               : isNumerationBelt(belt)
                 ? numerationCards(belt)
-                : conjugationCards(belt)),
+                : isGrammarBelt(belt)
+                  ? grammarCards(belt)
+                  : conjugationCards(belt)),
       h('button', { class: 'button primary lesson-practice', type: 'button', onclick: onPractice }, 'S’entraîner'),
     ),
   );
@@ -220,6 +225,35 @@ function numerationCards(belt: NumerationBelt): HTMLElement[] {
             h('br'),
             ...withFractions(withNbsp(question.explain)),
           ),
+        ),
+      ),
+    ),
+  ];
+}
+
+function grammarCards(belt: GrammarBelt): HTMLElement[] {
+  return [
+    h(
+      'article',
+      { class: 'lesson-card' },
+      h('h2', {}, 'La leçon'),
+      h('ul', { class: 'lesson-rules' }, ...belt.tips.map((tip) => h('li', {}, withNbsp(tip)))),
+    ),
+    ...belt.tasks.map((task) =>
+      h(
+        'article',
+        { class: 'lesson-card' },
+        h('h2', {}, task.instruction),
+        // Les crayons des fonctions ; les natures se lisent sous les mots des exemples.
+        task.mode === 'color' &&
+          h('p', { class: 'gram-legend' }, ...task.pencils.map((tag) => h('span', { class: `gram-group gram-${tag}` }, TAGS[tag].name))),
+        h(
+          'ul',
+          { class: 'lesson-examples gram-examples' },
+          ...task.examples.map((i) => {
+            const question = grammarQuestion(belt.belt, task, i);
+            return h('li', { class: 'gram-sentence' }, ...drawSentence(question.pieces, question.expected, { nature: task.mode === 'nature' }));
+          }),
         ),
       ),
     ),

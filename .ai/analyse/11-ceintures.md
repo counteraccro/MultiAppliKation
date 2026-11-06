@@ -40,7 +40,7 @@ c'est le principe même des ceintures.
 | Accords | 11 | 20 min | Plus tard : transposer des phrases entières (saisie longue) |
 | Numération | 12 (jusqu'à or) | 20 min | **Sixième matière** (commencée le 01/11/2026 : blanche, jaune, orange, rose, verte, bleue, violette, marron, noire, bronze, argent) : voir [18-ceintures-numeration.md](18-ceintures-numeration.md) |
 | Grandeurs et mesures | 8 | 20 min | Plus tard : fiches scannées, à recopier |
-| Grammaire | 11 | 20 min | Plus tard : fiches scannées ; reconnaître des mots dans une phrase |
+| Grammaire | 11 | 20 min | Faite le 06/11/2026 : voir [19-ceintures-grammaire.md](19-ceintures-grammaire.md) |
 | Calcul posé | 11 | 20 min | **Quatrième matière** (commencée le 28/10/2026 par la blanche) : voir [15-ceintures-calcul-pose.md](15-ceintures-calcul-pose.md) |
 | Lecture oralisée | 7 | 1 min | Pas dans l'app : se juge à l'oral |
 | Littérature | 11 | — | Pas dans l'app : livres lus et questionnaires |

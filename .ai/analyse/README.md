@@ -26,3 +26,4 @@ Application en ligne : https://counteraccro.github.io/MultiAppliKation/
 14. [Les Additions](14-additions.md) — quatrième activité : les tables d'addition, mêmes modes que les Tables
 15. [Ceintures : le Calcul posé](15-ceintures-calcul-pose.md) — quatrième matière, les opérations posées pas à pas
 17. [Mesure d'audience](17-mesure-audience.md) — GoatCounter, anonyme et sans cookie : écrans ouverts, activité et classe
+19. [Ceintures : la Grammaire](19-ceintures-grammaire.md) — septième matière, colorier les fonctions et donner les natures

@@ -5,9 +5,10 @@ import { beltOf, beltTextColor } from './belts';
 import { gradeGoal, gradeNote } from './grade';
 import { beltStatuses, formatDay, isReady, mustPracticeFirst, progressOf, type BeltStatus, type CeinturesData, type SubjectProgress } from './data';
 import { TEST_SIZE } from './calcul-pose';
-import { isHomophoneBelt, isMentalBelt, isNumerationBelt, isPosedBelt, isTableBelt, type Subject, type SubjectBelt } from './subjects';
+import { isGrammarBelt, isHomophoneBelt, isMentalBelt, isNumerationBelt, isPosedBelt, isTableBelt, type Subject, type SubjectBelt } from './subjects';
 import { MENTAL_TEST_SIZE } from './calcul-mental';
 import { NUMERATION_TEST_SIZE } from './numeration';
+import { GRAMMAR_TEST_SIZE } from './grammaire';
 
 export interface LadderActions {
   onLesson(belt: SubjectBelt): void;
@@ -132,6 +133,7 @@ function testHint(belt: SubjectBelt): string {
   if (isPosedBelt(belt)) return `${TEST_SIZE} opérations, sans aide`;
   if (isMentalBelt(belt)) return `${MENTAL_TEST_SIZE} calculs en 2 minutes`;
   if (isNumerationBelt(belt)) return `${NUMERATION_TEST_SIZE} questions, sans aide`;
+  if (isGrammarBelt(belt)) return `${GRAMMAR_TEST_SIZE} phrases, sans aide`;
   return '3 verbes, sans aide';
 }
 

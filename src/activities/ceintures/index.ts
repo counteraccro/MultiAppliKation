@@ -35,7 +35,9 @@ import { pickSentences, PracticeSession } from './practice-session';
 import { capitalize, fullSentence, parseSentence, withNbsp } from './sentence';
 import { renderSentenceScreen } from './sentence-screen';
 import { STICKER_SECTIONS, STICKERS, unlockStickers } from './stickers';
-import { isHomophoneBelt, isMentalBelt, isNumerationBelt, isPosedBelt, isTableBelt, type Subject, type SubjectBelt } from './subjects';
+import { isGrammarBelt, isHomophoneBelt, isMentalBelt, isNumerationBelt, isPosedBelt, isTableBelt, type Subject, type SubjectBelt } from './subjects';
+import { decodeMarks, GRAMMAR_PRACTICE_SIZE, GRAMMAR_TEST_SIZE, pickGrammar, type GrammarBelt, type GrammarQuestion } from './grammaire';
+import { drawSentence, renderGrammarScreen } from './grammar-screen';
 import { MENTAL_PRACTICE_SIZE, MENTAL_TEST_SIZE, MENTAL_TEST_TIME_MS, passesMental, pickCalcs, type MentalBelt } from './calcul-mental';
 import {
   NUMERATION_MAX_DIGITS,
@@ -54,7 +56,7 @@ import { VerbTestSession, type VerbMistake } from './verb-test';
 
 // Voir .ai/analyse/11-ceintures.md : les ceintures de la classe, homophones puis conjugaison (12-ceintures-conjugaison.md)
 // tables (13-ceintures-tables.md), calcul posé (15-ceintures-calcul-pose.md), calcul mental (16-ceintures-calcul-mental.md)
-// et numération (18-ceintures-numeration.md).
+// numération (18-ceintures-numeration.md) et grammaire (19-ceintures-grammaire.md).
 // Accueil (les matières), échelle d'une matière, leçon, entraînement et test d'une ceinture,
 // progrès et autocollants.
 export const ceintures: Activity = {
@@ -156,7 +158,9 @@ export const ceintures: Activity = {
               ? practiceMental(subject, belt)
               : isNumerationBelt(belt)
                 ? practiceNumeration(subject, belt)
-                : practiceVerb(subject, belt);
+                : isGrammarBelt(belt)
+                  ? practiceGrammar(subject, belt)
+                  : practiceVerb(subject, belt);
 
     const practiceSentences = (subject: Subject, belt: HomophoneBelt) =>
       show(() => {
@@ -266,6 +270,23 @@ export const ceintures: Activity = {
         });
       });
 
+    /** Grammaire : 6 phrases à colorier, corrigées tout de suite ; une phrase ratée revient. */
+    const practiceGrammar = (subject: Subject, belt: GrammarBelt) =>
+      show(() => {
+        const seen = progressOf(load(), subject).lastPractice?.[belt.belt];
+        const questions = pickGrammar(belt, GRAMMAR_PRACTICE_SIZE, seen);
+        const session = new CalcPracticeSession(questions);
+        return renderGrammarScreen(root, {
+          session,
+          label: label(belt),
+          onQuit: () => ladder(subject),
+          onDone: ({ bestStreak }) => {
+            const result = session.result();
+            practiceDone(subject, belt, questions.map((q) => q.id), result, result.toPractice, bestStreak);
+          },
+        });
+      });
+
     function practiceDone(subject: Subject, belt: SubjectBelt, ids: string[], result: Score, toPractice: string[], bestStreak: number) {
       const data = load();
       recordPractice(data, subject, belt.belt, ids, result);
@@ -285,7 +306,9 @@ export const ceintures: Activity = {
               ? testMental(subject, belt)
               : isNumerationBelt(belt)
                 ? testNumeration(subject, belt)
-                : testVerbs(subject, belt);
+                : isGrammarBelt(belt)
+                  ? testGrammar(subject, belt)
+                  : testVerbs(subject, belt);
 
     const testSentences = (subject: Subject, belt: HomophoneBelt) =>
       show(() => {
@@ -393,6 +416,23 @@ export const ceintures: Activity = {
           onDone: () => {
             const result = session.result();
             testDone(subject, belt, result, 'réponses justes', result.mistakes.length > 0 ? numerationCorrections(result.mistakes) : undefined);
+          },
+        });
+      });
+
+    /** Grammaire : 10 phrases sans aide, réussi à 9 justes (90 %), sans minuteur. */
+    const testGrammar = (subject: Subject, belt: GrammarBelt) =>
+      show(() => {
+        const seen = progressOf(load(), subject).lastPractice?.[belt.belt];
+        const session = new CalcTestSession(pickGrammar(belt, GRAMMAR_TEST_SIZE, seen));
+        return renderGrammarScreen(root, {
+          session,
+          test: true,
+          label: `En conditions réelles · ${label(belt)}`,
+          onQuit: () => ladder(subject),
+          onDone: () => {
+            const result = session.result();
+            testDone(subject, belt, result, 'phrases justes', result.mistakes.length > 0 ? grammarCorrections(result.mistakes) : undefined);
           },
         });
       });
@@ -595,6 +635,30 @@ function numerationCorrections(mistakes: TableMistake<NumerationQuestion>[]): HT
           {},
           given !== undefined && h('small', { class: 'correction-context' }, 'Tu avais répondu : ', h('s', {}, ...withFractions(given))),
           h('mark', {}, ...withFractions(solved)),
+        );
+      }),
+    ),
+  );
+}
+
+/** La correction d'un test de grammaire : chaque phrase fausse telle qu'il l'a coloriée, les mots faux barrés, puis la bonne. */
+function grammarCorrections(mistakes: TableMistake<GrammarQuestion>[]): HTMLElement {
+  return h(
+    'div',
+    { class: 'to-practice sentences test-corrections' },
+    h('h2', {}, 'La correction'),
+    h(
+      'ul',
+      {},
+      ...mistakes.map(({ question, typed }) => {
+        const given = decodeMarks(typed ?? '', question.expected.length);
+        const nature = question.exercise.mode === 'nature';
+        return h(
+          'li',
+          { class: 'gram-correction' },
+          h('small', { class: 'correction-context' }, question.exercise.instruction),
+          h('span', { class: 'gram-sentence gram-given' }, ...drawSentence(question.pieces, given, { nature, expected: question.expected })),
+          h('span', { class: 'gram-sentence gram-fixed' }, ...drawSentence(question.pieces, question.expected, { nature, given })),
         );
       }),
     ),
