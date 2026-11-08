@@ -5,7 +5,7 @@
 // nombre et une unité : en classe, l'élève écrit le calcul et une phrase-réponse ; ici, le résultat et l'unité.
 // Les ceintures ont la forme de celles de la Numération : elles passent par les mêmes écrans.
 
-import { groupDigits, numberText, shuffle } from '../../core/quiz';
+import { groupDigits, numberText, shuffle, type ConversionFigure } from '../../core/quiz';
 import type { NumerationBelt, NumerationQuestion } from './numeration';
 
 type Draw = (random: () => number) => NumerationQuestion;
@@ -13,8 +13,12 @@ type Draw = (random: () => number) => NumerationQuestion;
 const between = (min: number, max: number, random: () => number) => min + Math.floor(random() * (max - min + 1));
 const pick = <T>(items: readonly T[], random: () => number) => items[Math.floor(random() * items.length)]!;
 
+/** « 5 m », « 18 h 45 » : le nombre et son unité ne se séparent pas en fin de ligne. */
+const glued = (text: string) => text.replace(/(\d) (?=(?:[a-zA-Z]{1,3}²?|min)(?![\p{L}\d]))/gu, '$1\u00a0');
+
 function question(fields: Omit<NumerationQuestion, 'id'>): NumerationQuestion {
-  return { ...fields, id: fields.solved };
+  const texts = { prompt: glued(fields.prompt), solved: glued(fields.solved), explain: glued(fields.explain) };
+  return { ...fields, ...texts, id: texts.solved };
 }
 
 /** 4 810, 1,4 : les classes séparées, la virgule. */
@@ -29,7 +33,9 @@ export const VOLUMES = ['ml', 'cl', 'L'] as const;
 export const LENGTH_TABLE = ['km', 'hm', 'dam', 'm', 'dm', 'cm', 'mm'] as const;
 export const MASS_TABLE = ['kg', 'hg', 'dag', 'g'] as const;
 export const VOLUME_TABLE = ['L', 'dl', 'cl', 'ml'] as const;
-type Unit = (typeof LENGTH_TABLE)[number] | (typeof MASS_TABLE)[number] | (typeof VOLUME_TABLE)[number] | 't';
+/** Les unités d'aire (leçon Mes 9), de la plus grande à la plus petite : de l'une à l'autre, × 100. */
+export const AREA_TABLE = ['km²', 'hm²', 'dam²', 'm²', 'dm²', 'cm²', 'mm²'] as const;
+type Unit = (typeof LENGTH_TABLE)[number] | (typeof MASS_TABLE)[number] | (typeof VOLUME_TABLE)[number] | (typeof AREA_TABLE)[number] | 't';
 
 /** Chaque unité dans la plus petite de sa famille : 1 m = 1 000 mm, 1 t = 1 000 000 g, 1 L = 1 000 ml. */
 const FACTOR: Readonly<Record<Unit, number>> = {
@@ -49,11 +55,22 @@ const FACTOR: Readonly<Record<Unit, number>> = {
   cl: 10,
   dl: 100,
   L: 1000,
+  'mm²': 1,
+  'cm²': 100,
+  'dm²': 10_000,
+  'm²': 1_000_000,
+  'dam²': 100_000_000,
+  'hm²': 10_000_000_000,
+  'km²': 1_000_000_000_000,
 };
 
 /** Les unités à toucher pour une mesure : les plus connues de sa famille, ou tout le tableau de conversion. */
 const familyOf = (unit: Unit): readonly Unit[] =>
-  [LENGTHS, MASSES, VOLUMES, LENGTH_TABLE, MASS_TABLE, VOLUME_TABLE].find((family) => (family as readonly Unit[]).includes(unit))!;
+  [LENGTHS, MASSES, VOLUMES, LENGTH_TABLE, MASS_TABLE, VOLUME_TABLE, AREA_TABLE].find((family) => (family as readonly Unit[]).includes(unit))!;
+
+/** Longueur, masse, contenance ou aire : on ne passe pas de l'une à l'autre (20 m n'est pas 2 dm²). */
+const sameKind = (a: Unit, b: Unit) =>
+  [LENGTH_TABLE, [...MASS_TABLE, 't'], VOLUME_TABLE, AREA_TABLE].some((family) => (family as readonly Unit[]).includes(a) && (family as readonly Unit[]).includes(b));
 
 /** Une mesure : un nombre et son unité, « 120 cm ». */
 type Measure = readonly [value: number, unit: Unit];
@@ -67,7 +84,7 @@ const inSmallest = ([value, unit]: Measure) => value * FACTOR[unit];
  */
 function measureAnswer(base: number, unit: Unit, others: readonly Unit[] = familyOf(unit), places = 0): Pick<NumerationQuestion, 'answer' | 'alsoAccepted'> {
   const text = (u: Unit) => `${spaced(base / FACTOR[u])} ${u}`;
-  const fits = (u: Unit) => u !== unit && Number.isInteger(Math.round((base / FACTOR[u]) * 10 ** places * 1e6) / 1e6);
+  const fits = (u: Unit) => u !== unit && sameKind(u, unit) && Number.isInteger(Math.round((base / FACTOR[u]) * 10 ** places * 1e6) / 1e6);
   return { answer: text(unit), alsoAccepted: others.filter(fits).map(text) };
 }
 
@@ -117,8 +134,8 @@ const UNIT_SENTENCES: readonly (readonly [before: string, unit: Unit, after: str
 ];
 
 /** « Une canette de soda contient 33 … » : l'unité se touche parmi celles de sa famille. */
-export function unitFor(index: number): NumerationQuestion {
-  const [before, unit, after] = UNIT_SENTENCES[index % UNIT_SENTENCES.length]!;
+export function unitFor(index: number, sentences = UNIT_SENTENCES): NumerationQuestion {
+  const [before, unit, after] = sentences[index % sentences.length]!;
   const end = after === '.' ? '.' : ` ${after}`;
   return question({
     context: 'Complète avec l’unité qui convient',
@@ -751,7 +768,7 @@ const CONTESTS: readonly ((random: () => number) => NumerationQuestion)[] = [
 
 /** « 76 hg = … dag », « 2 700 dam = … m » : d'une colonne du tableau à une autre, avec des nombres entiers. */
 export function convert(value: number, from: Unit, to: Unit): NumerationQuestion {
-  const result = (value * FACTOR[from]) / FACTOR[to];
+  const result = Math.round(((value * FACTOR[from]) / FACTOR[to]) * 1e6) / 1e6;
   const [big, small] = FACTOR[from] > FACTOR[to] ? [from, to] : [to, from];
   const ratio = FACTOR[big] / FACTOR[small];
   const columns = Math.round(Math.log10(ratio));
@@ -759,12 +776,39 @@ export function convert(value: number, from: Unit, to: Unit): NumerationQuestion
     from === big
       ? `on multiplie par ${spaced(ratio)} : ${spaced(value)} × ${spaced(ratio)} = ${spaced(result)}`
       : `on divise par ${spaced(ratio)} : ${spaced(value)} : ${spaced(ratio)} = ${spaced(result)}`;
-  return equality(
-    `${spaced(value)} ${from}`,
-    `… ${to}`,
-    result,
-    `Dans le tableau de conversion, de ${from} à ${to}, il y a ${columns} colonne${columns > 1 ? 's' : ''} : 1 ${big} = ${spaced(ratio)} ${small}, donc ${how}.`,
-  );
+  return {
+    ...equality(
+      `${spaced(value)} ${from}`,
+      `… ${to}`,
+      result,
+      `Dans le tableau de conversion, de ${from} à ${to}, il y a ${columns} colonne${columns > 1 ? 's' : ''} : 1 ${big} = ${spaced(ratio)} ${small}, donc ${how}.`,
+    ),
+    lessonFigure: conversionTable(value, from, to),
+  };
+}
+
+/**
+ * Le tableau rempli comme dans la leçon Mes 10 : le chiffre des unités du nombre dans la colonne de `from`, un
+ * chiffre par colonne ; des 0 ajoutés jusqu'à la colonne de `to` ; la virgule dans la colonne de `to` s'il reste
+ * des chiffres après. Le nombre peut déborder du tableau (99 km) : les colonnes en plus n'ont pas de nom.
+ */
+export function conversionTable(value: number, from: Unit, to: Unit): ConversionFigure {
+  const table = ([LENGTH_TABLE, MASS_TABLE, VOLUME_TABLE] as readonly (readonly Unit[])[]).find((t) => t.includes(from) && t.includes(to))!;
+  const [whole, decimals = ''] = numberText(value).split(',') as [string, string?];
+  const [at, target] = [table.indexOf(from), table.indexOf(to)];
+  const [first, last] = [at - whole.length + 1, at + decimals.length];
+  const digits = whole + decimals;
+  const [start, end] = [Math.min(first, target, 0), Math.max(last, target, table.length - 1)];
+  const units: string[] = [];
+  const cells: { text: string; added?: boolean }[] = [];
+  for (let column = start; column <= end; column++) {
+    units.push(table[column] ?? '');
+    const inNumber = column >= first && column <= last;
+    const added = !inNumber && column >= Math.min(first, target) && column <= Math.max(last, target);
+    const text = inNumber ? digits[column - first]! : added ? '0' : '';
+    cells.push({ text: column === target && last > target ? `${text},` : text, ...(added ? { added } : {}) });
+  }
+  return { conversion: { units, cells } };
 }
 
 function drawConvert(random: () => number, tables: readonly (readonly Unit[])[]): NumerationQuestion {
@@ -824,6 +868,429 @@ function drawMixedPerimeter(random: () => number): NumerationQuestion {
   return mixedPerimeter(shuffle(drawMeasures(random, [['m', 1, 3], ['cm', 50, 250, 10], ['mm', 500, 2500, 100]]), random));
 }
 
+// --- Verte : l'aire d'un rectangle et d'un carré (fiches n° 37, 38, 40, 42, 44, 46 ; leçon Mes 9) ---
+
+/** Les unités à toucher pour une aire : la longueur (le piège), puis l'aire juste et ses deux voisines. */
+function areaUnits(unit: Unit): readonly Unit[] {
+  const i = AREA_TABLE.indexOf(`${unit}²` as (typeof AREA_TABLE)[number]);
+  return [unit, AREA_TABLE[i + 1] ?? AREA_TABLE[i - 2]!, AREA_TABLE[i]!, AREA_TABLE[i - 1] ?? AREA_TABLE[i + 2]!];
+}
+
+const SURFACES = [
+  { start: 'Ma chambre mesure', unit: 'm', long: [3, 6], short: [2, 4], step: 1, ask: 'Quelle est sa surface (son aire) ?', answer: 'Ma chambre a une surface de' },
+  { start: 'Un champ mesure', unit: 'hm', long: [2, 6], short: [1, 4], step: 1, ask: 'Quelle est son aire ?', answer: 'L’aire du champ est de' },
+  { start: 'Un champ mesure', unit: 'm', long: [1, 3], short: [2, 9], step: 0, ask: 'Quelle est son aire ?', answer: 'L’aire du champ est de' },
+  { start: 'Mon foulard mesure', unit: 'dm', long: [4, 8], short: [2, 4], step: 1, ask: 'Quelle est la mesure de sa surface ?', answer: 'La surface du foulard mesure' },
+  { start: 'Mon foulard mesure', unit: 'cm', long: [4, 6], short: [2, 4], step: 10, ask: 'Combien mesure sa surface ?', answer: 'La surface du foulard mesure' },
+  { start: 'Le tapis de la classe mesure', unit: 'm', long: [3, 5], short: [2, 3], step: 1, ask: 'Quelle est son aire ?', answer: 'L’aire du tapis est de' },
+] as const;
+
+/** « Ma chambre mesure 4 m sur 3 m. Quelle est sa surface ? » : A = L × l, en m². */
+export function rectangleArea(kind: number, long: number, short: number): NumerationQuestion {
+  const { start, unit, ask, answer } = SURFACES[kind]!;
+  const area = `${unit}²` as Unit;
+  const a = long * short;
+  return problem(
+    `${start} ${spaced(long)} ${unit} sur ${spaced(short)} ${unit}. ${ask}`,
+    a * FACTOR[area],
+    area,
+    `${answer} ${spaced(a)} ${area}.`,
+    `L’aire d’un rectangle : L × l = ${spaced(long)} × ${spaced(short)} = ${spaced(a)} (jamais d’unité dans les calculs). Les côtés sont en ${unit}, l’aire est en ${area} : des carrés de 1 ${unit} de côté.`,
+    areaUnits(unit as Unit),
+  );
+}
+
+function drawRectangleArea(random: () => number): NumerationQuestion {
+  const kind = between(0, SURFACES.length - 1, random);
+  const { long, short, step } = SURFACES[kind]!;
+  // Le grand champ des fiches (100 m sur 45 m) : des centaines de mètres sur des dizaines rondes à 5 près.
+  if (step === 0) return rectangleArea(kind, between(long[0], long[1], random) * 100, between(short[0], short[1], random) * 5 + 5);
+  return rectangleArea(kind, between(long[0], long[1], random) * step, between(short[0], short[1], random) * step);
+}
+
+const SQUARE_SURFACES = [
+  { name: 'Un carreau de carrelage carré', unit: 'dm', side: [2, 6], what: 'du carreau' },
+  { name: 'Un jardin carré', unit: 'm', side: [5, 12], what: 'du jardin' },
+  { name: 'Une serviette carrée', unit: 'cm', side: [20, 40], what: 'de la serviette' },
+  { name: 'Une table carrée', unit: 'dm', side: [6, 9], what: 'de la table' },
+] as const;
+
+/** « Un jardin carré a des côtés de 8 m. Quelle est son aire ? » (A = c × c), ou son périmètre, pour ne pas les confondre. */
+export function squareArea(kind: number, side: number, perimeter: boolean): NumerationQuestion {
+  const { name, unit, what } = SQUARE_SURFACES[kind]!;
+  const area = `${unit}²` as Unit;
+  const units = areaUnits(unit as Unit);
+  const prompt = `${name} a des côtés de ${side} ${unit}. ${perimeter ? 'Quel est son périmètre ?' : 'Quelle est son aire ?'}`;
+  if (perimeter) {
+    return problem(
+      prompt,
+      4 * side * FACTOR[unit as Unit],
+      unit as Unit,
+      `Le périmètre ${what} est de ${spaced(4 * side)} ${unit}.`,
+      `Le périmètre, c’est le tour : 4 × ${side} = ${spaced(4 * side)}. C’est une longueur, en ${unit} (l’aire serait en ${area}).`,
+      units,
+    );
+  }
+  return problem(
+    prompt,
+    side * side * FACTOR[area],
+    area,
+    `L’aire ${what} est de ${spaced(side * side)} ${area}.`,
+    `L’aire d’un carré : c × c = ${side} × ${side} = ${spaced(side * side)}. C’est une surface, en ${area}.`,
+    units,
+  );
+}
+
+function drawSquareArea(random: () => number): NumerationQuestion {
+  const kind = between(0, SQUARE_SURFACES.length - 1, random);
+  const [min, max] = SQUARE_SURFACES[kind]!.side;
+  return squareArea(kind, between(min, max, random), random() < 0.3);
+}
+
+// --- Verte : les durées et l'heure de fin (fiches n° 39, 41, 43, 45, 47, 48 ; leçon Mes 4) ---
+
+/** 18 h 10, 9 h 05, 16 h : l'heure comme sur les fiches, les minutes sur deux chiffres. */
+export const clockText = (minutes: number) => {
+  const m = minutes % 60;
+  return `${Math.floor(minutes / 60)} h${m === 0 ? '' : ` ${String(m).padStart(2, '0')}`}`;
+};
+/** Dans une phrase : « midi », « midi et demi », comme la fiche n° 47. */
+const saidTime = (minutes: number) => (minutes === 720 ? 'midi' : minutes === 750 ? 'midi et demi' : clockText(minutes));
+/** Une durée : 45 min, 1 h 15 min, 2 h. */
+export const durationText = (minutes: number) =>
+  minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)} h${minutes % 60 === 0 ? '' : ` ${minutes % 60} min`}`;
+
+/** La réponse d'une durée : en minutes, comme les fiches (« 75 minutes »), ou en heures et minutes. */
+function durationAnswer(minutes: number): Pick<NumerationQuestion, 'answer' | 'alsoAccepted' | 'clock'> {
+  return { clock: 'duration', answer: `${minutes} min`, alsoAccepted: minutes >= 60 ? [durationText(minutes)] : [] };
+}
+
+/** « 75 min (1 h 15 min) » dans une phrase-réponse. */
+const bothDurations = (minutes: number) => (minutes >= 60 ? `${minutes} min (${durationText(minutes)})` : `${minutes} min`);
+
+/** Les bonds de la méthode 2 : jusqu'à l'heure pile, les heures entières, puis les minutes qui restent. */
+function hops(start: number, end: number): (readonly [from: number, to: number])[] {
+  const steps: (readonly [number, number])[] = [];
+  let at = start;
+  const nextHour = Math.ceil(at / 60) * 60;
+  if (at % 60 !== 0 && nextHour <= end) steps.push([at, (at = nextHour)]);
+  const lastHour = Math.floor(end / 60) * 60;
+  if (lastHour > at) steps.push([at, (at = lastHour)]);
+  if (end > at) steps.push([at, end]);
+  return steps;
+}
+
+/** L'explication d'une durée, par bonds (leçon Mes 4, méthode 2), ou une soustraction dans la même heure. */
+function durationExplain(start: number, end: number): string {
+  const total = end - start;
+  const steps = hops(start, end);
+  if (steps.length === 1 && Math.floor(start / 60) === Math.floor(end / 60)) {
+    return `Dans la même heure : ${end % 60} − ${start % 60} = ${total}. Ça dure ${total} min.`;
+  }
+  const said = steps.map(([a, b]) => `De ${clockText(a)} à ${clockText(b)} : ${b - a >= 60 ? `${durationText(b - a)} = ${b - a} min` : `${b - a} min`}.`);
+  const sum = steps.length > 1 ? ` ${steps.map(([a, b]) => b - a).join(' + ')} = ${total}.` : '';
+  return `On avance par bonds jusqu’aux heures pile. ${said.join(' ')}${sum} Ça dure ${bothDurations(total)}.`;
+}
+
+/** Les émissions des fiches, et les nôtres : le genre (« le jeu »), le nom, il ou elle. */
+const SHOWS = [
+  ['le jeu', 'Super Défi', 'il'],
+  ['le jeu', 'Calculo', 'il'],
+  ['le jeu', 'TopGénial', 'il'],
+  ['la série', 'Les Héros du Sud', 'elle'],
+  ['le jeu', 'Tétrofor', 'il'],
+  ['le dessin animé', 'Pirouette', 'il'],
+  ['le documentaire', 'Planète Océan', 'il'],
+  ['la série', 'Les Petits Malins', 'elle'],
+] as const;
+
+/** « Le jeu Super Défi commence à 18 h 10 et dure 35 minutes. À quelle heure se termine-t-il ? » */
+export function endTime(show: number, start: number, duration: number): NumerationQuestion {
+  const [genre, name, it] = SHOWS[show]!;
+  const end = start + duration;
+  const toHour = 60 - (start % 60);
+  const explain =
+    start % 60 + duration < 60
+      ? `${start % 60} + ${duration} = ${(start % 60) + duration} : ${clockText(end)}.`
+      : duration === toHour
+        ? `${start % 60} + ${duration} = 60, et 60 min = 1 h : ${clockText(end)} pile.`
+        : `De ${clockText(start)} à ${clockText(start + toHour)}, il y a ${toHour} min. Il reste ${duration} − ${toHour} = ${duration - toHour} min${duration - toHour >= 60 ? ` = ${durationText(duration - toHour)}` : ''} : ${clockText(end)}.`;
+  return question({
+    context: 'Problème',
+    prompt: `À la télévision, ${genre} ${name} commence à ${saidTime(start)} et dure ${duration} minutes. À quelle heure se termine-t-${it} ?`,
+    clock: 'time',
+    answer: clockText(end),
+    solved: `${capitalized(genre)} ${name} se termine à ${clockText(end)}.`,
+    explain,
+  });
+}
+
+function drawEndTime(random: () => number): NumerationQuestion {
+  if (random() < 0.3) return addTime(between(8, 20, random) * 60 + between(0, 11, random) * 5, between(1, 2, random) * 60 + between(1, 11, random) * 5);
+  // Le plus souvent, l'émission passe l'heure pile.
+  return endTime(between(0, SHOWS.length - 1, random), between(8, 20, random) * 60 + between(2, 11, random) * 5, between(3, 18, random) * 5);
+}
+
+/** « Il est 8 h 30. Quelle heure sera-t-il dans 1 h 45 min ? » : heures et minutes à part (leçon Mes 4, méthode 4). */
+export function addTime(start: number, duration: number): NumerationQuestion {
+  const end = start + duration;
+  const [hours, minutes] = [Math.floor(start / 60) + Math.floor(duration / 60), (start % 60) + (duration % 60)];
+  const carry = minutes >= 60 ? ` ${minutes} min = 1 h ${minutes - 60} min, donc ${clockText(end)}.` : ` Ça fait ${clockText(end)}.`;
+  return question({
+    context: 'Problème',
+    prompt: `Il est ${clockText(start)}. Quelle heure sera-t-il dans ${durationText(duration)} ?`,
+    clock: 'time',
+    answer: clockText(end),
+    solved: `Dans ${durationText(duration)}, il sera ${clockText(end)}.`,
+    explain: `On additionne à part les heures et les minutes : ${Math.floor(start / 60)} + ${Math.floor(duration / 60)} = ${hours} h et ${start % 60} + ${duration % 60} = ${minutes} min.${carry}`,
+  });
+}
+
+/** « Le jeu TopGénial commence à 15 h 30 et se termine à 16 h 15. Combien de temps dure-t-il ? » */
+export function showDuration(show: number, start: number, end: number): NumerationQuestion {
+  const [genre, name] = SHOWS[show]!;
+  return question({
+    context: 'Problème',
+    prompt: `À la télévision, ${genre} ${name} commence à ${saidTime(start)} et se termine à ${saidTime(end)}. Combien de temps dure ${genre} ${name} ?`,
+    ...durationAnswer(end - start),
+    solved: `${capitalized(genre)} ${name} dure ${bothDurations(end - start)}.`,
+    explain: durationExplain(start, end),
+  });
+}
+
+/** « Mon train est parti à 8 h 10 et est arrivé à 11 h 35. Combien de temps a duré le voyage ? » (fiche n° 48), le film de la leçon. */
+export function journey(film: boolean, start: number, end: number): NumerationQuestion {
+  return question({
+    context: 'Problème',
+    prompt: film
+      ? `Ce soir, à la télévision, le film commence à ${clockText(start)} et se termine à ${clockText(end)}. Combien de temps dure le film ?`
+      : `Mon train est parti à ${clockText(start)} et est arrivé à ${clockText(end)}. Combien de temps a duré le voyage ?`,
+    ...durationAnswer(end - start),
+    solved: film ? `Le film dure ${bothDurations(end - start)}.` : `Le voyage a duré ${bothDurations(end - start)}.`,
+    explain: durationExplain(start, end),
+  });
+}
+
+function drawDuration(random: () => number): NumerationQuestion {
+  const kind = between(0, 2, random);
+  if (kind === 2) {
+    const film = random() < 0.5;
+    const start = film ? between(20, 21, random) * 60 + between(0, 11, random) * 5 : between(6, 15, random) * 60 + between(1, 11, random) * 5;
+    return journey(film, start, start + (film ? between(18, 30, random) : between(25, 60, random)) * 5);
+  }
+  const show = between(0, SHOWS.length - 1, random);
+  // Midi et demi parfois, comme le jeu Tétrofor.
+  const end = random() < 0.15 ? 750 : between(9, 20, random) * 60 + between(0, 11, random) * 5;
+  return showDuration(show, end - between(4, 18, random) * 5, end);
+}
+
+/** « Il est 8 h 40. Il sera 9 h dans … min. » (leçon Mes 4). */
+export function untilHour(start: number): NumerationQuestion {
+  const next = Math.ceil(start / 60) * 60;
+  return question({
+    context: 'Complète',
+    prompt: `Il est ${clockText(start)}. Il sera ${clockText(next)} dans`,
+    suffix: 'min.',
+    answer: next - start,
+    solved: `Il est ${clockText(start)}. Il sera ${clockText(next)} dans ${next - start} min.`,
+    explain: `Une heure, c’est 60 min : de ${start % 60} à 60, il manque ${next - start} (${start % 60} + ${next - start} = 60).`,
+  });
+}
+
+/** « 1 h 15 min, c'est … minutes » : les heures et les minutes en minutes. */
+export function inMinutes(minutes: number): NumerationQuestion {
+  const hours = Math.floor(minutes / 60);
+  return question({
+    context: 'Complète',
+    prompt: `${durationText(minutes)}, c’est`,
+    suffix: 'minutes.',
+    answer: minutes,
+    solved: `${durationText(minutes)}, c’est ${minutes} minutes.`,
+    explain: `1 h = 60 min${hours > 1 ? `, donc ${hours} h = ${hours * 60} min` : ''}. Puis ${hours * 60} + ${minutes % 60} = ${minutes}.`,
+  });
+}
+
+// --- Bleue : les décimaux pour mesurer et convertir (fiches n° 49 à 60 ; leçon Mes 10) ---
+
+/** Fiche n° 50 et les nôtres : l'unité qui convient à une mesure avec une virgule. */
+const DECIMAL_SENTENCES: readonly (readonly [before: string, unit: Unit, after: string])[] = [
+  ['Une petite mouche mesure 0,8', 'cm', 'de long.'],
+  ['Une feuille de papier mesure 0,2', 'mm', 'd’épaisseur.'],
+  ['Une porte mesure 0,90', 'm', 'de large.'],
+  ['Une bouteille d’eau contient 1,5', 'L', '.'],
+  ['Un bébé pèse 3,2', 'kg', 'à la naissance.'],
+  ['Un camion pèse 3,5', 't', '.'],
+  ['Une fourmi mesure 0,5', 'cm', 'de long.'],
+  ['Un marathon fait 42,195', 'km', '.'],
+  ['Une règle mesure 0,3', 'm', 'de long.'],
+  ['Un sac de farine pèse 1,5', 'kg', '.'],
+  ['La tour Eiffel mesure 0,33', 'km', 'de haut.'],
+  ['Une canette contient 0,33', 'L', 'de soda.'],
+  ['Une pièce de monnaie a une épaisseur de 2,3', 'mm', '.'],
+  ['Une pomme pèse 0,15', 'kg', '.'],
+  ['Un verre contient 12,5', 'cl', 'd’eau.'],
+  ['Une baleine bleue pèse 150,5', 't', '.'],
+];
+
+/** « 453 cm = … m », « 4,53 m = … cm » : avec le tableau de conversion, la virgule (leçon Mes 10, niveau 2). */
+function drawDecimalConvert(random: () => number): NumerationQuestion {
+  const [big, small] = pick(
+    [
+      ['m', 'cm'],
+      ['m', 'mm'],
+      ['km', 'm'],
+      ['cm', 'mm'],
+      ['m', 'dm'],
+      ['kg', 'g'],
+      ['L', 'cl'],
+      ['L', 'ml'],
+    ] as const,
+    random,
+  );
+  const ratio = FACTOR[big] / FACTOR[small];
+  // Un nombre qui ne tombe pas juste : 453 cm = 4,53 m.
+  let n = between(ratio + 1, ratio * 10 - 1, random);
+  if (n % ratio === 0) n++;
+  return random() < 0.5 ? convert(n, small, big) : convert(n / ratio, big, small);
+}
+
+/** 2,05 m, 1,20 m : des mètres avec deux chiffres après la virgule, comme les fiches. */
+const meters = (cm: number) => (cm / 100).toFixed(2).replace('.', ',');
+const LENGTH_UNITS: readonly Unit[] = ['mm', 'cm', 'm', 'km'];
+
+/** Un problème de longueur en cm, juste aussi en m ou en mm (avec la virgule). */
+const cmProblem = (prompt: string, cm: number, solved: string, explain: string): NumerationQuestion =>
+  question({ context: 'Problème', prompt, units: LENGTH_UNITS, ...measureAnswer(cm * 10, 'cm', LENGTH_UNITS, 3), solved, explain });
+
+/** Le sauteur, Sandra et François, Camille et Tom, le ruban vert (fiches n° 51, 52, 54, 57). */
+export function heightProblem(kind: number, big: number, small: number): NumerationQuestion {
+  if (kind === 0) {
+    return cmProblem(
+      `Lors d’un entraînement, le meilleur sauteur réalise un saut de ${meters(big)} m. Il a ainsi amélioré son record de ${small} cm. À quelle hauteur sautait-il avant ?`,
+      big - small,
+      `Avant, le meilleur sauteur sautait ${big - small} cm (${meters(big - small)} m).`,
+      `On écrit tout en cm : ${meters(big)} m = ${big} cm. Puis ${big} − ${small} = ${big - small}.`,
+    );
+  }
+  if (kind === 1) {
+    return cmProblem(
+      `Sandra (${meters(big)} m) mesure ${small} cm de moins que François. Quelle est la taille de François ?`,
+      big + small,
+      `François mesure ${big + small} cm (${meters(big + small)} m).`,
+      `On écrit tout en cm : ${meters(big)} m = ${big} cm. François est plus grand : ${big} + ${small} = ${big + small}.`,
+    );
+  }
+  if (kind === 2) {
+    return cmProblem(
+      `Camille mesure ${meters(big)} m. C’est ${small} cm de plus que son frère Tom. Quelle est la taille de Tom ?`,
+      big - small,
+      `Tom mesure ${big - small} cm (${meters(big - small)} m).`,
+      `On écrit tout en cm : ${meters(big)} m = ${big} cm. Tom est plus petit : ${big} − ${small} = ${big - small}.`,
+    );
+  }
+  return cmProblem(
+    `En mettant bout à bout un ruban jaune de ${small} cm et un ruban vert, Tom obtient un ruban de ${meters(big)} m. Quelle est la longueur du ruban vert ?`,
+    big - small,
+    `Le ruban vert mesure ${big - small} cm (${meters(big - small)} m).`,
+    `On écrit tout en cm : ${meters(big)} m = ${big} cm. Puis ${big} − ${small} = ${big - small}.`,
+  );
+}
+
+function drawHeightProblem(random: () => number): NumerationQuestion {
+  const kind = between(0, 3, random);
+  if (kind === 0) return heightProblem(0, between(180, 240, random), between(2, 15, random));
+  if (kind === 1) return heightProblem(1, between(60, 140, random), between(2, 15, random));
+  if (kind === 2) return heightProblem(2, between(110, 160, random), between(15, 50, random));
+  const total = between(150, 400, random);
+  return heightProblem(3, total, between(50, total - 20, random));
+}
+
+/** « Julie se pèse avec son chien… combien pèse Julie (en kg) ? » (fiche n° 49) : l'unité est imposée. */
+export function julie(grams: number, dog: number): NumerationQuestion {
+  const total = grams + dog;
+  const dogText = `${Math.floor(dog / 1000)} kg ${dog % 1000} g`;
+  return question({
+    context: 'Problème',
+    prompt: `Julie se pèse avec son chien. La balance indique ${spaced(total / 1000)} kg. Sachant que le chien pèse ${dogText}, combien pèse Julie (en kg) ?`,
+    units: MASSES,
+    ...measureAnswer(grams, 'kg', []),
+    solved: `Julie pèse ${spaced(grams / 1000)} kg.`,
+    explain: `On écrit tout en kg : ${dogText} = ${spaced(dog / 1000)} kg. Puis ${spaced(total / 1000)} − ${spaced(dog / 1000)} = ${spaced(grams / 1000)}. La question dit « en kg ».`,
+  });
+}
+
+/** « Lundi, un saut de 17,30 m ; mardi, 18,04 m. De combien de centimètres… ? » (fiche n° 53) : en cm, imposé. */
+export function longJump(monday: number, tuesday: number): NumerationQuestion {
+  const gain = tuesday - monday;
+  return question({
+    context: 'Problème',
+    prompt: `Un champion de saut en longueur a réalisé lundi un saut de ${meters(monday)} m. Mardi, il a sauté ${meters(tuesday)} m. De combien de centimètres a-t-il amélioré sa performance ?`,
+    units: LENGTH_UNITS,
+    ...measureAnswer(gain * 10, 'cm', []),
+    solved: `Le champion a amélioré sa performance de ${gain} cm.`,
+    explain: `${meters(tuesday)} − ${meters(monday)} = ${meters(gain)}, et ${meters(gain)} m = ${gain} cm. La question demande des centimètres.`,
+  });
+}
+
+function drawImposedUnit(random: () => number): NumerationQuestion {
+  if (random() < 0.5) return julie(between(250, 400, random) * 100, between(40, 200, random) * 50);
+  const monday = between(1500, 1800, random);
+  return longJump(monday, monday + between(15, 95, random));
+}
+
+/** « On veut partager une corde de 15,8 m en 4 morceaux de même longueur… en cm ? » (fiches n° 55, 59). */
+export function shareRope(piece: number, count: number): NumerationQuestion {
+  const total = piece * count;
+  return question({
+    context: 'Problème',
+    prompt: `On veut partager une corde de ${spaced(total / 100)} m en ${count} morceaux de même longueur. Quelle sera la longueur d’un morceau, en cm ?`,
+    units: LENGTH_UNITS,
+    ...measureAnswer(piece * 10, 'cm', []),
+    solved: `Un morceau mesurera ${spaced(piece)} cm.`,
+    explain: `On écrit la corde en cm : ${spaced(total / 100)} m = ${spaced(total)} cm. Puis ${spaced(total)} : ${count} = ${spaced(piece)}.`,
+  });
+}
+
+const VOLUME_UNITS: readonly Unit[] = ['ml', 'cl', 'dl', 'L'];
+
+/** Le Megasplash de Naïma (fiche n° 56) : des contenances en L, cl, dl et ml à additionner. */
+export function megasplash(liters: number, cl: number, dl: number, ml: number): NumerationQuestion {
+  const total = liters * 1000 + cl * 10 + dl * 100 + ml;
+  return question({
+    context: 'Problème',
+    prompt: `Naïma réalise un Megasplash pour sa fête d’anniversaire. Elle mélange ${spaced(liters)} L de jus d’orange, ${cl} cl de jus de banane, ${dl} dl de jus de citron vert et ${ml} ml de sirop de grenadine. Quelle quantité de Megasplash a-t-elle préparée ?`,
+    units: VOLUME_UNITS,
+    ...measureAnswer(total, 'L', VOLUME_UNITS, 3),
+    solved: `Naïma a préparé ${spaced(total / 1000)} L de Megasplash (${spaced(total)} ml).`,
+    explain: `On écrit tout en ml : ${spaced(liters)} L = ${spaced(liters * 1000)} ml, ${cl} cl = ${cl * 10} ml, ${dl} dl = ${dl * 100} ml. Puis ${spaced(liters * 1000)} + ${cl * 10} + ${dl * 100} + ${ml} = ${spaced(total)} ml = ${spaced(total / 1000)} L.`,
+  });
+}
+
+/** Le cocktail Borabora (fiche n° 58) : ce qui manque pour faire 2 litres, en cl. */
+export function borabora(liters: number, dl: number, cl: number, ml: number): NumerationQuestion {
+  const left = liters * 100 - dl * 10 - cl - ml / 10;
+  return question({
+    context: 'Problème',
+    prompt: `Pour préparer ${METERS_IN_WORDS[liters]} litre${liters > 1 ? 's' : ''} de cocktail Borabora, on mélange ${dl} dl de jus d’ananas, ${cl} cl de jus de fruits de la passion, ${ml} ml de jus de citron et de la grenadine. Quelle quantité de grenadine faut-il ?`,
+    units: VOLUME_UNITS,
+    ...measureAnswer(left * 10, 'cl', VOLUME_UNITS, 3),
+    solved: `Il faut ${left} cl de grenadine.`,
+    explain: `On écrit tout en cl : ${liters} L = ${liters * 100} cl, ${dl} dl = ${dl * 10} cl, ${ml} ml = ${ml / 10} cl. Puis ${liters * 100} − ${dl * 10} − ${cl} − ${ml / 10} = ${left}.`,
+  });
+}
+
+function drawCocktail(random: () => number): NumerationQuestion {
+  if (random() < 0.5) return megasplash(pick([1, 1.5, 2], random), between(2, 18, random) * 5, between(1, 9, random), between(11, 95, random));
+  // La grenadine fait un nombre rond de cl ; on recommence s'il ne reste pas assez de jus de fruits de la passion.
+  for (;;) {
+    const liters = between(1, 2, random);
+    const ml = pick([50, 100, 150, 200], random);
+    const dl = between(2, liters * 6, random);
+    const cl = liters * 100 - dl * 10 - ml / 10 - between(1, 8, random) * 5;
+    if (cl >= 10) return borabora(liters, dl, cl, ml);
+  }
+}
+
 // --- Les ceintures ---
 
 const BLANCHE_KINDS: readonly Draw[] = [
@@ -863,7 +1330,24 @@ const ROSE_KINDS: readonly Draw[] = [
   drawMixedPerimeter,
 ];
 
-export const MESURES: readonly NumerationBelt[] = [
+const VERTE_KINDS: readonly Draw[] = [
+  drawRectangleArea,
+  drawSquareArea,
+  drawEndTime,
+  drawDuration,
+  (random) => (random() < 0.5 ? untilHour(between(8, 20, random) * 60 + between(1, 11, random) * 5) : inMinutes(between(1, 3, random) * 60 + between(1, 11, random) * 5)),
+];
+
+const BLEUE_KINDS: readonly Draw[] = [
+  (random) => unitFor(between(0, DECIMAL_SENTENCES.length - 1, random), DECIMAL_SENTENCES),
+  drawDecimalConvert,
+  drawHeightProblem,
+  drawImposedUnit,
+  (random) => shareRope(between(150, 500, random), between(2, 5, random)),
+  drawCocktail,
+];
+
+const BELTS: readonly NumerationBelt[] = [
   {
     belt: 'blanche',
     skill: 'Je mesure un segment avec la règle. Je choisis la bonne unité : mm, cm, m ou km. Je connais les heures, les minutes et les mois de l’année.',
@@ -923,10 +1407,43 @@ export const MESURES: readonly NumerationBelt[] = [
     ],
     examples: () => [
       mostOf('Quel est le morceau le plus long ?', 'J’ai trois morceaux de corde. Le premier mesure 50\u00a0dm, le deuxième 400\u00a0cm et le dernier 3\u00a0m.', [[50, 'dm'], [400, 'cm'], [3, 'm']], undefined, (m) => `Le morceau le plus long est celui qui mesure ${m}.`),
+      convert(350, 'm', 'cm'),
       convert(76, 'hg', 'dag'),
       rectangleSide(0, 80, 120, true),
       timeFact(timeIndexes('rose')[0]!),
     ],
     kinds: ROSE_KINDS,
   },
+  {
+    belt: 'vert',
+    skill: 'Je calcule l’aire d’un carré et d’un rectangle. Je calcule combien de temps dure quelque chose et à quelle heure ça se termine.',
+    goal: 'CM1',
+    tips: [
+      'L’aire, c’est la mesure de la surface. 1 m², c’est un carré de 1 m de côté. 1 cm², un carré de 1 cm de côté.',
+      'Aire d’un rectangle : A = L × l. Aire d’un carré : A = c × c. Ma chambre de 4 m sur 3 m : 4 × 3 = 12 m².',
+      'Attention : le périmètre, c’est le tour, en m. L’aire, c’est la surface, en m².',
+      'Pour une durée, on avance par petits bonds jusqu’aux heures pile : de 8 h 30 à 9 h, 30 min. De 9 h à 10 h, 1 h. De 10 h à 10 h 15, 15 min.',
+      'On additionne à part les heures et les minutes : 8 h 30 + 1 h 45 = 9 h 75 min. Comme 75 min = 1 h 15 min, ça fait 10 h 15.',
+      'Pour répondre, je tape un nombre puis je touche h ou min : 1 h 15 min, ou 75 min.',
+    ],
+    examples: () => [rectangleArea(0, 4, 3), endTime(0, 18 * 60 + 10, 35), showDuration(2, 15 * 60 + 30, 16 * 60 + 15), journey(false, 8 * 60 + 10, 11 * 60 + 35)],
+    kinds: VERTE_KINDS,
+  },
+  {
+    belt: 'bleu',
+    skill: 'J’utilise les nombres à virgule pour mesurer et pour convertir : 2,05 m = 205 cm.',
+    decimal: true,
+    tips: [
+      'Dans 2,05 m, le chiffre des unités (2) est dans la colonne des m, 0 dans celle des dm et 5 dans celle des cm : 2,05 m = 205 cm.',
+      'Pour convertir, je place le nombre dans le tableau, son chiffre des unités dans la colonne de son unité. Puis je mets la virgule dans la colonne de la nouvelle unité : 453 cm = 4,53 m.',
+      'Avant de calculer, j’écris toutes les mesures dans la même unité : 1,5 L = 150 cl.',
+      'Si la question dit « en cm » ou « en kg », je réponds dans cette unité.',
+      'La touche virgule du pavé sert à écrire 1,99 m.',
+    ],
+    examples: () => [julie(33_500, 12_650), convert(453, 'cm', 'm'), heightProblem(0, 205, 6), megasplash(1.5, 55, 4, 22)],
+    kinds: BLEUE_KINDS,
+  },
 ];
+
+/** Les astuces et les compétences aussi : « 205 cm » ne se coupe pas en fin de ligne. */
+export const MESURES: readonly NumerationBelt[] = BELTS.map((belt) => ({ ...belt, skill: glued(belt.skill), tips: belt.tips.map(glued) }));

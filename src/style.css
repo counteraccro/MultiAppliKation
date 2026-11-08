@@ -2491,6 +2491,48 @@ button.belt-row:active {
   stroke-dasharray: 3 3;
 }
 
+/* Mesures : le tableau de conversion de la leçon, les 0 ajoutés en gris. */
+.conversion {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.conversion-head,
+.conversion-cell {
+  fill: #fff;
+  stroke: var(--text);
+  stroke-width: 1.2;
+}
+
+.conversion-head {
+  fill: #fff6d8;
+}
+
+.conversion-head.is-outside {
+  fill: #fff;
+}
+
+.conversion-unit,
+.conversion-digit {
+  fill: var(--text);
+  font-family: var(--font);
+  font-weight: 800;
+  text-anchor: middle;
+}
+
+.conversion-unit {
+  font-size: 13px;
+}
+
+.conversion-digit {
+  font-size: 20px;
+}
+
+.conversion-digit.is-added {
+  fill: #9e9e9e;
+}
+
 /* Mesures : les unités à toucher au-dessus du pavé ; celle choisie est mise en avant. */
 .unit-buttons {
   max-width: 380px;
@@ -2513,6 +2555,7 @@ button.belt-row:active {
 }
 
 .lesson-rules .ruler,
+.lesson-rules .conversion,
 .lesson-rules .number-line {
   max-width: 340px;
   margin-bottom: 4px;

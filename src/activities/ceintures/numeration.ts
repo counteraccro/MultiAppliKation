@@ -4,7 +4,7 @@
 // Une question se répond au pavé, au clavier de lettres (un nombre en lettres) ou en touchant un bouton.
 
 import { fractionToWords, numberToWords, numberToWordsTraditional } from '../../core/number-words';
-import { groupDigits, numberText, shuffle, type NumberLineFigure, type PartsFigure, type QuizQuestion } from '../../core/quiz';
+import { groupDigits, numberText, shuffle, type Figure, type NumberLineFigure, type PartsFigure, type QuizQuestion } from '../../core/quiz';
 import type { BeltId } from './belts';
 import { addDecimals, decimalToFraction, fractionToDecimal, pickCalcs, type MentalQuestion } from './calcul-mental';
 
@@ -14,6 +14,8 @@ export interface NumerationQuestion extends QuizQuestion {
   explain: string;
   /** Pour ne pas redonner les mêmes au prochain entraînement. */
   id: string;
+  /** Un dessin montré seulement dans la leçon, avec la réponse (le tableau de conversion rempli). */
+  lessonFigure?: Figure;
 }
 
 type Draw = (random: () => number) => NumerationQuestion;

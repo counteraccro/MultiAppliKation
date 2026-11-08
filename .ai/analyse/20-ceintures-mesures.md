@@ -107,8 +107,32 @@ Choix faits sans lui demander, à faire valider :
    - Unités à toucher : mm, cm, m, km, ou m, dam, hm, km pour un champ en hm. La tonne reste hors du tableau
      de conversion (pas de quintal dans la leçon).
    - L'autocollant « Objectif CE2 » des Mesures vient tout seul avec l'orange.
-   - Pas de tableau de conversion dessiné dans la leçon pour l'instant (« tracer un tableau » du classeur) :
-     à ajouter si l'utilisateur le souhaite.
+   - Tableau de conversion dessiné dans la leçon : ajouté à l'étape 3 (voir plus bas).
 3. **Verte et bleue** : aires (m², dm², cm², hm²), durées et heures de fin, les décimaux.
+   **Faite le 08/11/2026 (0.57.0)** :
+   - **Tableau de conversion dessiné** (validé par l'utilisateur) : dans la leçon, chaque exemple de conversion
+     montre le tableau rempli comme la leçon Mes 10 (`components/conversion-table.ts`, figure `conversion`) :
+     un chiffre par colonne, les 0 ajoutés en gris, la virgule dans la colonne de la nouvelle unité, une colonne
+     sans nom quand le nombre déborde (99 km). Il n'est montré que dans la leçon (`lessonFigure` d'une question),
+     jamais pendant la question, pour ne pas donner la réponse. La rose montre 350 m = 35 000 cm et
+     76 hg = 760 dag, la bleue 453 cm = 4,53 m.
+   - **Saisie des heures** (`clock` dans `core/quiz.ts`, mode `clock` de `question-screen.ts`) : les nombres au
+     pavé, « h » et « min » par deux boutons (ou les touches h et m), comme on l'écrit : 1, h, 15, min. Une durée
+     est juste en minutes ou en heures et minutes (75 min = 1 h 15 min = 1 h 15), pas « 1 h 75 min » ; une
+     heure s'écrit avec « h » (18 h 45 ou 18 h 45 min). La correction écrit la bonne réponse comme la sienne
+     (« 75 min » sous « 80 min », « 1 h 15 min » sous « 1 h 20 min »).
+   - Verte (objectif CM1) : aire d'un rectangle (chambre en m², champ en hm² et en m², foulard en dm² et en
+     cm², tapis), aire d'un carré, et parfois son périmètre pour ne pas confondre (les boutons sont la longueur et
+     trois unités d'aire : m, dm², m², dam²). Heure de fin d'une émission (fiches n° 39, 41, 45) et « Il est
+     8 h 30, quelle heure sera-t-il dans 1 h 45 min ? » (leçon Mes 4, méthode 4). Durée d'une émission, d'un
+     film (leçon) ou d'un voyage en train (fiche n° 48), expliquée par bonds jusqu'aux heures pile (méthode 2).
+     « Il est 8 h 40. Il sera 9 h dans … min » (leçon) et « 1 h 15 min, c'est … minutes ».
+   - Bleue (touche virgule) : l'unité qui convient à 0,8 … (mouche, feuille, porte, marathon…) ; conversions
+     avec la virgule dans les deux sens (453 cm = 4,53 m, 2,5 kg = 2 500 g) ; le sauteur, Sandra et François,
+     Camille et Tom, le ruban vert (juste en cm, en m ou en mm) ; Julie et son chien **en kg imposé**, le saut en
+     longueur **en cm imposé**, la corde partagée **en cm imposé** (fiches n° 49, 53, 55) ; le Megasplash et le
+     cocktail Borabora (L, dl, cl, ml).
+   - Mesures égales acceptées avec au plus 3 chiffres après la virgule dans la bleue (2,472 L = 2 472 ml) ; une
+     longueur n'est jamais acceptée dans une unité d'aire, ni l'inverse.
 4. **Marron, noire et brillante** : heure de début, côté à partir de l'aire, proportionnalité, problèmes
    niveau 4 ; progrès et autocollants de la matière, `unfinished` retiré.

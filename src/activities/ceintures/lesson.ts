@@ -220,7 +220,9 @@ function numerationCards(belt: NumerationBelt): HTMLElement[] {
             'li',
             {},
             // Colorier : l'exemple montre le dessin colorié.
-            question.figure && drawFigure(question.input === 'paint' && !isNumberLine(question.figure) ? { ...question.figure, colored: question.answer as number } : question.figure),
+            question.lessonFigure
+              ? drawFigure(question.lessonFigure)
+              : question.figure && drawFigure(question.input === 'paint' && !isNumberLine(question.figure) ? { ...question.figure, colored: question.answer as number } : question.figure),
             h('strong', {}, ...withFractions(withNbsp(question.solved))),
             h('br'),
             ...withFractions(withNbsp(question.explain)),

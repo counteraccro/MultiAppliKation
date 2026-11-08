@@ -1,4 +1,5 @@
-import { isNumberLine, isRuler, type Figure, type PartsFigure } from '../core/quiz';
+import { isConversion, isNumberLine, isRuler, type Figure, type PartsFigure } from '../core/quiz';
+import { conversionTable } from './conversion-table';
 import { numberLine, svg, type LinePick } from './number-line';
 import { ruler } from './ruler';
 
@@ -76,5 +77,6 @@ export function partsPicture(figure: PartsFigure, paint?: PartsPaint): SVGElemen
 /** La figure d'une question : une droite graduée, une règle ou un dessin à parts. */
 export function drawFigure(figure: Figure, options: { pick?: LinePick; paint?: PartsPaint } = {}): SVGElement {
   if (isRuler(figure)) return ruler(figure);
+  if (isConversion(figure)) return conversionTable(figure);
   return isNumberLine(figure) ? numberLine(figure, options.pick) : partsPicture(figure, options.paint);
 }

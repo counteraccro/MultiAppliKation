@@ -36,9 +36,14 @@ export interface QuizQuestion {
    * La réponse s'écrit « 14 m » ; une mesure égale dans une autre unité (`alsoAccepted` : « 1 400 cm ») est juste aussi.
    */
   units?: readonly string[];
+  /**
+   * Heures : les nombres au pavé, « h » et « min » par boutons. `duration` : une durée, juste en minutes ou en
+   * heures et minutes (« 75 min » = « 1 h 15 min ») ; `time` : une heure, « 18 h 45 » (« 18 h 45 min » aussi).
+   */
+  clock?: 'duration' | 'time';
 }
 
-export type Figure = NumberLineFigure | PartsFigure | RulerFigure;
+export type Figure = NumberLineFigure | PartsFigure | RulerFigure | ConversionFigure;
 
 export interface Choice {
   label: string;
@@ -73,8 +78,17 @@ export interface RulerFigure {
   ruler: { start: number; length: number };
 }
 
+/**
+ * Mesures : un tableau de conversion rempli (leçon Mes 10). `units` : l'en-tête des colonnes (vide quand le nombre
+ * déborde du tableau) ; `cells` : un chiffre par colonne, « 4, » avec la virgule, `added` pour les 0 ajoutés.
+ */
+export interface ConversionFigure {
+  conversion: { units: readonly string[]; cells: readonly { text: string; added?: boolean }[] };
+}
+
 export const isNumberLine = (figure: Figure): figure is NumberLineFigure => 'step' in figure;
 export const isRuler = (figure: Figure): figure is RulerFigure => 'ruler' in figure;
+export const isConversion = (figure: Figure): figure is ConversionFigure => 'conversion' in figure;
 
 export interface QuizSession<Q extends QuizQuestion = QuizQuestion> {
   /** Nombre de questions de la série (sans compter celles qui reviennent). */
@@ -127,7 +141,49 @@ export function measureText(text: string): string {
   return [groupDigits(number), unit].filter(Boolean).join(' ');
 }
 
+/** « 1 h 15 min » → 75, « 18 h 45 » → 1 125, « 75 min » → 75 ; undefined sans « h » ni « min », ou « 1 h 75 min ». */
+export function clockMinutes(text: string): { minutes: number; hours: boolean } | undefined {
+  const match = /^(?:(\d+) h(?: (\d+)(?: min)?)?|(\d+) min)$/.exec(text.trim());
+  if (!match) return undefined;
+  const [, hours, after, alone] = match;
+  if (alone !== undefined) return { minutes: Number(alone), hours: false };
+  if (Number(after ?? 0) >= 60) return undefined;
+  return { minutes: Number(hours) * 60 + Number(after ?? 0), hours: true };
+}
+
+/** Ce qui est tapé, comme on l'écrit : « 1 400 cm » pour une mesure, « 1 h 15 min » pour une durée. */
+export function typedText(question: QuizQuestion, typed: string): string {
+  return question.units ? measureText(typed) : typed;
+}
+
+/**
+ * La réponse juste à montrer sous la sienne : une mesure dans l'unité qu'il a choisie s'il y en a une
+ * (« 140 cm » plutôt que « 1,4 m ») ; une durée écrite comme la sienne (« 75 min » ou « 1 h 15 min »).
+ */
+export function shownAnswerFor(question: QuizQuestion, typed: string): string {
+  if (question.units) {
+    const { unit } = splitMeasure(typed);
+    return measureText(acceptedAnswers(question).find((a) => splitMeasure(a).unit === unit) ?? answerText(question));
+  }
+  if (question.clock) {
+    const withHours = / h/.test(typed);
+    const withMin = typed.endsWith('min');
+    const forms = acceptedAnswers(question).flatMap((a) => (question.clock === 'time' ? [a, `${a} min`] : [a]));
+    return (
+      forms.find((a) => / h/.test(a) === withHours && a.endsWith('min') === withMin) ??
+      forms.find((a) => / h/.test(a) === withHours) ??
+      answerText(question)
+    );
+  }
+  return answerText(question);
+}
+
 export function isCorrect(question: QuizQuestion, typed: string): boolean {
+  // Une durée : le même nombre de minutes ; une heure : la même, écrite avec « h ».
+  if (question.clock) {
+    const [given, expected] = [clockMinutes(typed), clockMinutes(answerText(question))];
+    return given !== undefined && expected !== undefined && given.minutes === expected.minutes && (question.clock === 'duration' || given.hours);
+  }
   // Une mesure : le même nombre (3,50 = 3,5) dans la même unité, pour l'une des réponses justes.
   if (question.units) {
     const given = splitMeasure(typed);

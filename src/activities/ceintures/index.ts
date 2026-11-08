@@ -6,7 +6,7 @@ import { renderQuestionScreen } from '../../components/question-screen';
 import { renderResult } from '../../components/result';
 import { closestAnswer } from '../../core/diff';
 import { h } from '../../core/dom';
-import { acceptedAnswers, answerText, groupDigits, measureText, normalizeAnswer, splitMeasure, type QuizQuestion } from '../../core/quiz';
+import { acceptedAnswers, answerText, groupDigits, normalizeAnswer, shownAnswerFor, typedText, type QuizQuestion } from '../../core/quiz';
 import { dayOf } from '../../core/play-days';
 import type { Sticker } from '../../core/stickers';
 import type { Activity } from '../types';
@@ -614,11 +614,12 @@ function numerationCorrections(mistakes: TableMistake<NumerationQuestion>[]): HT
       {},
       ...mistakes.map(({ question, typed }) => {
         const solved = withNbsp(question.solved);
-        if (question.units && typed !== undefined) {
-          // Une mesure : sa réponse, puis la phrase résolue avec la réponse juste dans l'unité choisie s'il y en a une.
-          const given = measureText(typed);
-          const shown = measureText(acceptedAnswers(question).find((a) => splitMeasure(a).unit === splitMeasure(typed).unit) ?? answerText(question));
-          const at = solved.lastIndexOf(shown);
+        if ((question.units || question.clock) && typed !== undefined) {
+          // Une mesure, une durée : sa réponse, puis la phrase résolue avec la réponse juste écrite comme la sienne
+          // (dans l'unité choisie, en minutes ou en heures et minutes).
+          const given = typedText(question, typed);
+          const shown = shownAnswerFor(question, typed);
+          const at = solved.replace(/\u00a0/g, ' ').lastIndexOf(shown.replace(/\u00a0/g, ' '));
           return h(
             'li',
             {},
