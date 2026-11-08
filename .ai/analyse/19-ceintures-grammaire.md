@@ -86,3 +86,7 @@ faite le 06/11/2026, à partir :
 2. **Les 9 autres ceintures**, le même jour (l'utilisateur a demandé d'enchaîner) : natures, compléments du
    nom dans leur groupe, couleurs des fonctions. Toute la matière est là : l'autocollant « Ceinture noire »
    existe. **0.54.0.**
+3. **Correctif « est assoiffé »** (08/11/2026, **0.58.1**) : l'astuce après une erreur citait « sont partis »
+   (passé composé, deux mots), si bien que « Le cheval **est assoiffé** » semblait juste. La réponse reste
+   « est » seul (« assoiffé » dit comment est le cheval) ; l'astuce de l'exercice et la règle de la leçon le
+   disent maintenant clairement.

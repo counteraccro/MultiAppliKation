@@ -254,7 +254,7 @@ const VERBS: GrammarExercise = {
   mode: 'color',
   pencils: ['V'],
   examples: [8, 7, 1],
-  tip: 'Le verbe conjugué change si on change le temps (hier, demain) ou la personne. Au passé composé, il a deux mots : « a pris », « sont partis ». Un verbe à l’infinitif (escalader, partir) n’est pas conjugué.',
+  tip: 'Le verbe conjugué change si on change le temps (hier, demain) ou la personne. Au passé composé, il a deux mots : « a pris », « sont partis ». Mais si le mot après « est » dit comment est le nom, il ne fait pas partie du verbe : « Le cheval est assoiffé » → on surligne seulement « est ». Un verbe à l’infinitif (escalader, partir) n’est pas conjugué.',
   sentences: [
     [1, 'Mon frère [V:sort] sa trottinette du garage.'],
     [1, 'Le cheval [V:est] assoiffé après sa course.'],
@@ -669,7 +669,7 @@ export const GRAMMAIRE: readonly GrammarBelt[] = [
     belt: 'blanche',
     skill: 'Les verbes conjugués',
     tips: [
-      'Le verbe dit ce que l’on fait (une action) ou comment on est (un état) : « Le cheval est assoiffé ».',
+      'Le verbe dit ce que l’on fait (une action) ou comment on est (un état) : « Le cheval est assoiffé ». Ici, le verbe est seulement « est ».',
       'Pour le trouver, change le temps de la phrase : hier, aujourd’hui, demain. Le mot qui change est le verbe conjugué.',
       'Ou bien mets-le entre « ne » et « pas » : « Il ne sort pas ».',
       'Au passé composé, le verbe a deux mots : « Il a pris sa douche », « Les oiseaux sont partis ». Surligne les deux.',
