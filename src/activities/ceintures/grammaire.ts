@@ -229,6 +229,14 @@ export function grammarQuestion(belt: BeltId, exercise: GrammarExercise, index: 
   };
 }
 
+const AUXILIARIES = new Set(['ai', 'as', 'a', 'avons', 'avez', 'ont', 'suis', 'es', 'est', 'sommes', 'êtes', 'sont']);
+
+/** Un verbe à surligner au passé composé : l'auxiliaire, puis un autre mot du verbe (« a pris », « se sont assis »). */
+export function isCompound(question: GrammarQuestion): boolean {
+  const words = wordsOf(question.pieces);
+  return words.some((w, i) => w.tags.includes('V') && AUXILIARIES.has(w.word.toLowerCase()) && words[i + 1]?.tags.includes('V'));
+}
+
 /**
  * Les phrases d'une série : chaque exercice de la ceinture à tour de rôle (jaune : les pronoms, puis le sujet),
  * de préférence pas vues au dernier entraînement (`seen`).
@@ -238,6 +246,9 @@ export function pickGrammar(belt: GrammarBelt, count: number, seen: readonly str
     const all = exercise.sentences.map((_, i) => grammarQuestion(belt.belt, exercise, i));
     return [...shuffle(all.filter((q) => !seen.includes(q.id)), random), ...shuffle(all.filter((q) => seen.includes(q.id)), random)];
   });
+  // Au moins un verbe au passé composé par série : les enfants n'en surlignent souvent qu'un des deux mots.
+  const pile = piles.find((p) => p.some(isCompound));
+  if (pile) pile.unshift(...pile.splice(pile.findIndex(isCompound), 1));
   const picked: GrammarQuestion[] = [];
   while (picked.length < count && piles.some((pile) => pile.length > 0)) {
     for (const pile of piles) {
@@ -357,6 +368,11 @@ const SUBJECTS_OF_VERBS: GrammarExercise = {
     [0, '[S:Mes amis] [V:se sont cachés] derrière la porte.'],
     [0, '[S:La voiture rouge de mon voisin] [V:démarre] difficilement.'],
     [0, 'Soudain, [S:un énorme chien noir] [V:surgit] au coin de la rue.'],
+    [0, '[S:J’] [V:ai oublié] mon cahier à la maison.'],
+    [0, '[S:Tu] [V:as gagné] la course de vélo.'],
+    [0, 'Dimanche, [S:ma grand-mère] [V:est venue] nous voir.'],
+    [0, 'Ce matin, [S:les pompiers] [V:ont éteint] un feu de forêt.'],
+    [0, '[S:Vous] [V:avez fini] vos exercices avant la sonnerie.'],
   ],
 };
 

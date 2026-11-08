@@ -3138,6 +3138,14 @@ button.belt-row:active {
   line-height: 2.4;
 }
 
-.gram-correction .gram-fixed {
-  margin-top: -0.4em;
+.gram-correction + .gram-correction {
+  padding-top: 12px;
+  border-top: 2px solid var(--border);
+}
+
+.gram-correction-title {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--text-soft);
 }

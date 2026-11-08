@@ -438,10 +438,9 @@ export function segment(length: number, start = 0): NumerationQuestion {
 }
 
 function drawSegment(random: () => number): NumerationQuestion {
-  const length = random() < 0.4 ? between(2, 10, random) * 10 : between(15, 99, random);
-  // Le plus souvent au 0, comme il faut placer la règle ; parfois plus loin, pour compter les graduations.
-  const start = random() < 0.7 || length > 80 ? 0 : between(1, 2, random) * 10;
-  return segment(length, start);
+  // Toujours au 0, comme on place la règle en classe ; le plus souvent avec des mm.
+  const length = random() < 0.2 ? between(2, 10, random) * 10 : between(1, 9, random) * 10 + between(1, 9, random);
+  return segment(length);
 }
 
 // --- Jaune : comparer et calculer des longueurs (fiches n° 13, 15, 16, 18) ---

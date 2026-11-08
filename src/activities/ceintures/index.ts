@@ -656,7 +656,7 @@ function numerationCorrections(mistakes: TableMistake<NumerationQuestion>[]): HT
   );
 }
 
-/** La correction d'un test de grammaire : chaque phrase fausse telle qu'il l'a coloriée, les mots faux barrés, puis la bonne. */
+/** La correction d'un test de grammaire : chaque phrase fausse à part, telle qu'il l'a coloriée (les mots faux barrés), puis la bonne. */
 function grammarCorrections(mistakes: TableMistake<GrammarQuestion>[]): HTMLElement {
   return h(
     'div',
@@ -672,7 +672,9 @@ function grammarCorrections(mistakes: TableMistake<GrammarQuestion>[]): HTMLElem
           'li',
           { class: 'gram-correction' },
           h('small', { class: 'correction-context' }, question.exercise.instruction),
+          h('small', { class: 'gram-correction-title' }, 'Ta réponse :'),
           h('span', { class: 'gram-sentence gram-given' }, ...drawSentence(question.pieces, given, { nature, expected: question.expected })),
+          h('small', { class: 'gram-correction-title' }, 'La correction :'),
           h('span', { class: 'gram-sentence gram-fixed' }, ...drawSentence(question.pieces, question.expected, { nature, given })),
         );
       }),

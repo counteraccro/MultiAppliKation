@@ -5,8 +5,10 @@ import {
   decodeMarks,
   encodeMarks,
   GRAMMAIRE,
+  GRAMMAR_PRACTICE_SIZE,
   GRAMMAR_TEST_SIZE,
   grammarQuestion,
+  isCompound,
   mainTag,
   paint,
   parseGrammar,
@@ -147,5 +149,14 @@ describe('le tirage', () => {
     expect(new Set(first.map((q) => q.exercise.id)).size).toBe(2);
     const next = pickGrammar(jaune, 6, first.map((q) => q.id));
     expect(next.some((q) => first.some((f) => f.id === q.id))).toBe(false);
+  });
+
+  it('met toujours un verbe au passé composé quand l’exercice demande le verbe', () => {
+    expect(isCompound(grammarQuestion('blanche', GRAMMAIRE[0]!.tasks[0]!, 8))).toBe(true);
+    expect(isCompound(grammarQuestion('blanche', GRAMMAIRE[0]!.tasks[0]!, 1))).toBe(false);
+    for (const belt of GRAMMAIRE) {
+      const any = belt.tasks.some((task) => task.sentences.some((_, i) => isCompound(grammarQuestion(belt.belt, task, i))));
+      for (let n = 0; n < 50; n++) expect(pickGrammar(belt, GRAMMAR_PRACTICE_SIZE).some(isCompound), belt.belt).toBe(any);
+    }
   });
 });

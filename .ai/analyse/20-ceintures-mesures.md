@@ -157,3 +157,9 @@ Choix faits sans lui demander, à faire valider :
      L…). Les prix s'écrivent avec deux chiffres après la virgule (84,80 €) ; 84,8 € est juste aussi.
    - Une réponse qui est un nombre de choses (élèves, verres, bouteilles, voix) se tape au pavé, le mot écrit après.
    - `unfinished` retiré : la matière est complète, l'autocollant « dernière ceinture » vient avec la brillante.
+
+## Retours de la classe
+
+- **08/11/2026 (0.59.0)**, une maîtresse : le segment partait parfois du 1 ou du 2 (« on mesure toujours depuis
+  le 0 ») et elle n'avait pas vu de mm. Le segment part maintenant toujours du 0, et 8 fois sur 10 sa longueur a
+  des mm (4 cm et 7 mm), au lieu de 6 sur 10.

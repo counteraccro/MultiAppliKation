@@ -90,3 +90,9 @@ faite le 06/11/2026, à partir :
    (passé composé, deux mots), si bien que « Le cheval **est assoiffé** » semblait juste. La réponse reste
    « est » seul (« assoiffé » dit comment est le cheval) ; l'astuce de l'exercice et la règle de la leçon le
    disent maintenant clairement.
+4. **Retours d'une maîtresse** (08/11/2026, **0.59.0**) :
+   - **La correction du test** : chaque phrase fausse est à part, séparée par un trait, avec « Ta réponse : »
+     puis « La correction : ». Avant, les phrases s'enchaînaient presque collées, sans titre.
+   - **Le passé composé** : chaque série (entraînement et test) a au moins une phrase avec un verbe au passé
+     composé quand l'exercice demande le verbe (`isCompound` : l'auxiliaire suivi d'un autre mot du verbe). Les
+     enfants n'en surlignent souvent qu'un mot. 5 phrases au passé composé en plus à la jaune.
