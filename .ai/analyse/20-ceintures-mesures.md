@@ -136,3 +136,24 @@ Choix faits sans lui demander, à faire valider :
      longueur n'est jamais acceptée dans une unité d'aire, ni l'inverse.
 4. **Marron, noire et brillante** : heure de début, côté à partir de l'aire, proportionnalité, problèmes
    niveau 4 ; progrès et autocollants de la matière, `unfinished` retiré.
+   **Faite le 08/11/2026 (0.58.0)** :
+   - Marron (touche virgule) : **l'heure de début** d'une émission (« se termine à 18 h 05, a duré 35 minutes »), d'un
+     voyage en train, d'un film, d'une promenade, d'un gâteau au four ; expliquée comme la méthode 3 de la leçon Mes 4
+     (on enlève à part les heures et les minutes ; s'il n'y en a pas assez, 10 h 15 = 9 h 75 min). **Le côté d'un
+     rectangle à partir de son aire** (jardin, chambre, nappe, affiche : 48 : 6 = 8) et le côté d'un carré (49 cm² →
+     7 cm), avec les pièges m² / dm² parmi les unités. Les problèmes des fiches n° 61 à 66 : saute-mouton (nombre
+     d'élèves au pavé), balance du primeur (**en grammes imposé**), camion chargé (en kg, juste aussi en t ; on demande
+     sa masse plutôt que « oui / non »), ampoules du médecin, robinet qui fuit (**en litres imposé**), verres et
+     bouteilles à remplir (la n° 66 en plus simple : 30 L en bouteilles de 75 cl, sans les hL).
+   - Noire (objectif CM2, leçon Pb 13) : le prix d'un, puis de plusieurs (biscuits, viande, soda, cahiers ; prix ronds
+     au niveau 2, centimes au niveau 3 : 63,60 € → 84,80 €) ; les recettes (3 fois plus de personnes, moins de
+     personnes, ou par la moitié comme les fiches n° 73 et 76 : 4 + 4 + 2) ; « un sac de sucre pèse 500 g, combien
+     pèsent 8 sacs ? » et « 3 chaises coûtent 75 €, combien coûte une chaise ? » (questions A et B de la leçon).
+   - Brillante (« Problèmes niveau 4 », n° 79 à 84) : l'avion (la distance, ou l'heure du décollage), le carrelage
+     (paquets entiers : 90 = 11 × 8 + 2, donc 12 paquets), le naïpode (réponse en heures), la caissière (jamais
+     « 0 € » à rendre), le marchand de vaisselle (bénéfice, avec des centimes), les élections (avec la correction
+     juste : 740 voix pour Mme Lejeune, M. Legrand).
+   - **L'euro** devient une unité (`MONEY`) : le prix se tape au pavé, puis « € » se touche parmi des pièges (g, kg,
+     L…). Les prix s'écrivent avec deux chiffres après la virgule (84,80 €) ; 84,8 € est juste aussi.
+   - Une réponse qui est un nombre de choses (élèves, verres, bouteilles, voix) se tape au pavé, le mot écrit après.
+   - `unfinished` retiré : la matière est complète, l'autocollant « dernière ceinture » vient avec la brillante.

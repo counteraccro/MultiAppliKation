@@ -12,7 +12,7 @@ const plainly =
   <A extends unknown[], R>(make: (...args: A) => R) =>
   (...args: A): R =>
     plain(make(...args));
-const { addTime, borabora, compareMeasures, conversionTable, convert, endTime, equality, heaviestOrca, heightProblem, inMinutes, journey, julie, longJump, megasplash, mixedPerimeter, monthDays, mostOf, neighbourMonth, rectangleArea, rectanglePerimeter, rectangleSide, ribbon, segment, shareRope, showDuration, squareArea, squarePerimeter, squareSide, tallest, timeFact, twoUnits, unitFor, untilHour } = Object.fromEntries(
+const { addTime, borabora, change, dishes, election, glasses, leak, leapfrog, plane, priceOfOne, prices, recipe, scales, severalOf, sideFromArea, squareSideFromArea, startOf, startTime, tiles, truck, vials, wish, compareMeasures, conversionTable, convert, endTime, equality, heaviestOrca, heightProblem, inMinutes, journey, julie, longJump, megasplash, mixedPerimeter, monthDays, mostOf, neighbourMonth, rectangleArea, rectanglePerimeter, rectangleSide, ribbon, segment, shareRope, showDuration, squareArea, squarePerimeter, squareSide, tallest, timeFact, twoUnits, unitFor, untilHour } = Object.fromEntries(
   Object.entries(mesures).map(([name, value]) => [name, typeof value === 'function' && name !== 'conversionTable' ? plainly(value as (...args: unknown[]) => unknown) : value]),
 ) as unknown as typeof mesures;
 
@@ -258,6 +258,92 @@ describe('Mesures', () => {
     expect(borabora(2, 10, 60, 100).answer).toBe('30 cl');
     expect(convert(453, 'cm', 'm').answer).toBe(4.53);
     expect(convert(4.53, 'm', 'cm').answer).toBe(453);
+  });
+
+  it('trouve l’heure de début en reculant (leçon Mes 4, méthode 3)', () => {
+    const show = startTime(1, 18 * 60 + 5, 35);
+    expect(show).toMatchObject({ clock: 'time', answer: '17 h 30', solved: 'Le jeu Calculo a commencé à 17 h 30.' });
+    expect(show.prompt).toBe('À la télévision, le jeu Calculo se termine à 18 h 05. Il a duré 35 minutes. À quelle heure a-t-il commencé ?');
+    expect(show.explain).toBe('On recule : on enlève à part les heures et les minutes. Il n’y a pas assez de minutes : 18 h 05, c’est 17 h 65 min (1 h = 60 min). 17 − 0 = 17 h et 65 − 35 = 30 min. Ça fait 17 h 30.');
+    expect(isCorrect(show, '17 h 30')).toBe(true);
+    expect(isCorrect(show, '30 min')).toBe(false);
+    // L'exemple de la leçon : 10 h 15 − 1 h 45 = 8 h 30.
+    const train = startOf(0, 10 * 60 + 15, 105);
+    expect(train).toMatchObject({ answer: '8 h 30', prompt: 'Mon train est arrivé à 10 h 15. Le voyage a duré 1 h 45 min. À quelle heure est-il parti ?' });
+    expect(train.explain).toContain('10 h 15, c’est 9 h 75 min');
+    expect(startOf(3, 12 * 60 + 40, 25).answer).toBe('12 h 15');
+    expect(startTime(0, 750, 80).explain).toMatch(/^80 min = 1 h 20 min\. /);
+  });
+
+  it('trouve le côté d’un rectangle à partir de son aire', () => {
+    const garden = sideFromArea(0, 8, 6, true);
+    expect(garden.prompt).toBe('Un jardin rectangulaire a une aire de 48 m². Sa largeur mesure 6 m. Combien mesure sa longueur ?');
+    expect(garden.answer).toBe('8 m');
+    expect(garden.units).toEqual(['m', 'dm²', 'm²', 'dam²']);
+    expect(isCorrect(garden, '8 m²')).toBe(false);
+    expect(sideFromArea(3, 40, 30, false).answer).toBe('30 cm');
+    expect(squareSideFromArea(7, 'cm')).toMatchObject({ prompt: 'Un carré a une aire de 49 cm². Combien mesure son côté ?', answer: '7 cm' });
+  });
+
+  it('résout les problèmes en plusieurs étapes (fiches n° 61 à 66)', () => {
+    expect(leapfrog(90, 20)).toMatchObject({ answer: 20, suffix: 'élèves' });
+    expect(leapfrog(90, 20).prompt).toContain('elle a parcouru 18 m');
+    const balance = scales(1340, 1, 3, 2);
+    expect(balance.prompt).toContain('il place une masse de 500 g, trois masses de 200 g et deux masses de 100 g');
+    expect(balance.answer).toBe('40 g');
+    expect(isCorrect(balance, '0,04 kg')).toBe(false);
+    // Fiche n° 63 : 10 190 kg (la correction Charivari dit « 40 g » par erreur).
+    const lorry = truck(6.2, 22, 45, 52, 50, 800);
+    expect(lorry.answer).toBe('10 190 kg');
+    expect(isCorrect(lorry, '10,19 t')).toBe(true);
+    expect(vials(3, 15, 5).answer).toBe('225 ml');
+    expect(isCorrect(vials(3, 15, 5), '22,5 cl')).toBe(true);
+    expect(leak(5, 60).answer).toBe('3 L');
+    expect(isCorrect(leak(5, 60), '300 cl')).toBe(false);
+    expect(leak(3, 30).answer).toBe('0,9 L');
+    expect(glasses(30, 75, true)).toMatchObject({ answer: 40, suffix: 'bouteilles' });
+  });
+
+  it('résout les problèmes de proportionnalité (fiches n° 67 à 78)', () => {
+    const biscuits = prices(0, 2, 7, 400);
+    expect(biscuits).toMatchObject({ prompt: '2 paquets de biscuits coûtent 8 €. Combien coûtent 7 paquets de biscuits ?', answer: '28 €' });
+    expect(biscuits.explain).toBe('On cherche d’abord le prix d’un paquet de biscuits : 8 : 2 = 4 €. Puis 7 × 4 = 28.');
+    expect(isCorrect(biscuits, '28 g')).toBe(false);
+    const meat = prices(1, 3, 4, 2120);
+    expect(meat.prompt).toContain('3 kilos de viande coûtent 63,60 €');
+    expect(meat.answer).toBe('84,80 €');
+    expect(isCorrect(meat, '84,8 €')).toBe(true);
+    expect(prices(0, 2, 7, 415).answer).toBe('29,05 €');
+    const sugar = recipe(0, 6, 18, 150);
+    expect(sugar.answer).toBe('450 g');
+    expect(sugar.explain).toBe('18 : 6 = 3 : il y a 3 fois plus de personnes, donc il faut 3 fois plus de sucre. 150 × 3 = 450.');
+    expect(isCorrect(sugar, '0,45 kg')).toBe(true);
+    expect(recipe(1, 4, 6, 200).explain).toBe('Pour 2 personnes, c’est la moitié : 200 : 2 = 100. 6 personnes, c’est 4 + 2 : 200 + 100 = 300.');
+    expect(recipe(2, 4, 10, 30).explain).toContain('10 personnes, c’est 4 + 4 + 2 : 30 + 30 + 15 = 75.');
+    expect(recipe(3, 6, 2, 36).answer).toBe('12 cl');
+    expect(severalOf(0, 500, 8).answer).toBe('4 000 g');
+    expect(isCorrect(severalOf(0, 500, 8), '4 kg')).toBe(true);
+    expect(priceOfOne(0, 3, 2500)).toMatchObject({ prompt: '3 chaises coûtent 75 €. Combien coûte une chaise ?', answer: '25 €' });
+  });
+
+  it('résout les problèmes niveau 4 (fiches n° 79 à 84)', () => {
+    expect(plane(14 * 60 + 10, 280, 150, false).answer).toBe('700 km');
+    expect(plane(14 * 60 + 10, 280, 150, false).explain).toBe('En une demi-heure, l’avion parcourt 280 : 2 = 140 km. En 2 h 30 min : 2 × 280 + 140 = 700.');
+    expect(plane(14 * 60 + 10, 280, 150, true).answer).toBe('11 h 40');
+    const kitchen = tiles(4.5, 5, 8, 23);
+    expect(kitchen.answer).toBe('276 €');
+    expect(kitchen.explain).toContain('90 = 11 × 8 + 2 : 11 paquets ne suffisent pas, il faut 12 paquets.');
+    const gift = wish(0, 35, 7, 30);
+    expect(gift.prompt).toContain('qui coûte 210 €. Sa mère gagne 1 225 € par mois et travaille 35 heures par semaine. Combien d’heures la mère de Lucas travaille-t-elle');
+    expect(isCorrect(gift, '30 h')).toBe(true);
+    expect(gift.solved).toBe('La mère de Lucas travaille 30 heures pour gagner le prix du naïpode.');
+    expect(change(756, 235, 145).answer).toBe('6,29 €');
+    expect(dishes(1500, 465, 12, 30).answer).toBe('3 022,50 €');
+    expect(isCorrect(dishes(1500, 465, 12, 30), '3022,5 €')).toBe(true);
+    // Fiche n° 84 : 740 voix pour Mme Lejeune (la correction dit 738), 296 pour M. Legrand.
+    const vote = election(2960);
+    expect(vote.answer).toBe(1924);
+    expect(vote.explain).toContain('2 960 : 4 = 740 voix pour Mme Lejeune');
   });
 
   it('tire des questions différentes', () => {

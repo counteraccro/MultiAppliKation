@@ -14,7 +14,7 @@ const between = (min: number, max: number, random: () => number) => min + Math.f
 const pick = <T>(items: readonly T[], random: () => number) => items[Math.floor(random() * items.length)]!;
 
 /** « 5 m », « 18 h 45 » : le nombre et son unité ne se séparent pas en fin de ligne. */
-const glued = (text: string) => text.replace(/(\d) (?=(?:[a-zA-Z]{1,3}²?|min)(?![\p{L}\d]))/gu, '$1\u00a0');
+const glued = (text: string) => text.replace(/(\d) (?=(?:[a-zA-Z]{1,3}²?|min|€)(?![\p{L}\d]))/gu, '$1\u00a0');
 
 function question(fields: Omit<NumerationQuestion, 'id'>): NumerationQuestion {
   const texts = { prompt: glued(fields.prompt), solved: glued(fields.solved), explain: glued(fields.explain) };
@@ -35,7 +35,9 @@ export const MASS_TABLE = ['kg', 'hg', 'dag', 'g'] as const;
 export const VOLUME_TABLE = ['L', 'dl', 'cl', 'ml'] as const;
 /** Les unités d'aire (leçon Mes 9), de la plus grande à la plus petite : de l'une à l'autre, × 100. */
 export const AREA_TABLE = ['km²', 'hm²', 'dam²', 'm²', 'dm²', 'cm²', 'mm²'] as const;
-type Unit = (typeof LENGTH_TABLE)[number] | (typeof MASS_TABLE)[number] | (typeof VOLUME_TABLE)[number] | (typeof AREA_TABLE)[number] | 't';
+/** Les prix des problèmes (noire, brillante) : l'euro, seul de sa famille. */
+const MONEY = ['€'] as const;
+type Unit = (typeof LENGTH_TABLE)[number] | (typeof MASS_TABLE)[number] | (typeof VOLUME_TABLE)[number] | (typeof AREA_TABLE)[number] | 't' | '€';
 
 /** Chaque unité dans la plus petite de sa famille : 1 m = 1 000 mm, 1 t = 1 000 000 g, 1 L = 1 000 ml. */
 const FACTOR: Readonly<Record<Unit, number>> = {
@@ -62,15 +64,16 @@ const FACTOR: Readonly<Record<Unit, number>> = {
   'dam²': 100_000_000,
   'hm²': 10_000_000_000,
   'km²': 1_000_000_000_000,
+  '€': 1,
 };
 
 /** Les unités à toucher pour une mesure : les plus connues de sa famille, ou tout le tableau de conversion. */
 const familyOf = (unit: Unit): readonly Unit[] =>
-  [LENGTHS, MASSES, VOLUMES, LENGTH_TABLE, MASS_TABLE, VOLUME_TABLE, AREA_TABLE].find((family) => (family as readonly Unit[]).includes(unit))!;
+  [LENGTHS, MASSES, VOLUMES, LENGTH_TABLE, MASS_TABLE, VOLUME_TABLE, AREA_TABLE, MONEY].find((family) => (family as readonly Unit[]).includes(unit))!;
 
 /** Longueur, masse, contenance ou aire : on ne passe pas de l'une à l'autre (20 m n'est pas 2 dm²). */
 const sameKind = (a: Unit, b: Unit) =>
-  [LENGTH_TABLE, [...MASS_TABLE, 't'], VOLUME_TABLE, AREA_TABLE].some((family) => (family as readonly Unit[]).includes(a) && (family as readonly Unit[]).includes(b));
+  [LENGTH_TABLE, [...MASS_TABLE, 't'], VOLUME_TABLE, AREA_TABLE, MONEY].some((family) => (family as readonly Unit[]).includes(a) && (family as readonly Unit[]).includes(b));
 
 /** Une mesure : un nombre et son unité, « 120 cm ». */
 type Measure = readonly [value: number, unit: Unit];
@@ -1291,6 +1294,515 @@ function drawCocktail(random: () => number): NumerationQuestion {
   }
 }
 
+// --- Marron : l'heure de début (leçon Mes 4, méthode 3) ---
+
+/** On recule : on enlève à part les heures et les minutes ; s'il n'y a pas assez de minutes, on change 1 h en 60 min. */
+function startExplain(end: number, duration: number): string {
+  const [hours, minutes] = [Math.floor(duration / 60), duration % 60];
+  const borrow = end % 60 < minutes;
+  const [fromHours, fromMinutes] = borrow ? [Math.floor(end / 60) - 1, (end % 60) + 60] : [Math.floor(end / 60), end % 60];
+  const lend = borrow ? ` Il n’y a pas assez de minutes : ${clockText(end)}, c’est ${fromHours} h ${fromMinutes} min (1 h = 60 min).` : '';
+  return `On recule : on enlève à part les heures et les minutes.${lend} ${fromHours} − ${hours} = ${fromHours - hours} h et ${fromMinutes} − ${minutes} = ${fromMinutes - minutes} min. Ça fait ${clockText(end - duration)}.`;
+}
+
+/** « Le jeu Calculo se termine à 18 h 05. Il a duré 35 minutes. À quelle heure a-t-il commencé ? » */
+export function startTime(show: number, end: number, duration: number): NumerationQuestion {
+  const [genre, name, it] = SHOWS[show]!;
+  const inHours = duration >= 60 ? `${duration} min = ${durationText(duration)}. ` : '';
+  return question({
+    context: 'Problème',
+    prompt: `À la télévision, ${genre} ${name} se termine à ${saidTime(end)}. ${capitalized(it)} a duré ${duration} minutes. À quelle heure a-t-${it} commencé ?`,
+    clock: 'time',
+    answer: clockText(end - duration),
+    solved: `${capitalized(genre)} ${name} a commencé à ${clockText(end - duration)}.`,
+    explain: inHours + startExplain(end, duration),
+  });
+}
+
+/** Le train, le film, la promenade, le gâteau : la fin et la durée, on cherche le début. */
+const STARTS = [
+  { prompt: 'Mon train est arrivé à {end}. Le voyage a duré {duration}. À quelle heure est-il parti ?', solved: 'Le train est parti à {start}.' },
+  { prompt: 'Le film s’est terminé à {end}. Il a duré {duration}. À quelle heure a-t-il commencé ?', solved: 'Le film a commencé à {start}.' },
+  { prompt: 'Léa rentre de promenade à {end}. Elle a marché pendant {duration}. À quelle heure est-elle partie ?', solved: 'Léa est partie à {start}.' },
+  { prompt: 'Le gâteau sort du four à {end}. Il a cuit pendant {duration}. À quelle heure l’a-t-on mis au four ?', solved: 'On a mis le gâteau au four à {start}.' },
+] as const;
+
+export function startOf(kind: number, end: number, duration: number): NumerationQuestion {
+  const { prompt, solved } = STARTS[kind]!;
+  const fill = (text: string) => text.replace('{end}', clockText(end)).replace('{duration}', durationText(duration)).replace('{start}', clockText(end - duration));
+  return question({ context: 'Problème', prompt: fill(prompt), clock: 'time', answer: clockText(end - duration), solved: fill(solved), explain: startExplain(end, duration) });
+}
+
+function drawStart(random: () => number): NumerationQuestion {
+  if (random() < 0.4) {
+    const end = random() < 0.15 ? 750 : between(9, 21, random) * 60 + between(0, 11, random) * 5;
+    return startTime(between(0, SHOWS.length - 1, random), end, between(4, 18, random) * 5);
+  }
+  const kind = between(0, STARTS.length - 1, random);
+  const end = between(10, 21, random) * 60 + between(0, 11, random) * 5;
+  // Le gâteau cuit moins d'une heure ; le reste dure des heures et des minutes, souvent plus de minutes qu'à la fin.
+  const duration = kind === 3 ? between(5, 11, random) * 5 : between(1, 3, random) * 60 + between(1, 11, random) * 5;
+  return startOf(kind, end, duration);
+}
+
+// --- Marron : le côté d'un rectangle à partir de son aire (leçons Mes 8 et Mes 9) ---
+
+const AREA_SIDES = [
+  { start: 'Un jardin rectangulaire', of: 'du jardin', unit: 'm', long: [6, 12], short: [3, 5] },
+  { start: 'Une chambre rectangulaire', of: 'de la chambre', unit: 'm', long: [4, 6], short: [2, 3] },
+  { start: 'Une nappe rectangulaire', of: 'de la nappe', unit: 'dm', long: [12, 20], short: [8, 10] },
+  { start: 'Une affiche rectangulaire', of: 'de l’affiche', unit: 'cm', long: [3, 6], short: [2, 3], step: 10 },
+] as const;
+
+/** « Un jardin rectangulaire a une aire de 48 m². Sa largeur mesure 6 m. Combien mesure sa longueur ? » : A : l. */
+export function sideFromArea(kind: number, long: number, short: number, askLong: boolean): NumerationQuestion {
+  const { start, of, unit } = AREA_SIDES[kind]!;
+  const a = long * short;
+  const [known, found] = askLong ? [short, long] : [long, short];
+  const [knownName, foundName] = askLong ? ['largeur', 'longueur'] : ['longueur', 'largeur'];
+  return problem(
+    `${start} a une aire de ${spaced(a)} ${unit}². Sa ${knownName} mesure ${known} ${unit}. Combien mesure sa ${foundName} ?`,
+    found * FACTOR[unit],
+    unit,
+    `La ${foundName} ${of} mesure ${found} ${unit}.`,
+    `L’aire d’un rectangle, c’est L × l : ${known} × … = ${spaced(a)}. Pour trouver le nombre qui manque, on divise : ${spaced(a)} : ${known} = ${found}. C’est une longueur, en ${unit} (pas en ${unit}²).`,
+    areaUnits(unit),
+  );
+}
+
+/** « Un carré a une aire de 49 cm². Combien mesure son côté ? » : le nombre qui, multiplié par lui-même, donne l'aire. */
+export function squareSideFromArea(side: number, unit: 'm' | 'cm'): NumerationQuestion {
+  return problem(
+    `Un carré a une aire de ${side * side} ${unit}². Combien mesure son côté ?`,
+    side * FACTOR[unit],
+    unit,
+    `Le côté du carré mesure ${side} ${unit}.`,
+    `L’aire d’un carré, c’est c × c : quel nombre multiplié par lui-même donne ${side * side} ? ${side} × ${side} = ${side * side}. Le côté mesure ${side} ${unit} (une longueur, pas des ${unit}²).`,
+    areaUnits(unit),
+  );
+}
+
+function drawSideFromArea(random: () => number): NumerationQuestion {
+  if (random() < 0.25) return squareSideFromArea(between(3, 10, random), random() < 0.5 ? 'm' : 'cm');
+  const kind = between(0, AREA_SIDES.length - 1, random);
+  const shape = AREA_SIDES[kind]!;
+  const step = 'step' in shape ? shape.step : 1;
+  return sideFromArea(kind, between(shape.long[0], shape.long[1], random) * step, between(shape.short[0], shape.short[1], random) * step, random() < 0.5);
+}
+
+// --- Marron : des problèmes en plusieurs étapes (fiches n° 61 à 66) ---
+
+/** Un problème dont la réponse est un nombre de choses (élèves, verres, voix) : le nombre au pavé. */
+const countProblem = (prompt: string, answer: number, things: string, solved: string, explain: string): NumerationQuestion =>
+  question({ context: 'Problème', prompt, suffix: things, answer, solved, explain });
+
+/** Au saute-mouton, Julie avance de 90 cm à chaque saut et parcourt 18 m (fiche n° 61). */
+export function leapfrog(step: number, count: number): NumerationQuestion {
+  const total = step * count;
+  return countProblem(
+    `Au jeu du saute-mouton, Julie avance de ${step} cm à chaque saut. Au final, elle a parcouru ${spaced(total / 100)} m sans s’arrêter. Au-dessus de combien d’élèves est-elle passée ?`,
+    count,
+    'élèves',
+    `Julie est passée au-dessus de ${count} élèves.`,
+    `On écrit tout en cm : ${spaced(total / 100)} m = ${spaced(total)} cm. Puis ${spaced(total)} : ${step} = ${count} (jamais d’unité dans les calculs).`,
+  );
+}
+
+function drawLeapfrog(random: () => number): NumerationQuestion {
+  for (;;) {
+    const step = pick([50, 60, 75, 80, 90, 120, 150], random);
+    const count = between(6, 24, random);
+    if ((step * count) % 100 === 0) return leapfrog(step, count);
+  }
+}
+
+const SOME = ['', 'une', 'deux', 'trois'];
+
+/** La balance du primeur (fiche n° 62) : les masses posées, les tomates en kg ; ce qui manque, en grammes. */
+export function scales(tomatoes: number, big: number, middle: number, small: number): NumerationQuestion {
+  const placed = big * 500 + middle * 200 + small * 100;
+  const missing = tomatoes - placed;
+  const all: readonly (readonly [count: number, grams: number])[] = [
+    [big, 500],
+    [middle, 200],
+    [small, 100],
+  ];
+  const masses = all.filter(([n]) => n > 0);
+  const said = masses.map(([n, g]) => `${SOME[n]} masse${n > 1 ? 's' : ''} de ${g} g`);
+  const sum = masses.map(([n, g]) => (n === 1 ? `${g}` : `${n} × ${g}`)).join(' + ');
+  return question({
+    context: 'Problème',
+    prompt: `Au marché, le primeur pèse des tomates. Sur le plateau de gauche, il y a ${spaced(tomatoes / 1000)} kg de tomates. Sur le plateau de droite, il place ${listed(said)}. Combien de grammes manque-t-il pour que les plateaux soient à l’équilibre ?`,
+    units: MASSES,
+    ...measureAnswer(missing, 'g', []),
+    solved: `Il manque ${missing} g pour que les plateaux soient à l’équilibre.`,
+    explain: `Sur le plateau de droite : ${sum} = ${spaced(placed)} g. Les tomates : ${spaced(tomatoes / 1000)} kg = ${spaced(tomatoes)} g. Puis ${spaced(tomatoes)} − ${spaced(placed)} = ${missing}. La question demande des grammes.`,
+  });
+}
+
+function drawScales(random: () => number): NumerationQuestion {
+  const [big, middle, small] = [between(0, 1, random), between(1, 3, random), between(0, 3, random)];
+  return scales(big * 500 + middle * 200 + small * 100 + between(1, 19, random) * 10, big, middle, small);
+}
+
+/** Le camion chargé (fiche n° 63) : à vide en tonnes, des fûts, des caisses et des boîtes de 500 g. */
+export function truck(empty: number, barrels: number, barrel: number, crates: number, crate: number, boxes: number): NumerationQuestion {
+  const total = Math.round(empty * 1000) + barrels * barrel + crates * crate + boxes / 2;
+  return question({
+    context: 'Problème',
+    prompt: `Un camion pèse ${spaced(empty)} tonnes à vide. On le charge de ${barrels} fûts de ${barrel} kg chacun, de ${crates} caisses de ${crate} kg chacune et de ${boxes} boîtes de 500 g chacune. Combien pèse le camion chargé ?`,
+    units: MASSES,
+    ...measureAnswer(total * 1000, 'kg', MASSES, 3),
+    solved: `Le camion chargé pèse ${spaced(total)} kg.`,
+    explain: `On écrit tout en kg : ${spaced(empty)} t = ${spaced(empty * 1000)} kg et 500 g = 0,5 kg. Puis ${spaced(empty * 1000)} + ${barrels} × ${barrel} + ${crates} × ${crate} + ${boxes} × 0,5 = ${spaced(total)}.`,
+  });
+}
+
+/** Les ampoules du médecin (fiche n° 64) : 3 boîtes de 15 ampoules de 5 ml. */
+export function vials(boxes: number, perBox: number, ml: number): NumerationQuestion {
+  const total = boxes * perBox * ml;
+  return question({
+    context: 'Problème',
+    prompt: `Le médecin prescrit ${boxes} boîtes de ${perBox} ampoules de ${ml} ml. Quelle quantité totale de médicament a été prescrite ?`,
+    units: VOLUME_UNITS,
+    ...measureAnswer(total, 'ml', VOLUME_UNITS, 3),
+    solved: `${spaced(total)} ml de médicament ont été prescrits.`,
+    explain: `${boxes} × ${perBox} × ${ml} = ${spaced(total)} (jamais d’unité dans les calculs).`,
+  });
+}
+
+/** Le robinet qui fuit (fiche n° 65) : des cl par minute ; combien de litres, imposé. */
+export function leak(cl: number, minutes: number): NumerationQuestion {
+  const total = cl * minutes;
+  const time = minutes === 60 ? 'Au bout d’une heure' : minutes === 30 ? 'Au bout d’une demi-heure' : `Au bout de ${durationText(minutes)}`;
+  return question({
+    context: 'Problème',
+    prompt: `Mon robinet fuit et laisse échapper ${cl} cl à chaque minute. Je récupère l’eau dans un seau. ${time}, combien de litres d’eau aurai-je récupérés ?`,
+    units: VOLUME_UNITS,
+    ...measureAnswer(total * 10, 'L', []),
+    solved: `${time}, j’aurai récupéré ${spaced(total / 100)} L d’eau.`,
+    explain: `${durationText(minutes)} = ${minutes} min, donc ${cl} × ${minutes} = ${total} cl. Puis 1 L = 100 cl : ${total} cl = ${spaced(total / 100)} L. La question demande des litres.`,
+  });
+}
+
+/** Combien de verres, de bouteilles remplir (fiche n° 66, en plus simple) : on écrit tout en cl, puis on partage. */
+export function glasses(liters: number, cl: number, bottles: boolean): NumerationQuestion {
+  const count = (liters * 100) / cl;
+  return countProblem(
+    bottles
+      ? `Un viticulteur a ${liters} L de vin. Combien de bouteilles de ${cl} cl peut-il remplir ?`
+      : `Pour la fête de l’école, on a ${liters} L de jus de pomme. Combien de verres de ${cl} cl peut-on remplir ?`,
+    count,
+    bottles ? 'bouteilles' : 'verres',
+    bottles ? `Il peut remplir ${count} bouteilles de ${cl} cl.` : `On peut remplir ${count} verres de ${cl} cl.`,
+    `On écrit tout en cl : ${liters} L = ${spaced(liters * 100)} cl. Puis ${spaced(liters * 100)} : ${cl} = ${count}.`,
+  );
+}
+
+const MARRON_PROBLEMS: readonly Draw[] = [
+  drawLeapfrog,
+  drawScales,
+  (random) => truck(pick([5.5, 6, 6.2, 6.5, 7, 7.4], random), between(10, 25, random), pick([40, 45, 50], random), between(20, 60, random), pick([25, 50], random), pick([200, 400, 600, 800], random)),
+  (random) => vials(between(2, 5, random), pick([10, 12, 15, 20], random), pick([2, 5, 10], random)),
+  (random) => leak(pick([2, 3, 4, 5, 6, 8, 10], random), pick([30, 60, 60, 120], random)),
+  (random) => (random() < 0.5 ? glasses(pick([3, 6, 9, 15, 30], random), 75, true) : glasses(between(1, 5, random), pick([10, 20, 25, 50], random), false)),
+];
+
+// --- Noire : la proportionnalité (fiches n° 67 à 78, leçon Pb 13) ---
+
+/** 8,30 € : les centimes sur deux chiffres, comme sur les fiches ; 28 € sans virgule. */
+const euros = (cents: number) => (cents % 100 === 0 ? spaced(cents / 100) : groupDigits((cents / 100).toFixed(2).replace('.', ',')));
+
+/** Un prix à trouver : le nombre au pavé (avec la virgule), puis « € » parmi des pièges. */
+const moneyProblem = (prompt: string, cents: number, units: readonly Unit[], solved: string, explain: string): NumerationQuestion =>
+  question({ context: 'Problème', prompt, units, answer: `${euros(cents)} €`, alsoAccepted: [], solved, explain });
+
+const GOODS = [
+  { one: 'paquet de biscuits', many: 'paquets de biscuits', units: ['€', 'g', 'kg'] },
+  { one: 'kilo de viande', many: 'kilos de viande', units: ['€', 'kg', 'g'] },
+  { one: 'bouteille de soda', many: 'bouteilles de soda', units: ['€', 'L', 'cl'] },
+  { one: 'cahier', many: 'cahiers', units: ['€', 'cm', 'g'] },
+] as const;
+
+/** « Deux paquets de biscuits coûtent 8 €. Combien coûtent 7 paquets ? » : le prix d'un, puis de plusieurs. */
+export function prices(good: number, known: number, asked: number, unitCents: number): NumerationQuestion {
+  const { one, many, units } = GOODS[good]!;
+  const [total, result] = [known * unitCents, asked * unitCents];
+  return moneyProblem(
+    `${known} ${many} coûtent ${euros(total)} €. Combien coûtent ${asked} ${many} ?`,
+    result,
+    units,
+    `${asked} ${many} coûtent ${euros(result)} €.`,
+    `On cherche d’abord le prix d’un ${one} : ${euros(total)} : ${known} = ${euros(unitCents)} €. Puis ${asked} × ${euros(unitCents)} = ${euros(result)}.`,
+  );
+}
+
+function drawPrices(random: () => number, decimals: boolean): NumerationQuestion {
+  const good = between(0, GOODS.length - 1, random);
+  const known = between(2, 6, random);
+  let asked = between(2, 10, random);
+  if (asked === known) asked++;
+  // Niveau 2 : un prix rond pour un ; niveau 3 : des centimes (4,15 €, 21,20 €, 4,99 €). La viande coûte plus cher.
+  const meat = good === 1 ? 1000 : 0;
+  if (!decimals) return prices(good, known, asked, meat + between(2, 12, random) * 100);
+  const cents = between(21, 199, random) * 5 + pick([0, 0, 4], random);
+  return prices(good, known, asked, meat + (cents % 100 === 0 ? cents + 50 : cents));
+}
+
+const RECIPES = [
+  { cake: 'un gâteau au chocolat', what: 'sucre', unit: 'g', units: ['g', 'kg', 'cl'] },
+  { cake: 'un gâteau aux pommes', what: 'farine', unit: 'g', units: ['g', 'kg', 'cl'] },
+  { cake: 'un gâteau aux pommes', what: 'caramel', unit: 'g', units: ['g', 'kg', 'cl'] },
+  { cake: 'des crêpes', what: 'lait', unit: 'cl', units: ['ml', 'cl', 'L', 'g'] },
+  { cake: 'une mousse au chocolat', what: 'chocolat', unit: 'g', units: ['g', 'kg', 'cl'] },
+] as const;
+
+/**
+ * « Pour un gâteau pour 6 personnes, il faut 150 g de sucre. Combien pour 18 personnes ? » : 3 fois plus de
+ * personnes, 3 fois plus de sucre (fiche n° 68) ; ou par la moitié, 4 → 2 → 6 (fiches n° 73 et 76).
+ */
+export function recipe(kind: number, persons: number, target: number, quantity: number): NumerationQuestion {
+  const { cake, what, unit, units } = RECIPES[kind]!;
+  const result = (quantity * target) / persons;
+  let explain: string;
+  if (target % persons === 0) {
+    const k = target / persons;
+    explain = `${target} : ${persons} = ${k} : il y a ${k} fois plus de personnes, donc il faut ${k} fois plus de ${what}. ${quantity} × ${k} = ${spaced(result)}.`;
+  } else if (persons % target === 0) {
+    const k = persons / target;
+    explain = `${persons} : ${target} = ${k} : il y a ${k} fois moins de personnes, donc il faut ${k} fois moins de ${what}. ${quantity} : ${k} = ${spaced(result)}.`;
+  } else {
+    // 10 personnes, c'est 4 + 4 + 2 : la quantité deux fois, et sa moitié.
+    const half = persons / 2;
+    const parts = [...Array<number>(Math.floor(target / persons)).fill(persons), half];
+    explain = `Pour ${half} personnes, c’est la moitié : ${quantity} : 2 = ${spaced(quantity / 2)}. ${target} personnes, c’est ${parts.join(' + ')} : ${parts.map((p) => spaced((quantity * p) / persons)).join(' + ')} = ${spaced(result)}.`;
+  }
+  return question({
+    context: 'Problème',
+    prompt: `Pour faire ${cake} pour ${persons} personnes, il faut ${quantity} ${unit} de ${what}. Combien faut-il de ${what} pour ${target} personnes ?`,
+    units,
+    ...measureAnswer(result * FACTOR[unit], unit, units as readonly Unit[], 3),
+    solved: `Pour ${target} personnes, il faut ${spaced(result)} ${unit} de ${what}.`,
+    explain,
+  });
+}
+
+function drawRecipe(random: () => number): NumerationQuestion {
+  const kind = between(0, RECIPES.length - 1, random);
+  const persons = pick([2, 4, 6], random);
+  // Plus de personnes (× 2, × 3, × 4), moins (4 → 2, 6 → 3, 6 → 2), ou par la moitié (4 → 6, 4 → 10, 6 → 9).
+  const way = persons === 2 ? 0 : between(0, 2, random);
+  const target = way === 0 ? persons * between(2, 4, random) : way === 1 ? persons / (persons === 6 ? pick([2, 3], random) : 2) : persons * between(1, 2, random) + persons / 2;
+  // Une quantité qui se partage juste, en 2 comme en 3.
+  const quantity = RECIPES[kind]!.unit === 'cl' ? pick([24, 30, 36, 48, 60], random) : between(2, 10, random) * 30;
+  return recipe(kind, persons, target, quantity);
+}
+
+/** « Un sac de sucre pèse 500 g. Combien pèsent 8 sacs ? » (leçon Pb 13, question A) : une mesure, plusieurs fois. */
+export function severalOf(kind: number, each: number, count: number): NumerationQuestion {
+  const total = each * count;
+  const [prompt, solved, unit, units] = (
+    [
+      [`Un sac de sucre pèse ${each} g. Combien pèsent ${count} sacs de sucre ?`, `${count} sacs de sucre pèsent ${spaced(total)} g.`, 'g', MASSES],
+      [`Une bouteille de jus contient ${each} cl. Combien contiennent ${count} bouteilles ?`, `${count} bouteilles contiennent ${spaced(total)} cl.`, 'cl', VOLUME_UNITS],
+      [`Une planche mesure ${each} cm de long. On en met ${count} bout à bout. Quelle longueur obtient-on ?`, `On obtient ${spaced(total)} cm.`, 'cm', LENGTH_UNITS],
+    ] as const
+  )[kind]!;
+  const [things, more] = (
+    [
+      ['sacs', 'plus lourd'],
+      ['bouteilles', 'plus de jus'],
+      ['planches', 'plus long'],
+    ] as const
+  )[kind]!;
+  return question({
+    context: 'Problème',
+    prompt,
+    units,
+    ...measureAnswer(total * FACTOR[unit], unit, units, 3),
+    solved,
+    explain: `${count} fois plus de ${things}, c’est ${count} fois ${more} : ${count} × ${each} = ${spaced(total)}.`,
+  });
+}
+
+const ITEMS = [
+  ['chaises', 'une chaise'],
+  ['tee-shirts', 'un tee-shirt'],
+  ['places de cinéma', 'une place de cinéma'],
+  ['livres', 'un livre'],
+] as const;
+
+/** « Si 3 chaises coûtent 75 €, combien coûte une chaise ? » (leçon Pb 13, question B) : on partage. */
+export function priceOfOne(item: number, count: number, unitCents: number): NumerationQuestion {
+  const [many, one] = ITEMS[item]!;
+  const total = count * unitCents;
+  return moneyProblem(
+    `${count} ${many} coûtent ${euros(total)} €. Combien coûte ${one} ?`,
+    unitCents,
+    ['€', 'kg', 'g'],
+    `${capitalized(one)} coûte ${euros(unitCents)} €.`,
+    `Pour avoir le prix d’un seul, on partage en ${count} : ${euros(total)} : ${count} = ${euros(unitCents)}.`,
+  );
+}
+
+// --- Brillante : les problèmes niveau 4 (fiches n° 79 à 84) ---
+
+/** L'avion (fiche n° 79) : la distance parcourue, ou l'heure du décollage. */
+export function plane(landing: number, speed: number, duration: number, askTakeOff: boolean): NumerationQuestion {
+  const hours = Math.floor(duration / 60);
+  const distance = (speed * duration) / 60;
+  const start = `Un avion de transport atterrit à ${clockText(landing)} après un vol de ${durationText(duration)} à la vitesse moyenne de ${speed} kilomètres par heure.`;
+  if (askTakeOff) {
+    return question({
+      context: 'Problème',
+      prompt: `${start} À quelle heure a-t-il décollé ?`,
+      clock: 'time',
+      answer: clockText(landing - duration),
+      solved: `L’avion a décollé à ${clockText(landing - duration)}.`,
+      explain: `La vitesse ne sert pas ici. ${startExplain(landing, duration)}`,
+    });
+  }
+  const half = duration % 60 === 30;
+  return problem(
+    `${start} Quelle distance a-t-il parcourue ?`,
+    distance * FACTOR.km,
+    'km',
+    `En ${durationText(duration)}, l’avion a parcouru ${spaced(distance)} km.`,
+    half
+      ? `En une demi-heure, l’avion parcourt ${speed} : 2 = ${speed / 2} km. En ${durationText(duration)} : ${hours} × ${speed} + ${speed / 2} = ${spaced(distance)}.`
+      : `En 1 h, l’avion parcourt ${speed} km. En ${hours} h : ${hours} × ${speed} = ${spaced(distance)}.`,
+  );
+}
+
+/** Le carrelage de la cuisine (fiche n° 80) : les carreaux de 50 cm, les paquets entiers, le prix. */
+export function tiles(long: number, wide: number, perPack: number, packPrice: number): NumerationQuestion {
+  const [along, across] = [long * 2, wide * 2];
+  const count = along * across;
+  const packs = Math.ceil(count / perPack);
+  const rest = count % perPack;
+  const buy =
+    rest === 0
+      ? `${count} : ${perPack} = ${packs} paquets.`
+      : `${count} = ${packs - 1} × ${perPack} + ${rest} : ${packs - 1} paquets ne suffisent pas, il faut ${packs} paquets.`;
+  return moneyProblem(
+    `Je veux poser du carrelage dans ma cuisine rectangulaire. Elle mesure ${spaced(long)} m sur ${spaced(wide)} m. Un carreau mesure 50 cm de côté. Les carreaux sont vendus par paquets de ${perPack}, au prix de ${packPrice} € le paquet. Combien vais-je dépenser ?`,
+    packs * packPrice * 100,
+    ['€', 'm²', 'm'],
+    `Je vais dépenser ${spaced(packs * packPrice)} €.`,
+    `Dans 1 m, il y a 2 carreaux de 50 cm : ${spaced(long)} × 2 = ${along} carreaux dans la longueur, ${spaced(wide)} × 2 = ${across} dans la largeur. ${along} × ${across} = ${count} carreaux. ${buy} Puis ${packs} × ${packPrice} = ${spaced(packs * packPrice)}.`,
+  );
+}
+
+const WISHES = [
+  ['Lucas', 'un naïpode', 'Sa mère'],
+  ['Inès', 'un vélo', 'Son père'],
+  ['Malo', 'une console', 'Sa mère'],
+] as const;
+
+/** Le naïpode (fiche n° 81) : 5 semaines par mois, le salaire d'une heure, puis le nombre d'heures. */
+export function wish(kind: number, perWeek: number, hourly: number, hours: number): NumerationQuestion {
+  const [child, gift, parent] = WISHES[kind]!;
+  const [monthHours, salary, price] = [5 * perWeek, 5 * perWeek * hourly, hours * hourly];
+  // « la mère de Lucas », « le père d'Inès ».
+  const who = `${parent.toLowerCase().replace('sa ', 'la ').replace('son ', 'le ')} ${/^[AEIOUÉÈ]/.test(child) ? 'd’' : 'de '}${child}`;
+  return question({
+    context: 'Problème',
+    prompt: `Pour son anniversaire, ${child} aimerait ${gift}, qui coûte ${price} €. ${parent} gagne ${spaced(salary)} € par mois et travaille ${perWeek} heures par semaine. Combien d’heures ${who} travaille-t-${parent === 'Sa mère' ? 'elle' : 'il'} pour gagner ce prix ? (On compte 5 semaines dans un mois.)`,
+    clock: 'duration',
+    answer: `${hours} h`,
+    alsoAccepted: [`${hours * 60} min`],
+    solved: `${capitalized(who)} travaille ${hours} heures pour gagner le prix ${gift.startsWith('une') ? 'de la' : 'du'} ${gift.split(' ')[1]}.`,
+    explain: `En un mois : 5 × ${perWeek} = ${monthHours} heures. En une heure : ${spaced(salary)} : ${monthHours} = ${hourly} €. Pour ${price} € : ${price} : ${hourly} = ${hours} heures.`,
+  });
+}
+
+/** La caissière (fiche n° 82) : les achats, les billets de 10 € donnés, la monnaie rendue. */
+export function change(compass: number, folder: number, ink: number): NumerationQuestion {
+  const total = compass + 2 * folder + ink;
+  const notes = Math.ceil(total / 1000);
+  const back = notes * 1000 - total;
+  return moneyProblem(
+    `Victor achète un compas à ${euros(compass)} €, deux pochettes de feuilles à ${euros(folder)} € pièce et une boîte de cartouches d’encre à ${euros(ink)} €. Dans son porte-monnaie, il a 4 billets de 10 €. Il donne le moins de billets possible. Combien la caissière lui rendra-t-elle ?`,
+    back,
+    ['€', 'g', 'cm'],
+    `La caissière lui rendra ${euros(back)} €.`,
+    `${euros(compass)} + 2 × ${euros(folder)} + ${euros(ink)} = ${euros(total)} : les achats coûtent ${euros(total)} €. Il donne ${notes} billet${notes > 1 ? 's' : ''} : ${notes * 10} €. Puis ${notes * 10} − ${euros(total)} = ${euros(back)}.`,
+  );
+}
+
+function drawChange(random: () => number): NumerationQuestion {
+  // On recommence quand les achats tombent pile sur des dizaines d'euros : la caissière n'aurait rien à rendre.
+  for (;;) {
+    const [compass, folder, ink] = [between(70, 179, random) * 5 + pick([0, 1, 4], random), between(30, 59, random) * 5, between(20, 50, random) * 5 - pick([0, 1, 5], random)];
+    if ((compass + 2 * folder + ink) % 1000 !== 0) return change(compass, folder, ink);
+  }
+}
+
+/** Le marchand de vaisselle (fiche n° 83) : le prix d'achat, les assiettes cassées, la revente à la douzaine. */
+export function dishes(count: number, perThousand: number, broken: number, perDozen: number): NumerationQuestion {
+  // En centimes : 1 500 assiettes à 465 € les mille coûtent 697,50 €.
+  const buy = (count / 1000) * perThousand * 100;
+  const dozens = (count - broken) / 12;
+  const sell = dozens * perDozen * 100;
+  const bought =
+    count === 1000
+      ? `1 000 assiettes coûtent ${perThousand} €.`
+      : count === 2000
+        ? `2 000 assiettes coûtent 2 × ${perThousand} = ${euros(buy)} €.`
+        : `500 assiettes coûtent ${perThousand} : 2 = ${euros(perThousand * 50)} €, donc 1 500 assiettes coûtent ${perThousand} + ${euros(perThousand * 50)} = ${euros(buy)} €.`;
+  return moneyProblem(
+    `Un marchand de vaisselle achète ${spaced(count)} assiettes au prix de ${perThousand} € les mille. Il en casse ${broken} et revend les autres ${perDozen} € la douzaine. Calcule son bénéfice (ce qu’il gagne en plus de ce qu’il a payé).`,
+    sell - buy,
+    ['€', 'kg', 'g'],
+    `Il fait ${euros(sell - buy)} € de bénéfice.`,
+    `${bought} Il lui reste ${spaced(count)} − ${broken} = ${spaced(count - broken)} assiettes, soit ${spaced(count - broken)} : 12 = ${dozens} douzaines. Il les revend ${dozens} × ${perDozen} = ${euros(sell)} €. Bénéfice : ${euros(sell)} − ${euros(buy)} = ${euros(sell - buy)}.`,
+  );
+}
+
+function drawDishes(random: () => number): NumerationQuestion {
+  const count = pick([1000, 1500, 2000], random);
+  // Les assiettes qui restent se rangent en douzaines : 1 500 − 12, 1 000 − 4, 2 000 − 8.
+  const broken = (count % 12 || 12) + 12 * between(0, 1, random);
+  return dishes(count, between(40, 60, random) * 10 + pick([0, 5], random), broken, between(20, 36, random));
+}
+
+/** Les élections de Saint-Martin (fiche n° 84, avec la correction juste : 740 voix, M. Legrand). */
+export function election(voices: number): NumerationQuestion {
+  const [quarter, tenth] = [voices / 4, voices / 10];
+  const rest = voices - quarter - tenth;
+  return countProblem(
+    `Aux élections municipales de Saint-Martin, il y a eu ${spaced(voices)} voix. La liste de Mme Lejeune a obtenu le quart des voix. Celle de M. Legrand en a obtenu 10 %. Celle de M. Guillou a obtenu les autres voix. Combien de voix le gagnant a-t-il reçues ?`,
+    rest,
+    'voix',
+    `M. Guillou gagne l’élection avec ${spaced(rest)} voix.`,
+    `Le quart : ${spaced(voices)} : 4 = ${spaced(quarter)} voix pour Mme Lejeune. 10 %, c’est un dixième : ${spaced(voices)} : 10 = ${spaced(tenth)} voix pour M. Legrand. Les autres : ${spaced(voices)} − ${spaced(quarter)} − ${spaced(tenth)} = ${spaced(rest)} voix pour M. Guillou, le plus grand nombre.`,
+  );
+}
+
+const MARRON_KINDS: readonly Draw[] = [
+  drawStart,
+  drawSideFromArea,
+  (random) => pick(MARRON_PROBLEMS.slice(0, 3), random)(random),
+  (random) => pick(MARRON_PROBLEMS.slice(3), random)(random),
+];
+
+const NOIRE_KINDS: readonly Draw[] = [
+  (random) => drawPrices(random, false),
+  drawRecipe,
+  (random) => drawPrices(random, true),
+  (random) => severalOf(between(0, 2, random), pick([125, 250, 500, 75, 150], random), between(3, 9, random)),
+  (random) => priceOfOne(between(0, ITEMS.length - 1, random), between(2, 6, random), random() < 0.6 ? between(4, 30, random) * 100 : between(81, 599, random) * 5),
+];
+
+const BRILLANTE_KINDS: readonly Draw[] = [
+  (random) => plane(between(10, 20, random) * 60 + between(0, 11, random) * 5, between(10, 20, random) * 20, between(3, 7, random) * 30, random() < 0.3),
+  (random) => tiles(between(6, 12, random) / 2, between(6, 10, random) / 2, pick([8, 10, 12], random), between(15, 30, random)),
+  (random) => wish(between(0, WISHES.length - 1, random), pick([20, 24, 30, 35, 40], random), between(7, 12, random), between(15, 40, random)),
+  drawChange,
+  drawDishes,
+  (random) => election(between(50, 200, random) * 20),
+];
+
 // --- Les ceintures ---
 
 const BLANCHE_KINDS: readonly Draw[] = [
@@ -1442,6 +1954,49 @@ const BELTS: readonly NumerationBelt[] = [
     ],
     examples: () => [julie(33_500, 12_650), convert(453, 'cm', 'm'), heightProblem(0, 205, 6), megasplash(1.5, 55, 4, 22)],
     kinds: BLEUE_KINDS,
+  },
+  {
+    belt: 'marron',
+    skill: 'Je trouve à quelle heure quelque chose a commencé. Je trouve le côté d’un rectangle quand je connais son aire. Je résous des problèmes en plusieurs étapes.',
+    decimal: true,
+    tips: [
+      'Pour trouver l’heure de début, je recule : j’enlève la durée à l’heure de fin.',
+      'J’enlève à part les heures et les minutes. S’il n’y a pas assez de minutes, je change 1 h en 60 min : 10 h 15, c’est 9 h 75 min. Puis 9 h 75 − 1 h 45 = 8 h 30.',
+      'Aire d’un rectangle = L × l. Si je connais l’aire et un côté, je divise : 48 m² et un côté de 6 m, 48 : 6 = 8. L’autre côté mesure 8 m.',
+      'Le côté est une longueur : il s’écrit en m, pas en m².',
+      'Dans un problème en plusieurs étapes, j’écris un calcul et une phrase pour chaque étape. Avant de calculer, je mets toutes les mesures dans la même unité.',
+    ],
+    examples: () => [startTime(1, 18 * 60 + 5, 35), startOf(0, 10 * 60 + 15, 105), sideFromArea(0, 8, 6, true), leapfrog(90, 20)],
+    kinds: MARRON_KINDS,
+  },
+  {
+    belt: 'noire',
+    skill: 'Je résous des problèmes de proportionnalité : si 2 paquets coûtent 8 €, je trouve le prix de 7 paquets.',
+    goal: 'CM2',
+    decimal: true,
+    tips: [
+      'C’est de la proportionnalité quand, si j’achète 2 fois plus, je paie 2 fois plus. 1 kg de viande coûte 8 €, donc 3 kg coûtent 3 × 8 = 24 €.',
+      'Je cherche d’abord le prix d’un seul : 2 paquets coûtent 8 €, donc 1 paquet coûte 8 : 2 = 4 €. Puis 7 paquets coûtent 7 × 4 = 28 €.',
+      'Pour une recette : 18 personnes, c’est 3 fois 6 personnes. Il faut 3 fois plus de sucre : 150 × 3 = 450 g.',
+      'Je peux passer par la moitié : pour 4 personnes, 200 g de farine. Pour 2 personnes, 100 g. Pour 6 personnes, 200 + 100 = 300 g.',
+      'Pour écrire un prix avec des centimes, je touche la virgule : 4,15 €.',
+    ],
+    examples: () => [prices(0, 2, 7, 400), recipe(0, 6, 18, 150), recipe(1, 4, 6, 200), prices(1, 3, 4, 2120)],
+    kinds: NOIRE_KINDS,
+  },
+  {
+    belt: 'brillante',
+    skill: 'Je résous des problèmes difficiles en plusieurs étapes, avec des durées, des aires et des prix.',
+    decimal: true,
+    tips: [
+      'Je lis le problème deux fois. Je cherche ce qu’on me demande, puis ce que je dois trouver avant.',
+      'J’écris une étape à la fois : un calcul, puis une phrase.',
+      '280 km par heure, c’est 280 km en 1 h, et 280 : 2 = 140 km en une demi-heure.',
+      'On ne peut pas acheter un morceau de paquet : s’il manque 2 carreaux, on achète un paquet de plus.',
+      'Le bénéfice, c’est ce que le marchand gagne : ce qu’il a vendu moins ce qu’il a payé.',
+    ],
+    examples: () => [plane(14 * 60 + 10, 280, 150, false), tiles(4.5, 5, 8, 23), wish(0, 35, 7, 30), election(2960)],
+    kinds: BRILLANTE_KINDS,
   },
 ];
 
