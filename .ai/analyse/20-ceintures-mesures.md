@@ -94,6 +94,21 @@ Choix faits sans lui demander, à faire valider :
      la jaune ne la demande.
 2. **Orange et rose** : périmètre, côté d'un carré, longueurs en 2 unités, g / kg / t, tableau de conversion
    avec les entiers (dam, hm, dag, hg, cl, dl…), côté d'un rectangle à partir du périmètre.
+   **Faite le 08/11/2026 (0.56.0)** :
+   - Orange (objectif CE2) : périmètre d'un rectangle (chambre, champ en hm, clôture, cadre, jardin) et d'un
+     carré (mouchoir, jardin, table), côté d'un carré à partir du périmètre ; 2 m 50 cm = … cm et l'inverse
+     (345 cm = 3 m … cm), avec le piège 1 m 5 cm = 105 cm ; kg ↔ g, t ↔ kg, 1 kg 500 g ; l'orque la plus
+     lourde (deux en kg, une en tonnes) ; jours d'un mois (poings fermés, sans février), semaines, année.
+   - Rose : le plus long / le plus lourd / qui contient le plus, mesures dans trois ou quatre unités (cordes,
+     sauts, animaux en un quart d'heure, colis, bouteilles) ; conversions avec le tableau (longueurs ; masses
+     kg → g ; contenances L → ml), toujours avec des nombres entiers ; côté d'un rectangle à partir du
+     périmètre (champ, piscine, cadre) ; mois, semaines, jours, minutes d'une journée, secondes d'une heure ;
+     périmètre d'un triangle aux côtés en m, cm et mm (leçon Mes 8).
+   - Unités à toucher : mm, cm, m, km, ou m, dam, hm, km pour un champ en hm. La tonne reste hors du tableau
+     de conversion (pas de quintal dans la leçon).
+   - L'autocollant « Objectif CE2 » des Mesures vient tout seul avec l'orange.
+   - Pas de tableau de conversion dessiné dans la leçon pour l'instant (« tracer un tableau » du classeur) :
+     à ajouter si l'utilisateur le souhaite.
 3. **Verte et bleue** : aires (m², dm², cm², hm²), durées et heures de fin, les décimaux.
 4. **Marron, noire et brillante** : heure de début, côté à partir de l'aire, proportionnalité, problèmes
    niveau 4 ; progrès et autocollants de la matière, `unfinished` retiré.

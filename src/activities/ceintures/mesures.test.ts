@@ -1,6 +1,26 @@
 import { describe, expect, it } from 'vitest';
 import { isCorrect, splitMeasure } from '../../core/quiz';
-import { compareMeasures, equality, MESURES, neighbourMonth, ribbon, segment, tallest, timeFact, unitFor } from './mesures';
+import {
+  compareMeasures,
+  convert,
+  equality,
+  heaviestOrca,
+  MESURES,
+  mixedPerimeter,
+  monthDays,
+  mostOf,
+  neighbourMonth,
+  rectanglePerimeter,
+  rectangleSide,
+  ribbon,
+  segment,
+  squarePerimeter,
+  squareSide,
+  tallest,
+  timeFact,
+  twoUnits,
+  unitFor,
+} from './mesures';
 import { NUMERATION_TEST_SIZE, pickNumeration } from './numeration';
 import { CalcTestSession } from './table-practice';
 
@@ -80,6 +100,61 @@ describe('Mesures', () => {
 
   it('connaît les relations entre jours, heures, minutes et secondes', () => {
     expect(timeFact(0)).toMatchObject({ prompt: 'Dans une heure, il y a', suffix: 'minutes.', answer: 60 });
+  });
+
+  it('calcule le périmètre d’un rectangle et d’un carré (fiches n° 19 à 23)', () => {
+    const room = rectanglePerimeter(0, 4, 3);
+    expect(room).toMatchObject({ prompt: 'Ma chambre mesure 4 m sur 3 m. Quel est son périmètre ?', answer: '14 m' });
+    expect(room.solved).toBe('Le périmètre de ma chambre est de 14\u00a0m.');
+    expect(isCorrect(room, '1400 cm')).toBe(true);
+    // Le champ en hm : les unités autour de l'hectomètre.
+    expect(rectanglePerimeter(1, 3, 2)).toMatchObject({ answer: '10 hm', units: ['m', 'dam', 'hm', 'km'] });
+    expect(squarePerimeter(0, 35).answer).toBe('140 cm');
+    expect(squareSide(20, true)).toMatchObject({ answer: '5 m', solved: 'Un côté de ma chambre mesure 5\u00a0m.' });
+  });
+
+  it('passe d’une à deux unités (2 m 50 cm)', () => {
+    expect(twoUnits(0, 2, 50, 'total')).toMatchObject({ prompt: '2 m 50 cm =', suffix: 'cm', answer: 250 });
+    expect(twoUnits(0, 1, 5, 'total').answer).toBe(105);
+    expect(twoUnits(0, 3, 45, 'small')).toMatchObject({ prompt: '345 cm = 3 m', suffix: 'cm', answer: 45 });
+    expect(twoUnits(3, 1, 500, 'big')).toMatchObject({ prompt: '1\u00a0500 g =', suffix: 'kg 500 g', answer: 1 });
+    expect(twoUnits(0, 1, 5, 'total').explain.replace(/\u00a0/g, ' ')).toBe('1 m = 100 cm. Puis 100 + 5 = 105.');
+  });
+
+  it('compare des masses en tonnes et en kg (fiche n° 24)', () => {
+    const question = heaviestOrca(['Zorba', 'Wago', 'Yakari'], [[8500, 'kg'], [9, 't'], [9100, 'kg']]);
+    expect(question.answer).toBe('Yakari');
+    expect(question.explain.replace(/\u00a0/g, ' ')).toBe('On écrit tout en kg : 8 500 kg, 9 t = 9 000 kg, 9 100 kg. Puis 9 100 kg > 9 000 kg > 8 500 kg.');
+  });
+
+  it('donne le nombre de jours d’un mois', () => {
+    expect(monthDays(3).answer).toBe(30);
+    expect(monthDays(7).answer).toBe(31);
+  });
+
+  it('compare trois morceaux de corde : les boutons sont les mesures (fiche n° 25)', () => {
+    const question = mostOf('Quel est le morceau le plus long ?', '…', [[50, 'dm'], [400, 'cm'], [3, 'm']], undefined, (m) => `Le plus long mesure ${m}.`);
+    expect(question.choices?.map((c) => c.label)).toEqual(['50\u00a0dm', '400\u00a0cm', '3\u00a0m']);
+    expect(question.answer).toBe('50\u00a0dm');
+  });
+
+  it('convertit avec le tableau de conversion (leçon Mes 10)', () => {
+    expect(convert(76, 'hg', 'dag')).toMatchObject({ prompt: '76 hg =', suffix: 'dag', answer: 760 });
+    expect(convert(2700, 'dam', 'm').answer).toBe(27000);
+    expect(convert(4000, 'ml', 'L').answer).toBe(4);
+  });
+
+  it('trouve un côté d’un rectangle à partir du périmètre (fiche n° 27)', () => {
+    const question = rectangleSide(0, 80, 120, true);
+    expect(question.prompt).toBe('Un champ rectangulaire a un périmètre de 400 m. Son petit côté mesure 80 m. Combien mesure le grand côté ?');
+    expect(question.answer).toBe('120 m');
+    expect(rectangleSide(0, 60, 90, false).answer).toBe('60 m');
+  });
+
+  it('convertit les côtés avant de calculer un périmètre (leçon Mes 8)', () => {
+    const question = mixedPerimeter([[2, 'm'], [150, 'cm'], [1500, 'mm']]);
+    expect(question.answer).toBe('500 cm');
+    expect(isCorrect(question, '5 m')).toBe(true);
   });
 
   it('tire des questions justes pour chaque ceinture', () => {
