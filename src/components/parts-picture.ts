@@ -1,5 +1,6 @@
-import { isNumberLine, type Figure, type PartsFigure } from '../core/quiz';
+import { isNumberLine, isRuler, type Figure, type PartsFigure } from '../core/quiz';
 import { numberLine, svg, type LinePick } from './number-line';
+import { ruler } from './ruler';
 
 const WIDTH = 340;
 const CELL = 30;
@@ -72,7 +73,8 @@ export function partsPicture(figure: PartsFigure, paint?: PartsPaint): SVGElemen
   return root;
 }
 
-/** La figure d'une question : une droite graduée ou un dessin à parts. */
+/** La figure d'une question : une droite graduée, une règle ou un dessin à parts. */
 export function drawFigure(figure: Figure, options: { pick?: LinePick; paint?: PartsPaint } = {}): SVGElement {
+  if (isRuler(figure)) return ruler(figure);
   return isNumberLine(figure) ? numberLine(figure, options.pick) : partsPicture(figure, options.paint);
 }

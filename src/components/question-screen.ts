@@ -5,7 +5,9 @@ import {
   answerText,
   groupDigits,
   isNumberLine,
+  measureText,
   normalizeAnswer,
+  splitMeasure,
   type PartsFigure,
   type QuizQuestion,
   type QuizSession,
@@ -76,8 +78,8 @@ export interface QuestionScreenOptions {
   onQuit(): void;
 }
 
-/** Pavé de chiffres, clavier de lettres, boutons à toucher, dessin à colorier, ou nombres à ranger. */
-type Mode = 'digits' | 'letters' | 'choices' | 'paint' | 'order';
+/** Pavé de chiffres, clavier de lettres, boutons à toucher, dessin à colorier, nombres à ranger, ou nombre + unité. */
+type Mode = 'digits' | 'letters' | 'choices' | 'paint' | 'order' | 'measure';
 
 /**
  * Pose les questions d'une série une à une. Une erreur affiche tout de suite
@@ -88,7 +90,7 @@ type Mode = 'digits' | 'letters' | 'choices' | 'paint' | 'order';
 export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenOptions): () => void {
   const { session } = options;
   const modeOf = (question: QuizQuestion): Mode =>
-    question.order ? 'order' : question.choices ? 'choices' : (question.input ?? (options.input === 'letters' ? 'letters' : 'digits'));
+    question.order ? 'order' : question.units ? 'measure' : question.choices ? 'choices' : (question.input ?? (options.input === 'letters' ? 'letters' : 'digits'));
   let mode: Mode = 'digits';
   let asked: QuizQuestion | undefined;
   let typed = '';
@@ -103,6 +105,17 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
   /** La réponse attendue, par classes si on le demande. */
   const shownAnswer = (question: QuizQuestion) =>
     options.classes && typeof question.answer === 'number' ? groupDigits(answerText(question)) : answerText(question);
+  /** Mesures : la réponse juste dans l'unité choisie s'il y en a une (« 140 cm » plutôt que « 1,4 m »). */
+  const shownMeasure = (question: QuizQuestion) => {
+    const { unit } = splitMeasure(typed);
+    return measureText(acceptedAnswers(question).find((a) => splitMeasure(a).unit === unit) ?? answerText(question));
+  };
+  /** Mesures : ce qui est tapé est « nombre unité » ; le pavé ne change que le nombre. */
+  const withNumber = (change: (number: string) => string) => {
+    const { number, unit } = splitMeasure(typed);
+    const changed = change(number);
+    typed = unit === '' ? changed : `${changed} ${unit}`;
+  };
 
   const prompt = h('span', { class: 'prompt' });
   const suffix = h('span', { class: 'prompt' });
@@ -174,20 +187,19 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
         if (typed.length >= (options.maxLetters ?? MAX_LETTERS) || (char === ' ' && (typed === '' || typed.endsWith(' ')))) return;
         typed += char;
       } else {
-        if (typed.length >= (options.maxDigits ?? MAX_DIGITS)) return;
-        if (char === ',') {
+        withNumber((number) => {
+          if (number.length >= (options.maxDigits ?? MAX_DIGITS)) return number;
           // Une seule virgule ; tapée en premier, elle suit un 0 (« 0,5 »).
-          if (typed.includes(',')) return;
-          typed = (typed || '0') + char;
-        } else {
-          typed = typed === '0' ? char : typed + char;
-        }
+          if (char === ',') return number.includes(',') ? number : (number || '0') + char;
+          return number === '0' ? char : number + char;
+        });
       }
       renderAnswer();
     },
     onBackspace() {
       if (state !== 'asking') return;
-      typed = typed.slice(0, -1);
+      if (mode === 'measure') withNumber((number) => number.slice(0, -1));
+      else typed = typed.slice(0, -1);
       renderAnswer();
     },
     onSubmit() {
@@ -197,6 +209,8 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
       if (!question) return;
       // Ranger : tous les nombres d'abord.
       if (mode === 'order' && typed.split(` ${question.order} `).length < (question.choices?.length ?? 0)) return;
+      // Une mesure : le nombre et l'unité.
+      if (mode === 'measure' && Object.values(splitMeasure(typed)).includes('')) return;
       chrono?.pause();
       countdown?.pause();
       const correct = session.answer(typed, performance.now() - shownAt);
@@ -234,16 +248,25 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
           feedback.replaceChildren(...withFractions(`${told} ${question.explain ? `${question.explain} ` : ''}${wrongHint}`));
         } else {
           // Dans la case : sa réponse en haut, ses fautes barrées ; la bonne en dessous, ce qui diffère surligné.
-          const shown = mode === 'letters' ? closestAnswer(normalizeAnswer(typed), acceptedAnswers(question)) : shownAnswer(question);
+          const shown =
+            mode === 'letters' ? closestAnswer(normalizeAnswer(typed), acceptedAnswers(question)) : mode === 'measure' ? shownMeasure(question) : shownAnswer(question);
           const given = mode === 'letters' ? normalizeAnswer(typed) : typedLabel();
           answerBox.replaceChildren(
-            ...((mode === 'letters' || mode === 'digits') && !shown.includes('/')
+            ...((mode === 'letters' || mode === 'digits' || mode === 'measure') && !shown.includes('/')
               ? [typedWithMistakes(given, shown), answerWithFixes(given, shown)]
               : [h('span', { class: 'typed-answer' }, h('s', {}, ...withFractions(given))), h('span', { class: 'fixed-answer' }, ...withFractions(shown))]),
           );
-          // Boutons : le choisi barré, le bon mis en avant.
-          choiceButton(typed)?.classList.add('is-wrong');
-          choiceButton(String(question.answer))?.classList.add('is-answer');
+          // Boutons : le choisi barré, le bon mis en avant ; l'unité, si elle était fausse.
+          if (mode === 'measure') {
+            const [chosen, right] = [splitMeasure(typed).unit, splitMeasure(shown).unit];
+            if (chosen !== right) {
+              choiceButton(chosen)?.classList.add('is-wrong');
+              choiceButton(right)?.classList.add('is-answer');
+            }
+          } else {
+            choiceButton(typed)?.classList.add('is-wrong');
+            choiceButton(String(question.answer))?.classList.add('is-answer');
+          }
           // Sans case (« Touche le chiffre des dizaines »), la phrase dit la bonne réponse.
           const told = equation.contains(answerBox) ? '' : `C’était ${mode === 'letters' ? `« ${shown} »` : shown}. `;
           feedback.replaceChildren(...withFractions(`${told}${question.explain ? `${question.explain} ` : ''}${wrongHint}`));
@@ -270,6 +293,7 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
     if (mode === 'letters') return createKeyboard(handlers, { hyphen: options.hyphen });
     if (mode === 'paint') return createPaint(question);
     if (mode === 'order') return createOrder(question);
+    if (mode === 'measure') return createMeasure(question);
     if (mode === 'digits') {
       return createKeypad({
         ...handlers,
@@ -341,6 +365,29 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
       },
       destroy: () => document.removeEventListener('keydown', onKeydown),
     };
+  }
+
+  /**
+   * Mesures : les unités à toucher au-dessus du pavé. Toucher une unité la choisit (une autre la remplace) ;
+   * OK quand le nombre et l'unité y sont.
+   */
+  function createMeasure(question: QuizQuestion): Keypad {
+    const units = question.units ?? [];
+    const choose = (unit: string) => {
+      if (state !== 'asking') return;
+      const { number } = splitMeasure(typed);
+      typed = `${number} ${unit}`;
+      renderAnswer();
+    };
+    buttons = new Map(units.map((unit) => [unit, h('button', { class: 'choice unit-choice', type: 'button', onclick: () => choose(unit) }, unit)] as const));
+    const row = h('div', { class: 'choice-buttons unit-buttons' }, ...buttons.values());
+    row.style.setProperty('--choices', String(units.length));
+    const keypad = createKeypad({
+      ...handlers,
+      onDigit: (digit) => handlers.onChar(String(digit)),
+      onComma: options.decimal ? () => handlers.onChar(',') : undefined,
+    });
+    return { el: h('div', { class: 'choices-input measure-input' }, row, keypad.el), setSubmitLabel: keypad.setSubmitLabel, destroy: keypad.destroy };
   }
 
   /** Colorier en touchant le dessin, puis OK : la réponse est le nombre de parts coloriées. */
@@ -416,6 +463,10 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
 
   /** Ce qui est tapé, comme dans la case : un bouton touché écrit ce qu'il montre (« < »), pas sa valeur. */
   function typedLabel(): string {
+    if (mode === 'measure') {
+      const { number, unit } = splitMeasure(typed);
+      return typed === '' ? '' : [number === '' ? '?' : groupDigits(number), unit].filter(Boolean).join(' ');
+    }
     return mode === 'choices'
       ? (asked?.choices?.find((c) => c.value === typed)?.label ?? typed)
       : mode === 'digits' && options.classes
@@ -426,6 +477,10 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
   function renderAnswer() {
     answerBox.replaceChildren(...withFractions(typedLabel() || '?'));
     answerBox.classList.toggle('is-empty', typed === '');
+    if (mode === 'measure') {
+      const { unit } = splitMeasure(typed);
+      for (const [value, button] of buttons) button.classList.toggle('is-chosen', value === unit);
+    }
   }
 
   function renderStreak(milestone: boolean) {
@@ -462,7 +517,7 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
     asked = question;
     // Le pavé ou le clavier reste d'une question à l'autre ; les boutons changent à chaque fois.
     const nextMode = modeOf(question);
-    if (input === undefined || nextMode !== mode || nextMode === 'choices' || nextMode === 'paint' || nextMode === 'order') {
+    if (input === undefined || nextMode !== mode || ['choices', 'paint', 'order', 'measure'].includes(nextMode)) {
       input?.destroy();
       mode = nextMode;
       liveFigure = undefined;
@@ -470,7 +525,7 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
       keypadArea.replaceChildren(input.el);
     }
     section.classList.toggle('letters', mode === 'letters');
-    if (mode !== 'choices') buttons = new Map();
+    if (mode !== 'choices' && mode !== 'measure') buttons = new Map();
     // Nombre caché : la case est au milieu (« 7 × ? = 56 »), l'opération plus longue s'affiche plus petit.
     // En mots ou avec des boutons, pas de « = » : « nous [ mangerons ] », « 92 [ > ] 29 ».
     prompt.replaceChildren(...withFractions(question.suffix === undefined && mode === 'digits' ? `${question.prompt} =` : question.prompt));

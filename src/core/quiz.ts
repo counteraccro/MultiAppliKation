@@ -31,9 +31,14 @@ export interface QuizQuestion {
    * la réponse est leurs `label` dans l'ordre, séparés par le signe : « 4,4 > 4,36 > 4,3 > 4,07 ».
    */
   order?: '<' | '>';
+  /**
+   * Mesures : le nombre au pavé, puis l'unité en touchant un de ces boutons (« mm », « cm », « m »).
+   * La réponse s'écrit « 14 m » ; une mesure égale dans une autre unité (`alsoAccepted` : « 1 400 cm ») est juste aussi.
+   */
+  units?: readonly string[];
 }
 
-export type Figure = NumberLineFigure | PartsFigure;
+export type Figure = NumberLineFigure | PartsFigure | RulerFigure;
 
 export interface Choice {
   label: string;
@@ -63,7 +68,13 @@ export interface PartsFigure {
   colored: number;
 }
 
+/** Mesures : un segment de `length` mm posé sur une règle graduée, son bout gauche à `start` mm du 0. */
+export interface RulerFigure {
+  ruler: { start: number; length: number };
+}
+
 export const isNumberLine = (figure: Figure): figure is NumberLineFigure => 'step' in figure;
+export const isRuler = (figure: Figure): figure is RulerFigure => 'ruler' in figure;
 
 export interface QuizSession<Q extends QuizQuestion = QuizQuestion> {
   /** Nombre de questions de la série (sans compter celles qui reviennent). */
@@ -104,7 +115,31 @@ export function acceptedAnswers(question: QuizQuestion): string[] {
   return [answerText(question), ...(question.alsoAccepted ?? [])];
 }
 
+/** « 1 400 cm » : le nombre (1400) et l'unité ; l'unité est vide tant qu'elle n'est pas choisie. */
+export function splitMeasure(text: string): { number: string; unit: string } {
+  const at = text.lastIndexOf(' ');
+  return at === -1 ? { number: text, unit: '' } : { number: text.slice(0, at).replace(/\s/g, ''), unit: text.slice(at + 1) };
+}
+
+/** Une mesure telle qu'on l'écrit : « 1 400 cm », le nombre par classes. */
+export function measureText(text: string): string {
+  const { number, unit } = splitMeasure(text);
+  return [groupDigits(number), unit].filter(Boolean).join(' ');
+}
+
 export function isCorrect(question: QuizQuestion, typed: string): boolean {
+  // Une mesure : le même nombre (3,50 = 3,5) dans la même unité, pour l'une des réponses justes.
+  if (question.units) {
+    const given = splitMeasure(typed);
+    const value = (n: string) => Number(n.replace(',', '.'));
+    return (
+      given.number !== '' &&
+      acceptedAnswers(question).some((a) => {
+        const expected = splitMeasure(a);
+        return expected.unit === given.unit && value(expected.number) === value(given.number);
+      })
+    );
+  }
   // Un décimal se tape avec la virgule ; 3,50 est le même nombre que 3,5.
   if (typeof question.answer === 'number') return typed.trim() !== '' && Number(typed.replace(',', '.')) === question.answer;
   // Un bouton touché : sa valeur, pas ce qu'il montre (deux chiffres 4 dans 44).

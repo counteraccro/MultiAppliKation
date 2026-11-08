@@ -6,7 +6,7 @@ import { renderQuestionScreen } from '../../components/question-screen';
 import { renderResult } from '../../components/result';
 import { closestAnswer } from '../../core/diff';
 import { h } from '../../core/dom';
-import { acceptedAnswers, answerText, groupDigits, normalizeAnswer, type QuizQuestion } from '../../core/quiz';
+import { acceptedAnswers, answerText, groupDigits, measureText, normalizeAnswer, splitMeasure, type QuizQuestion } from '../../core/quiz';
 import { dayOf } from '../../core/play-days';
 import type { Sticker } from '../../core/stickers';
 import type { Activity } from '../types';
@@ -614,6 +614,20 @@ function numerationCorrections(mistakes: TableMistake<NumerationQuestion>[]): HT
       {},
       ...mistakes.map(({ question, typed }) => {
         const solved = withNbsp(question.solved);
+        if (question.units && typed !== undefined) {
+          // Une mesure : sa réponse, puis la phrase résolue avec la réponse juste dans l'unité choisie s'il y en a une.
+          const given = measureText(typed);
+          const shown = measureText(acceptedAnswers(question).find((a) => splitMeasure(a).unit === splitMeasure(typed).unit) ?? answerText(question));
+          const at = solved.lastIndexOf(shown);
+          return h(
+            'li',
+            {},
+            h('small', { class: 'correction-context' }, 'Tu avais répondu : ', h('s', {}, typedWithMistakes(given, shown))),
+            at === -1
+              ? h('mark', {}, solved)
+              : h('span', { class: 'correction-line' }, solved.slice(0, at), answerWithFixes(given, shown), solved.slice(at + shown.length)),
+          );
+        }
         if (typeof question.answer === 'string' && !question.choices && typed !== undefined) {
           const given = normalizeAnswer(typed);
           const shown = closestAnswer(given, acceptedAnswers(question));

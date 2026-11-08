@@ -50,8 +50,8 @@ describe('progrès des ceintures', () => {
   it('compte les ceintures de chaque couleur pour la barre de l’accueil', () => {
     const data = readCeinturesData({});
     setClassLevel(data, homophones, 1, '2026-10-25');
-    // 9 homophones, 10 conjugaison, 10 tables, 10 calcul posé, 15 calcul mental, 11 numération et 11 grammaire pas encore commencées.
-    expect(masteryCounts(data)).toEqual({ unseen: 76, learning: 0, progress: 0, known: 2, mastered: 0 });
+    // 9 homophones, 10 conjugaison, 10 tables, 10 calcul posé, 15 calcul mental, 11 numération, 11 grammaire et 2 mesures pas encore commencées.
+    expect(masteryCounts(data)).toEqual({ unseen: 78, learning: 0, progress: 0, known: 2, mastered: 0 });
   });
 
   it('ne garde pas des statistiques abîmées', () => {
@@ -112,7 +112,7 @@ describe('autocollants des ceintures', () => {
   });
 
   it('range l’album par matière', () => {
-    expect(STICKER_SECTIONS.map((s) => s.title)).toEqual(['Homophones', 'Conjugaison', 'Tables', 'Calcul posé', 'Calcul mental', 'Numération', 'Grammaire']);
+    expect(STICKER_SECTIONS.map((s) => s.title)).toEqual(['Homophones', 'Conjugaison', 'Tables', 'Calcul posé', 'Calcul mental', 'Numération', 'Grammaire', 'Mesures']);
     // Grammaire complète : l'autocollant de la ceinture noire.
     expect(STICKER_SECTIONS[6]!.stickers.map((s) => s.id)).toContain('grammaire.goal-ce2');
     expect(STICKER_SECTIONS[6]!.stickers.map((s) => s.name)).toContain('Ceinture noire');

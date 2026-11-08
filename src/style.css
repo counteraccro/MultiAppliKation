@@ -2453,6 +2453,66 @@ button.belt-row:active {
   text-anchor: middle;
 }
 
+/* Mesures : un segment sur une règle graduée. */
+.ruler {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.ruler-body {
+  fill: #fff6d8;
+  stroke: var(--text);
+  stroke-width: 1.5;
+}
+
+.ruler-tick {
+  stroke: var(--text);
+  stroke-width: 1;
+}
+
+.ruler-label {
+  fill: var(--text);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 800;
+  text-anchor: middle;
+}
+
+.ruler-segment {
+  stroke: #1e88e5;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.ruler-guide {
+  stroke: #1e88e5;
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+/* Mesures : les unités à toucher au-dessus du pavé ; celle choisie est mise en avant. */
+.unit-buttons {
+  max-width: 380px;
+  margin: 0 auto;
+}
+
+.unit-buttons .choice {
+  min-height: 52px;
+  font-size: 1.3rem;
+}
+
+.unit-buttons .choice.is-chosen {
+  background: var(--primary);
+  color: #fff;
+}
+
+.measure-input {
+  gap: 10px;
+  align-items: center;
+}
+
+.lesson-rules .ruler,
 .lesson-rules .number-line {
   max-width: 340px;
   margin-bottom: 4px;
