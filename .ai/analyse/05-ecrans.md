@@ -4,6 +4,7 @@
 
 1. **Qui joue ?** : grosses tuiles des profils (prénom + couleur ou avatar),
    « + » pour en créer un (prénom, couleur, classe).
+   En bas, le numéro de version et le lien « Chercher une mise à jour » (voir 08-technique.md).
 2. **Choix de l'activité** : « Les Tables », « Conjugaison ».
 3. **Accueil des Tables** : grille des 10 tables avec leurs étoiles,
    quatre gros boutons « Révision », « Mélange » (choix des tables), « Nombre caché »

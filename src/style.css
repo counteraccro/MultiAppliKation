@@ -1820,6 +1820,28 @@ button {
   opacity: 0.7;
 }
 
+.link-update {
+  padding: 6px 10px;
+  border: 0;
+  background: none;
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.link-update:disabled {
+  opacity: 0.5;
+}
+
+.update-status {
+  min-height: 1.2em;
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-soft);
+}
+
 .update-overlay {
   z-index: 100;
 }
