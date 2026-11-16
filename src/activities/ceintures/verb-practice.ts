@@ -1,7 +1,7 @@
 // Entraînement d'une ceinture de conjugaison : 3 verbes de la ceinture tirés au hasard, dont au
-// moins un piège, comme sur la fiche (« Conjugue le verbe parler au présent »), leurs formes tapées
-// une à une dans l'ordre (je … ils), corrigées tout de suite. Une forme ratée revient un peu plus
-// tard ; seul le premier essai compte.
+// moins un piège. Leurs formes sont mélangées (verbes et personnes), le sujet est un pronom, un prénom
+// ou un groupe nominal (« Léa », « mes parents », « Tom et moi ») ; chaque forme est corrigée tout de
+// suite. Une forme ratée revient un peu plus tard ; seul le premier essai compte.
 
 import { shuffle, type QuizQuestion } from '../../core/quiz';
 import { Series } from '../../core/series';
@@ -11,28 +11,101 @@ import { TENSES, type ConjugationBelt, type Exercise } from './conjugaison';
 
 export interface VerbQuestion extends QuizQuestion {
   answer: string;
-  /** La forme entière, pour le résultat : « nous parlons », « parle ! ». */
+  /** La forme entière, pour le résultat : « nous parlons », « Léa écrit », « parle ! ». */
   full: string;
 }
 
 const IMPERATIVE_PERSONS = ['tu', 'nous', 'vous'];
 
-/** Les questions d'un exercice, dans l'ordre de la fiche ; le genre (il / elle) au hasard. */
+/** Un sujet qui n'est pas un pronom ; son genre accorde le participe avec être (« mes cousines sont parties »). */
+interface Subject {
+  text: string;
+  feminine: boolean;
+}
+
+const he = (text: string): Subject => ({ text, feminine: false });
+const she = (text: string): Subject => ({ text, feminine: true });
+
+/** Il / elle, ils / elles : un prénom ou un groupe nominal, comme dans les phrases de la classe. */
+const OTHERS: Readonly<Record<3 | 6, { names: readonly Subject[]; groups: readonly Subject[] }>> = {
+  3: {
+    names: [she('Léa'), he('Tom'), she('Inès'), he('Hugo'), she('Chloé'), he('Malik')],
+    groups: [she('ma sœur'), he('mon cousin'), she('la maîtresse'), he('le boulanger'), he('mon voisin'), she('ma tante')],
+  },
+  6: {
+    names: [he('Léa et Tom'), she('Inès et Jade'), he('Hugo et Malik')],
+    groups: [he('les enfants'), he('mes parents'), she('mes copines'), she('les filles'), he('mes cousins'), she('les maîtresses')],
+  },
+};
+
+/** Ce qui grince n'est pas une personne : une porte, le parquet. */
+const THINGS: Readonly<Record<string, Record<3 | 6, readonly Subject[]>>> = {
+  grincer: { 3: [she('la porte'), he('le parquet')], 6: [she('les portes'), he('les volets')] },
+};
+
+/** Nous et vous sans le pronom : « Tom et moi », « Léa et toi ». */
+const WITH_ME = ['Tom et moi', 'Léa et moi', 'mon frère et moi'];
+const WITH_YOU = ['Inès et toi', 'Hugo et toi', 'ta sœur et toi'];
+
+const pick = <T>(items: readonly T[], random: () => number) => items[Math.floor(random() * items.length)]!;
+
+/**
+ * Le sujet d'une forme : je et tu restent des pronoms ; il, ils : un pronom, un prénom ou un groupe
+ * nominal, à parts égales ; nous, vous : une fois sur quatre « Tom et moi », « Léa et toi ».
+ */
+function subjectFor(person: Person, verb: string, random: () => number): { text?: string; feminine: boolean } {
+  const feminine = random() < 0.5;
+  const draw = random();
+  if (person === 3 || person === 6) {
+    if (draw < 1 / 3) return { feminine };
+    const things = THINGS[verb]?.[person];
+    if (things) return pick(things, random);
+    const { names, groups } = OTHERS[person];
+    return pick(draw < 2 / 3 ? names : groups, random);
+  }
+  if (person === 4 && draw < 0.25) return { text: pick(WITH_ME, random), feminine };
+  if (person === 5 && draw < 0.25) return { text: pick(WITH_YOU, random), feminine };
+  return { feminine };
+}
+
+/** Les questions d'un exercice, dans l'ordre de la fiche, chacune avec son sujet. */
 export function exerciseQuestions(exercise: Exercise, random: () => number = Math.random): VerbQuestion[] {
   const imperative = exercise.tense === 'imperatif';
   const context = `${exercise.verb} · ${TENSES[exercise.tense].label}`;
   return exercise.forms.map((form, i) => {
-    const feminine = random() < 0.5;
+    const person = (i + 1) as Person;
+    const subject = subjectFor(person, exercise.verb, random);
     const { answer, also } = Array.isArray(form)
-      ? { answer: form[feminine ? 1 : 0], also: [] }
+      ? { answer: form[subject.feminine ? 1 : 0], also: [] }
       : typeof form === 'string'
         ? { answer: form, also: [] }
         : form;
     // À l'impératif, pas de pronom à écrire : il est rappelé entre parenthèses.
-    const prompt = imperative ? `(${IMPERATIVE_PERSONS[i]})` : pronoun((i + 1) as Person, answer, feminine);
+    const prompt = imperative ? `(${IMPERATIVE_PERSONS[i]})` : (subject.text ?? pronoun(person, answer, subject.feminine));
     const full = imperative ? `${answer} !` : sentence({ prompt, answer });
     return { prompt, context, answer, alsoAccepted: also, full };
   });
+}
+
+/**
+ * Les formes des verbes mélangées : verbes et personnes au hasard, jamais deux fois de suite le même
+ * verbe quand on peut l'éviter. Le verbe qui a le plus de formes restantes passe plus souvent, pour ne
+ * pas finir par une suite du même.
+ */
+export function mixedQuestions(exercises: readonly Exercise[], random: () => number = Math.random): { exercise: Exercise; question: VerbQuestion }[] {
+  const piles = exercises.map((exercise) => ({ exercise, questions: shuffle(exerciseQuestions(exercise, random), random) }));
+  const mixed: { exercise: Exercise; question: VerbQuestion }[] = [];
+  let last: Exercise | undefined;
+  for (;;) {
+    const left = piles.filter((pile) => pile.questions.length > 0);
+    if (left.length === 0) return mixed;
+    const others = left.filter((pile) => pile.exercise !== last);
+    const from = others.length > 0 ? others : left;
+    let draw = random() * from.reduce((sum, pile) => sum + pile.questions.length, 0);
+    const pile = from.find((p) => (draw -= p.questions.length) < 0) ?? from[from.length - 1]!;
+    mixed.push({ exercise: pile.exercise, question: pile.questions.shift()! });
+    last = pile.exercise;
+  }
 }
 
 /** Verbes par série, à l'entraînement comme en conditions réelles. */
@@ -78,19 +151,19 @@ export interface VerbPracticeResult {
   /** Formes justes au premier essai. */
   correct: number;
   total: number;
-  /** Formes ratées au premier essai, dans l'ordre des fiches. */
+  /** Formes ratées au premier essai, dans l'ordre de la série. */
   toPractice: string[];
 }
 
 export class VerbPracticeSession extends Series<VerbQuestion> {
   private readonly questions: readonly VerbQuestion[];
 
-  /** Les verbes l'un après l'autre, chacun dans l'ordre de la fiche. */
+  /** Les formes des verbes mélangées (voir `mixedQuestions`). */
   constructor(
     readonly exercises: readonly Exercise[],
     random: () => number = Math.random,
   ) {
-    const questions = exercises.flatMap((exercise) => exerciseQuestions(exercise, random));
+    const questions = mixedQuestions(exercises, random).map((item) => item.question);
     super(questions);
     this.questions = questions;
   }

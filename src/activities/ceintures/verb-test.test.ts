@@ -8,19 +8,19 @@ describe('conjugaison en conditions réelles', () => {
     const exercises = belt.exercises.slice(0, 3);
     const session = new VerbTestSession(exercises, () => 0.9);
     expect(session.total).toBe(18);
+    const wrong: [string, string][] = [];
     let i = 0;
     while (session.current()) {
-      const { answer } = session.current()!;
+      const { answer, prompt } = session.current()!;
       // Deux fautes sur 18 : 88 %, pas assez.
+      if (i === 3 || i === 10) wrong.push([prompt, 'faux']);
       session.answer(i === 3 || i === 10 ? 'faux' : answer);
       i++;
     }
     const result = session.result();
     expect(result).toMatchObject({ correct: 16, total: 18, passed: false });
-    expect(result.mistakes.map((m) => [m.exercise.verb, m.question.prompt, m.typed])).toEqual([
-      ['avoir', 'nous', 'faux'],
-      ['être', 'vous', 'faux'],
-    ]);
+    expect(result.mistakes.map((m) => [m.question.prompt, m.typed])).toEqual(wrong);
+    expect(result.mistakes.every((m) => exercises.includes(m.exercise))).toBe(true);
   });
 
   it('réussit avec une seule faute sur 18', () => {

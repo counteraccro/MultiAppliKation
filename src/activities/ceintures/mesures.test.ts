@@ -105,6 +105,19 @@ describe('Mesures', () => {
     expect(squareSide(20, true)).toMatchObject({ answer: '5 m', solved: 'Un côté de ma chambre mesure 5 m.' });
   });
 
+  it('dessine la figure en indice, le côté à trouver marqué « ? »', () => {
+    expect(rectanglePerimeter(0, 4, 3).hint).toEqual({ polygon: { kind: 'rectangle', sides: ['4 m', '3 m'], inside: 'P = ?' } });
+    expect(squareSide(20, true).hint).toEqual({ polygon: { kind: 'square', sides: ['?'], inside: 'P = 20 m' } });
+    expect(rectangleSide(0, 80, 120, true).hint).toEqual({ polygon: { kind: 'rectangle', sides: ['?', '80 m'], inside: 'P = 400 m' } });
+    expect(mixedPerimeter([[2, 'm'], [150, 'cm'], [1500, 'mm']]).hint).toEqual({
+      polygon: { kind: 'triangle', sides: ['2 m', '150 cm', '1 500 mm'], inside: 'P = ?' },
+    });
+    expect(rectangleArea(0, 4, 3).hint).toEqual({ polygon: { kind: 'rectangle', sides: ['4 m', '3 m'], inside: 'A = ?' } });
+    expect(squareArea(1, 8, true).hint).toEqual({ polygon: { kind: 'square', sides: ['8 m'], inside: 'P = ?' } });
+    expect(sideFromArea(0, 8, 6, false).hint).toEqual({ polygon: { kind: 'rectangle', sides: ['8 m', '?'], inside: 'A = 48 m²' } });
+    expect(squareSideFromArea(7, 'cm').hint).toEqual({ polygon: { kind: 'square', sides: ['?'], inside: 'A = 49 cm²' } });
+  });
+
   it('passe d’une à deux unités (2 m 50 cm)', () => {
     expect(twoUnits(0, 2, 50, 'total')).toMatchObject({ prompt: '2 m 50 cm =', suffix: 'cm', answer: 250 });
     expect(twoUnits(0, 1, 5, 'total').answer).toBe(105);

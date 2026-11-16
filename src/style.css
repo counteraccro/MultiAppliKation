@@ -2555,6 +2555,46 @@ button.belt-row:active {
   fill: #9e9e9e;
 }
 
+/* Mesures : l'indice des périmètres et des aires, la figure et ses côtés. */
+.polygon {
+  display: block;
+  width: 100%;
+  max-width: 340px;
+  height: auto;
+  margin: 0 auto;
+}
+
+.polygon-shape {
+  fill: #e3f2fd;
+  stroke: #1e88e5;
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+
+.polygon-label,
+.polygon-inside {
+  fill: var(--text);
+  font-family: var(--font);
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.polygon-label.is-unknown {
+  fill: #e53935;
+}
+
+.polygon-inside {
+  text-anchor: middle;
+}
+
+.hint-button {
+  min-height: 44px;
+  width: auto;
+  margin: 8px auto 0;
+  padding: 8px 18px;
+  font-size: 1rem;
+}
+
 /* Mesures : les unités à toucher au-dessus du pavé ; celle choisie est mise en avant. */
 .unit-buttons {
   max-width: 380px;
@@ -2578,6 +2618,7 @@ button.belt-row:active {
 
 .lesson-rules .ruler,
 .lesson-rules .conversion,
+.lesson-rules .polygon,
 .lesson-rules .number-line {
   max-width: 340px;
   margin-bottom: 4px;

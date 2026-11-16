@@ -163,3 +163,12 @@ Choix faits sans lui demander, à faire valider :
 - **08/11/2026 (0.59.0)**, une maîtresse : le segment partait parfois du 1 ou du 2 (« on mesure toujours depuis
   le 0 ») et elle n'avait pas vu de mm. Le segment part maintenant toujours du 0, et 8 fois sur 10 sa longueur a
   des mm (4 cm et 7 mm), au lieu de 6 sur 10.
+- **16/11/2026 (0.61.0)**, une maîtresse : « une case indice où cela fait apparaître le dessin du carré / rectangle
+  avec les mesures ». Chaque question de périmètre ou d'aire (rectangle, carré, triangle de l'orange ; côté
+  d'un rectangle de la rose ; aires de la verte ; côté à partir de l'aire de la marron) a un bouton
+  **« 💡 Indice »** sous la question : il montre la figure (un croquis, pas à l'échelle) avec la mesure de
+  chaque côté, « ? » en rouge pour le côté à trouver, et au milieu « P = ? », « A = ? » ou ce qu'on connaît
+  (« P = 400 m », « A = 48 m² »). Choix de l'utilisateur : **à l'entraînement seulement** (pas en conditions
+  réelles, comme en classe), et une réponse juste après l'indice **compte comme juste**. La leçon montre la
+  figure à côté des exemples. Code : `hint` (une `Figure`) dans `QuizQuestion`, `PolygonFigure` et
+  `components/polygon.ts`, `sketch()` dans `mesures.ts`.

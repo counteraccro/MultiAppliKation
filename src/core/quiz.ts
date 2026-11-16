@@ -26,6 +26,8 @@ export interface QuizQuestion {
   solved?: string;
   /** Une droite graduée ou un dessin (billes, rectangle), au-dessus de la question. */
   figure?: Figure;
+  /** Un dessin caché derrière le bouton « Indice », à l'entraînement seulement (le rectangle et ses côtés). */
+  hint?: Figure;
   /**
    * Ranger : les `choices` se touchent dans l'ordre, du plus grand au plus petit (`>`) ou l'inverse (`<`) ;
    * la réponse est leurs `label` dans l'ordre, séparés par le signe : « 4,4 > 4,36 > 4,3 > 4,07 ».
@@ -43,7 +45,7 @@ export interface QuizQuestion {
   clock?: 'duration' | 'time';
 }
 
-export type Figure = NumberLineFigure | PartsFigure | RulerFigure | ConversionFigure;
+export type Figure = NumberLineFigure | PartsFigure | RulerFigure | ConversionFigure | PolygonFigure;
 
 export interface Choice {
   label: string;
@@ -86,9 +88,18 @@ export interface ConversionFigure {
   conversion: { units: readonly string[]; cells: readonly { text: string; added?: boolean }[] };
 }
 
+/**
+ * Mesures : un rectangle (`sides` : longueur, largeur), un carré (son côté) ou un triangle (ses trois côtés),
+ * pas à l'échelle, chaque côté avec sa mesure (« ? » pour celle à trouver) ; `inside` au milieu (« A = ? »).
+ */
+export interface PolygonFigure {
+  polygon: { kind: 'rectangle' | 'square' | 'triangle'; sides: readonly string[]; inside?: string };
+}
+
 export const isNumberLine = (figure: Figure): figure is NumberLineFigure => 'step' in figure;
 export const isRuler = (figure: Figure): figure is RulerFigure => 'ruler' in figure;
 export const isConversion = (figure: Figure): figure is ConversionFigure => 'conversion' in figure;
+export const isPolygon = (figure: Figure): figure is PolygonFigure => 'polygon' in figure;
 
 export interface QuizSession<Q extends QuizQuestion = QuizQuestion> {
   /** Nombre de questions de la série (sans compter celles qui reviennent). */

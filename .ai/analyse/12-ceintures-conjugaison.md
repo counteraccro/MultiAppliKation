@@ -134,3 +134,16 @@ Depuis la 0.29.0, on peut revenir à la forme d'avant pendant l'entraînement en
 (voir 11-ceintures.md).
 
 La Conjugaison est complète, de la blanche à la marron. Reste possible plus tard : la ceinture noire.
+
+## Retours de la classe
+
+- **16/11/2026 (0.61.0)**, une maîtresse : « tout est dans l'ordre et c'est le même verbe, il faudrait des
+  verbes variés et mélange de personnes et pas que des sujets avec pronom, parfois de GN ou nom propre ».
+  Toujours 3 verbes et 18 formes (15 avec l'impératif), mais **les formes des 3 verbes sont mélangées**
+  (`mixedQuestions` dans `verb-practice.ts`) : verbes et personnes au hasard, jamais deux fois de suite le
+  même verbe quand on peut l'éviter. Le sujet varie : je et tu restent des pronoms ; il, ils sont un pronom,
+  un prénom (« Léa », « Inès et Jade ») ou un groupe nominal (« ma tante », « mes parents »), à parts égales ;
+  nous, vous sont une fois sur quatre « Tom et moi », « Léa et toi ». Le genre du sujet accorde le participe
+  avec être (« les maîtresses seront venues ») ; ce qui grince est une chose (« la porte », « les volets »).
+  Choix de l'utilisateur : **à l'entraînement et en conditions réelles**, longueur inchangée. La correction
+  du test reste rangée verbe par verbe.

@@ -1,6 +1,7 @@
-import { isConversion, isNumberLine, isRuler, type Figure, type PartsFigure } from '../core/quiz';
+import { isConversion, isNumberLine, isPolygon, isRuler, type Figure, type PartsFigure } from '../core/quiz';
 import { conversionTable } from './conversion-table';
 import { numberLine, svg, type LinePick } from './number-line';
+import { polygon } from './polygon';
 import { ruler } from './ruler';
 
 const WIDTH = 340;
@@ -78,5 +79,6 @@ export function partsPicture(figure: PartsFigure, paint?: PartsPaint): SVGElemen
 export function drawFigure(figure: Figure, options: { pick?: LinePick; paint?: PartsPaint } = {}): SVGElement {
   if (isRuler(figure)) return ruler(figure);
   if (isConversion(figure)) return conversionTable(figure);
+  if (isPolygon(figure)) return polygon(figure);
   return isNumberLine(figure) ? numberLine(figure, options.pick) : partsPicture(figure, options.paint);
 }

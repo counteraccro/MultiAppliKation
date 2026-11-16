@@ -139,6 +139,9 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
   const equation = h('div', { class: 'equation' }, prompt, answerBox, suffix);
   const context = h('p', { class: 'question-context' });
   const figure = h('div', { class: 'question-figure' });
+  // Entraînement : le dessin de `hint` en touchant « Indice » ; la réponse compte comme les autres.
+  const hint = h('div', { class: 'question-figure question-hint', hidden: true });
+  const hintButton = h('button', { class: 'button secondary hint-button', type: 'button', hidden: true, onclick: showHint }, '💡 Indice');
   const feedback = h('p', { class: 'feedback', 'aria-live': 'polite' });
   const progress = h('div', { class: 'progress', 'aria-hidden': 'true' });
   const progressText = h('span', { class: 'visually-hidden' });
@@ -171,6 +174,13 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
     feedback.textContent = '⏰ Temps écoulé !';
     if (undoButton) undoButton.hidden = true;
     timer = window.setTimeout(() => options.onDone({ bestStreak }), TIME_UP_PAUSE_MS);
+  }
+
+  function showHint() {
+    if (!asked?.hint) return;
+    hint.replaceChildren(drawFigure(asked.hint));
+    hint.hidden = false;
+    hintButton.hidden = true;
   }
 
   function undo() {
@@ -585,6 +595,9 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
     context.textContent = question.context ?? '';
     figure.replaceChildren(...(question.figure ? [liveFigure ?? drawFigure(question.figure)] : []));
     figure.hidden = !question.figure;
+    hint.replaceChildren();
+    hint.hidden = true;
+    hintButton.hidden = !question.hint || options.test === true;
     // « 8,37 = ?/100 » : la case est le numérateur d'une fraction.
     const denominator = /^\/(\d+)$/.exec(question.suffix ?? '')?.[1];
     suffix.replaceChildren(...withFractions(denominator === undefined ? (question.suffix ?? '') : ''));
@@ -639,6 +652,8 @@ export function renderQuestionScreen(root: HTMLElement, options: QuestionScreenO
       context,
       figure,
       equation,
+      hintButton,
+      hint,
       feedback,
       streakEl,
       undoButton,

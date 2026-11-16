@@ -5,7 +5,7 @@
 // nombre et une unité : en classe, l'élève écrit le calcul et une phrase-réponse ; ici, le résultat et l'unité.
 // Les ceintures ont la forme de celles de la Numération : elles passent par les mêmes écrans.
 
-import { groupDigits, numberText, shuffle, type ConversionFigure } from '../../core/quiz';
+import { groupDigits, numberText, shuffle, type ConversionFigure, type PolygonFigure } from '../../core/quiz';
 import type { NumerationBelt, NumerationQuestion } from './numeration';
 
 type Draw = (random: () => number) => NumerationQuestion;
@@ -524,6 +524,12 @@ function problem(prompt: string, base: number, unit: Unit, solved: string, expla
   return question({ context: 'Problème', prompt, units, ...measureAnswer(base, unit, units), solved, explain });
 }
 
+/** L'indice d'un périmètre ou d'une aire : la figure, la mesure de ses côtés (« ? » pour celle à trouver). */
+const sketch = (kind: PolygonFigure['polygon']['kind'], sides: readonly string[], inside?: string): PolygonFigure => ({
+  polygon: { kind, sides, ...(inside ? { inside } : {}) },
+});
+const measured = (n: number, unit: string) => `${spaced(n)} ${unit}`;
+
 /** Les rectangles des fiches : le début de la phrase, l'unité, les longueurs possibles, la question et la phrase-réponse. */
 const RECTANGLES = [
   { start: 'Ma chambre mesure', unit: 'm', long: [4, 7], short: [2, 4], ask: 'Quel est son périmètre ?', answer: 'Le périmètre de ma chambre est de' },
@@ -539,13 +545,14 @@ export function rectanglePerimeter(kind: number, long: number, short: number): N
   const unit = rectangle.unit as Unit;
   const p = 2 * long + 2 * short;
   const after = 'after' in rectangle ? rectangle.after : '';
-  return problem(
+  const asked = problem(
     `${rectangle.start} ${spaced(long)} ${unit} sur ${spaced(short)} ${unit}. ${rectangle.ask}`,
     p * FACTOR[unit],
     unit,
     `${rectangle.answer} ${spaced(p)} ${unit}${after}.`,
     `Le périmètre, c’est le tour : 2 × ${spaced(long)} + 2 × ${spaced(short)} = ${spaced(p)} (jamais d’unité dans les calculs).`,
   );
+  return { ...asked, hint: sketch('rectangle', [measured(long, unit), measured(short, unit)], 'P = ?') };
 }
 
 function drawRectanglePerimeter(random: () => number): NumerationQuestion {
@@ -565,20 +572,21 @@ const SQUARES = [
 export function squarePerimeter(kind: number, side: number): NumerationQuestion {
   const square = SQUARES[kind]!;
   const unit = square.unit as Unit;
-  return problem(
+  const asked = problem(
     `${square.start} ${side} ${unit} de côté. ${square.ask}`,
     4 * side * FACTOR[unit],
     unit,
     `${square.answer} ${spaced(4 * side)} ${unit}${square.after}.`,
     `Un carré a 4 côtés égaux : 4 × ${side} = ${spaced(4 * side)}.`,
   );
+  return { ...asked, hint: sketch('square', [measured(side, unit)], 'P = ?') };
 }
 
 /** « Le tour de ma chambre mesure 20 m. Sachant que ma chambre est carrée, combien mesure un côté ? » (fiche n° 23). */
 export function squareSide(perimeter: number, room: boolean): NumerationQuestion {
   const unit: Unit = room ? 'm' : 'cm';
   const side = perimeter / 4;
-  return problem(
+  const asked = problem(
     room
       ? `Le tour de ma chambre mesure ${perimeter} m. Sachant que ma chambre est carrée, combien mesure un côté ?`
       : `Un carré a un périmètre de ${perimeter} cm. Combien mesure un côté ?`,
@@ -587,6 +595,7 @@ export function squareSide(perimeter: number, room: boolean): NumerationQuestion
     room ? `Un côté de ma chambre mesure ${side} m.` : `Un côté du carré mesure ${side} cm.`,
     `Les 4 côtés d’un carré sont égaux : on partage le périmètre en 4. ${perimeter} : 4 = ${side}.`,
   );
+  return { ...asked, hint: sketch('square', ['?'], `P = ${measured(perimeter, unit)}`) };
 }
 
 function drawSquare(random: () => number): NumerationQuestion {
@@ -835,13 +844,14 @@ export function rectangleSide(kind: number, short: number, long: number, askLong
   const p = 2 * (short + long);
   const [known, found] = askLong ? [short, long] : [long, short];
   const [knownName, foundName] = askLong ? ['petit', 'grand'] : ['grand', 'petit'];
-  return problem(
+  const asked = problem(
     `${start} a un périmètre de ${spaced(p)} ${unit}. Son ${knownName} côté mesure ${known} ${unit}. Combien mesure le ${foundName} côté ?`,
     found * FACTOR[unit as Unit],
     unit as Unit,
     `Le ${foundName} côté mesure ${found} ${unit}.`,
     `${spaced(p)} − 2 × ${known} = ${spaced(2 * found)} : les deux ${foundName}s côtés mesurent ${spaced(2 * found)} ${unit} ensemble. Puis ${spaced(2 * found)} : 2 = ${found}.`,
   );
+  return { ...asked, hint: sketch('rectangle', askLong ? ['?', measured(known, unit)] : [measured(known, unit), '?'], `P = ${measured(p, unit)}`) };
 }
 
 function drawRectangleSide(random: () => number): NumerationQuestion {
@@ -857,13 +867,14 @@ export function mixedPerimeter(sides: readonly Measure[]): NumerationQuestion {
   const total = sides.reduce((sum, m) => sum + inSmallest(m), 0);
   const inCm = sides.map((m) => spaced(inSmallest(m) / 10));
   const converted = sides.filter(([, u]) => u !== 'cm').map((m) => `${measureText(m)} = ${spaced(inSmallest(m) / 10)}\u00a0cm`);
-  return problem(
+  const asked = problem(
     `Un triangle a des côtés de ${listed(sides.map(measureText))}. Quel est son périmètre ?`,
     total,
     'cm',
     `Le périmètre du triangle est de ${spaced(total / 10)} cm.`,
     `On écrit tout dans la même unité avant d’additionner : ${converted.join(', ')}. Puis ${inCm.join(' + ')} = ${spaced(total / 10)}.`,
   );
+  return { ...asked, hint: sketch('triangle', sides.map(measureText), 'P = ?') };
 }
 
 function drawMixedPerimeter(random: () => number): NumerationQuestion {
@@ -892,7 +903,7 @@ export function rectangleArea(kind: number, long: number, short: number): Numera
   const { start, unit, ask, answer } = SURFACES[kind]!;
   const area = `${unit}²` as Unit;
   const a = long * short;
-  return problem(
+  const asked = problem(
     `${start} ${spaced(long)} ${unit} sur ${spaced(short)} ${unit}. ${ask}`,
     a * FACTOR[area],
     area,
@@ -900,6 +911,7 @@ export function rectangleArea(kind: number, long: number, short: number): Numera
     `L’aire d’un rectangle : L × l = ${spaced(long)} × ${spaced(short)} = ${spaced(a)} (jamais d’unité dans les calculs). Les côtés sont en ${unit}, l’aire est en ${area} : des carrés de 1 ${unit} de côté.`,
     areaUnits(unit as Unit),
   );
+  return { ...asked, hint: sketch('rectangle', [measured(long, unit), measured(short, unit)], 'A = ?') };
 }
 
 function drawRectangleArea(random: () => number): NumerationQuestion {
@@ -923,24 +935,25 @@ export function squareArea(kind: number, side: number, perimeter: boolean): Nume
   const area = `${unit}²` as Unit;
   const units = areaUnits(unit as Unit);
   const prompt = `${name} a des côtés de ${side} ${unit}. ${perimeter ? 'Quel est son périmètre ?' : 'Quelle est son aire ?'}`;
+  const hint = sketch('square', [measured(side, unit)], perimeter ? 'P = ?' : 'A = ?');
   if (perimeter) {
-    return problem(
+    return { hint, ...problem(
       prompt,
       4 * side * FACTOR[unit as Unit],
       unit as Unit,
       `Le périmètre ${what} est de ${spaced(4 * side)} ${unit}.`,
       `Le périmètre, c’est le tour : 4 × ${side} = ${spaced(4 * side)}. C’est une longueur, en ${unit} (l’aire serait en ${area}).`,
       units,
-    );
+    ) };
   }
-  return problem(
+  return { hint, ...problem(
     prompt,
     side * side * FACTOR[area],
     area,
     `L’aire ${what} est de ${spaced(side * side)} ${area}.`,
     `L’aire d’un carré : c × c = ${side} × ${side} = ${spaced(side * side)}. C’est une surface, en ${area}.`,
     units,
-  );
+  ) };
 }
 
 function drawSquareArea(random: () => number): NumerationQuestion {
@@ -1359,7 +1372,7 @@ export function sideFromArea(kind: number, long: number, short: number, askLong:
   const a = long * short;
   const [known, found] = askLong ? [short, long] : [long, short];
   const [knownName, foundName] = askLong ? ['largeur', 'longueur'] : ['longueur', 'largeur'];
-  return problem(
+  const asked = problem(
     `${start} a une aire de ${spaced(a)} ${unit}². Sa ${knownName} mesure ${known} ${unit}. Combien mesure sa ${foundName} ?`,
     found * FACTOR[unit],
     unit,
@@ -1367,11 +1380,12 @@ export function sideFromArea(kind: number, long: number, short: number, askLong:
     `L’aire d’un rectangle, c’est L × l : ${known} × … = ${spaced(a)}. Pour trouver le nombre qui manque, on divise : ${spaced(a)} : ${known} = ${found}. C’est une longueur, en ${unit} (pas en ${unit}²).`,
     areaUnits(unit),
   );
+  return { ...asked, hint: sketch('rectangle', askLong ? ['?', measured(known, unit)] : [measured(known, unit), '?'], `A = ${measured(a, `${unit}²`)}`) };
 }
 
 /** « Un carré a une aire de 49 cm². Combien mesure son côté ? » : le nombre qui, multiplié par lui-même, donne l'aire. */
 export function squareSideFromArea(side: number, unit: 'm' | 'cm'): NumerationQuestion {
-  return problem(
+  const asked = problem(
     `Un carré a une aire de ${side * side} ${unit}². Combien mesure son côté ?`,
     side * FACTOR[unit],
     unit,
@@ -1379,6 +1393,7 @@ export function squareSideFromArea(side: number, unit: 'm' | 'cm'): NumerationQu
     `L’aire d’un carré, c’est c × c : quel nombre multiplié par lui-même donne ${side * side} ? ${side} × ${side} = ${side * side}. Le côté mesure ${side} ${unit} (une longueur, pas des ${unit}²).`,
     areaUnits(unit),
   );
+  return { ...asked, hint: sketch('square', ['?'], `A = ${measured(side * side, `${unit}²`)}`) };
 }
 
 function drawSideFromArea(random: () => number): NumerationQuestion {

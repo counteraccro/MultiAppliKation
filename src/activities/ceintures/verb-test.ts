@@ -1,11 +1,11 @@
 // Entraînement en conditions réelles d'une ceinture de conjugaison : 3 verbes (tirés comme à
-// l'entraînement, voir `pickExercises`), comme une fiche de passage, sans correction pendant.
+// l'entraînement, voir `pickExercises`), leurs formes mélangées, sans correction pendant.
 // Réussi avec au moins 90 % des formes justes ; tout est corrigé à la fin.
 
 import { isCorrect, type QuizSession } from '../../core/quiz';
 import type { Exercise } from './conjugaison';
 import { isPassing } from './test-session';
-import { exerciseQuestions, type VerbQuestion } from './verb-practice';
+import { mixedQuestions, type VerbQuestion } from './verb-practice';
 
 export interface VerbMistake {
   exercise: Exercise;
@@ -21,14 +21,14 @@ export interface VerbTestResult {
   mistakes: VerbMistake[];
 }
 
-/** Les formes des verbes l'une après l'autre ; pas de deuxième essai. */
+/** Les formes des verbes mélangées, comme à l'entraînement ; pas de deuxième essai. */
 export class VerbTestSession implements QuizSession<VerbQuestion> {
   readonly total: number;
   private readonly items: { exercise: Exercise; question: VerbQuestion }[];
   private readonly typed: string[] = [];
 
   constructor(exercises: readonly Exercise[], random: () => number = Math.random) {
-    this.items = exercises.flatMap((exercise) => exerciseQuestions(exercise, random).map((question) => ({ exercise, question })));
+    this.items = mixedQuestions(exercises, random);
     this.total = this.items.length;
   }
 

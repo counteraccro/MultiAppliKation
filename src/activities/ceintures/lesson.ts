@@ -219,9 +219,9 @@ function numerationCards(belt: NumerationBelt): HTMLElement[] {
           h(
             'li',
             {},
-            // Colorier : l'exemple montre le dessin colorié.
-            question.lessonFigure
-              ? drawFigure(question.lessonFigure)
+            // Colorier : l'exemple montre le dessin colorié ; un périmètre ou une aire, la figure de l'indice.
+            question.lessonFigure || question.hint
+              ? drawFigure(question.lessonFigure ?? question.hint!)
               : question.figure && drawFigure(question.input === 'paint' && !isNumberLine(question.figure) ? { ...question.figure, colored: question.answer as number } : question.figure),
             h('strong', {}, ...withFractions(withNbsp(question.solved))),
             h('br'),
