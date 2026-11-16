@@ -16,7 +16,7 @@ import { posedGrid } from './posed-screen';
 import { isAccordBelt, isGrammarBelt, isHomophoneBelt, isMentalBelt, isNumerationBelt, isPosedBelt, isTableBelt, type SubjectBelt } from './subjects';
 import type { MentalBelt } from './calcul-mental';
 import type { NumerationBelt } from './numeration';
-import { isTrap, parseAccord, sentenceOf, shown, type AccordBelt } from './accords';
+import { isTrap, parseAccord, shown, startSentence, type AccordBelt } from './accords';
 import { grammarQuestion, TAGS, type GrammarBelt } from './grammaire';
 import { drawSentence } from './grammar-screen';
 import { factText } from './table-practice';
@@ -284,7 +284,7 @@ function accordCards(belt: AccordBelt): HTMLElement[] {
             {},
             h('strong', {}, exercise.instruction),
             h('br'),
-            withNbsp(sentenceOf(exercise.text, 'start')),
+            withNbsp(startSentence(exercise)),
             h('br'),
             '→ ',
             ...parseAccord(exercise.text).map((piece) =>

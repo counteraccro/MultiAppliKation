@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { AccordSession } from './accord-session';
-import { accordBelt, ACCORDS, boxesOf, isRight, isTrap, parseAccord, pickAccords, sentenceOf, tipFor, type AccordExercise } from './accords';
+import { accordBelt, ACCORDS, boxesOf, isRight, isTrap, parseAccord, pickAccords, sentenceOf, startSentence, SWAP, tipFor } from './accords';
 
 /**
- * Les fiches Charivari recopiées à part : la phrase de départ et sa correction (n° 1 à 18). Les données de
+ * Les fiches Charivari recopiées à part : la phrase de départ et sa correction (n° 1 à 36). Les données de
  * l'app doivent redonner exactement les mêmes. « La barque charive » (n° 11) est corrigée ici aussi.
  */
 const FICHES: Record<string, [string, string]> = {
@@ -61,14 +61,61 @@ const FICHES: Record<string, [string, string]> = {
   'jaune.16': ['Anna n’est jamais arrivée en retard.', 'Tom n’est jamais arrivé en retard.'],
   'jaune.17': ['Anna semblait perdue dans ses pensées.', 'Tom semblait perdu dans ses pensées.'],
   'jaune.18': ['Anna est devenue maitresse d’école.', 'Tom est devenu maitre d’école.'],
+  'orange.1': ['Enthousiaste, ce maitre prépare une séance ludique et intéressante !', 'Enthousiastes, ces maitres préparent des séances ludiques et intéressantes !'],
+  'orange.2': ['Il a un crayon rouge neuf.', 'Ils ont des crayons rouges neufs.'],
+  'orange.3': ['Son ancien stylo préféré ne fonctionnait plus.', 'Ses anciens stylos préférés ne fonctionnaient plus.'],
+  'orange.4': ['Elle a une petite main potelée.', 'Elles ont des petites mains potelées.'],
+  'orange.5': ['Ce grand paquet encombre ma petite étagère étroite.', 'Ces grands paquets encombrent mes petites étagères étroites.'],
+  'orange.6': ['Je n’arrive pas à faire cet exercice long et difficile.', 'Nous n’arrivons pas à faire ces exercices longs et difficiles.'],
+  'orange.7': ['Tu ne traverses jamais sur ce passage piéton !', 'Vous ne traversez jamais sur ces passages piétons !'],
+  'orange.8': ['Ta cousine a une jolie maison fleurie.', 'Tes cousines ont des jolies maisons fleuries.'],
+  'orange.9': ['Apeuré, notre jeune chien aboie sur cette personne inconnue.', 'Apeurés, nos jeunes chiens aboient sur ces personnes inconnues.'],
+  'orange.10': ['Effrayés, ces canards bruyants cancanent.', 'Effrayé, ce canard bruyant cancane.'],
+  'orange.11': ['Les poissons ont peur des grands requins blancs.', 'Le poisson a peur du grand requin blanc.'],
+  'orange.12': ['Tes nouveaux livres ne parlent ni de ces personnages, ni de ces villages !', 'Ton nouveau livre ne parle ni de ce personnage, ni de ce village !'],
+  'orange.13': ['Ces fillettes ramassent les fruits mûrs et sucrés.', 'Cette fillette ramasse le fruit mûr et sucré.'],
+  'orange.14': ['Mes maitresses ont des idées farfelues mais intéressantes !', 'Ma maitresse a une idée farfelue mais intéressante !'],
+  'orange.15': ['Fatigués, ces soldats écrivaient de nouvelles lettres émouvantes.', 'Fatigué, ce soldat écrivait une nouvelle lettre émouvante.'],
+  'orange.16': ['Inquiets, les policiers surveillent ces suspects.', 'Inquiet, le policier surveille ce suspect.'],
+  'orange.17': ['Nous effaçons ces traces sur vos vieilles tables abimées.', 'J’efface cette trace sur votre vieille table abimée.'],
+  'orange.18': ['Ils ne révisent guère les nouvelles leçons !', 'Il ne révise guère la nouvelle leçon !'],
+  'orange.19': ['cet invité / l’employé / votre ami', 'cette invitée / l’employée / votre amie'],
+  'orange.20': ['le gardien / ce collégien / un musicien', 'la gardienne / cette collégienne / une musicienne'],
+  'orange.21': ['cet acteur / notre animateur / un navigateur', 'cette actrice / notre animatrice / une navigatrice'],
+  'orange.22': ['mon boucher / un droitier / le sorcier', 'ma bouchère / une droitière / la sorcière'],
+  'orange.23': ['un menteur / le dompteur / un chercheur', 'une menteuse / la dompteuse / une chercheuse'],
+  'orange.24': ['immortel / mensuel / réel / naturel', 'immortelle / mensuelle / réelle / naturelle'],
+  'orange.25': ['Le directeur discute avec notre maitre.', 'La directrice discute avec notre maitresse.'],
+  'orange.26': ['Le spectateur applaudit ce nouveau comédien talentueux.', 'La spectatrice applaudit cette nouvelle comédienne talentueuse.'],
+  'orange.27': ['Son chien désobéissant grogne sur ton fils apeuré.', 'Sa chienne désobéissante grogne sur ta fille apeurée.'],
+  'orange.28': ['Ce pharmacien est très professionnel.', 'Cette pharmacienne est très professionnelle.'],
+  'orange.29': ['Mon moniteur d’équitation est phénoménal !', 'Ma monitrice d’équitation est phénoménale !'],
+  'orange.30': ['Cet étranger semble perdu et inquiet.', 'Cette étrangère semble perdue et inquiète.'],
+  'orange.31': ['Je veux devenir un informaticien exceptionnel !', 'Je veux devenir une informaticienne exceptionnelle !'],
+  'orange.32': ['Ce jeune homme sera apprenti-boulanger.', 'Cette jeune femme sera apprentie-boulangère.'],
+  'orange.33': ['Mon ancien instituteur passionné enseigne toujours ici.', 'Mon ancienne institutrice passionnée enseigne toujours ici.'],
+  'orange.34': ['Quentin est un grand magicien…', 'Éléa est une grande magicienne…'],
+  'orange.35': ['Quentin semble motivé et travailleur.', 'Éléa semble motivée et travailleuse.'],
+  'orange.36': ['Quentin deviendra un ouvrier qualifié.', 'Éléa deviendra une ouvrière qualifiée.'],
+  'rose.1': ['Le cheval blanc trotte puis galope.', 'Les chevaux blancs trottent puis galopent.'],
+  'rose.2': ['Son genou ne semblait pas gonflé. Il était bleu.', 'Ses genoux ne semblaient pas gonflés. Ils étaient bleus.'],
+  'rose.3': ['L’écolier ouvre et entre par le grand portail vert.', 'Les écoliers ouvrent et entrent par les grands portails verts.'],
+  'rose.4': ['Le seigneur construit ce magnifique château fortifié puis habite dans le donjon.', 'Les seigneurs construisent ces magnifiques châteaux fortifiés puis habitent dans les donjons.'],
+  'rose.5': ['Le tournoi médiéval est très attendu.', 'Les tournois médiévaux sont très attendus.'],
+  'rose.6': ['La reine admire le favori mais n’encourage pas le perdant.', 'Les reines admirent les favoris mais n’encouragent pas les perdants.'],
+  'rose.7': ['Les souris grises vivent dans les vastes plaines.', 'La souris grise vit dans la vaste plaine.'],
+  'rose.8': ['Les travaux de ces maçons ne commencent pas avant janvier et se terminent en mars.', 'Le travail de ce maçon ne commence pas avant janvier et se termine en mars.'],
+  'rose.9': ['Les longs nez roses des cochons sont les groins ou les museaux.', 'Le long nez rose du cochon est le groin ou le museau.'],
+  'rose.10': ['Les hiboux sont des animaux nocturnes carnivores.', 'Le hibou est un animal nocturne carnivore.'],
+  'rose.11': ['Les plats cuisinés étaient conservés dans des bocaux puis savourés.', 'Le plat cuisiné était conservé dans un bocal puis savouré.'],
+  'rose.12': ['Des grosses miettes tombent sur mes jambes et les salissent.', 'Une grosse miette tombe sur ma jambe et la salit.'],
+  'rose.13': ['Snoopy est un cheval capricieux.', 'Didoune est une jument capricieuse.'],
+  'rose.14': ['Snoopy est un loup un peu fou.', 'Didoune est une louve un peu folle.'],
+  'rose.15': ['Snoopy est un coq compétitif.', 'Didoune est une poule compétitive.'],
+  'rose.16': ['Le chat blanc et agressif s’enfuit.', 'La chatte blanche et agressive s’enfuit.'],
+  'rose.17': ['Le garçon mignon monte le cheval brun.', 'La fille mignonne monte la jument brune.'],
+  'rose.18': ['L’affreux canard et le coq maladif picorent.', 'L’affreuse cane et la poule maladive picorent.'],
 };
-
-/** « Remplace Lina par Enzo. » : le prénom de départ, mis à la place du nouveau dans la phrase de départ. */
-function startSentence(exercise: AccordExercise): string {
-  const swap = /^Remplace (\S+) par (\S+)\.$/.exec(exercise.instruction);
-  const start = sentenceOf(exercise.text, 'start');
-  return swap ? start.replace(swap[2]!, swap[1]!) : start;
-}
 
 describe('Accords', () => {
   const all = ACCORDS.flatMap((belt) => belt.texts.map((exercise) => ({ belt, exercise })));
@@ -84,7 +131,7 @@ describe('Accords', () => {
     expect(all.filter((e) => e.exercise.fiche !== undefined).map((e) => e.exercise.id).sort()).toEqual(Object.keys(FICHES).sort());
   });
 
-  it('écrit chaque phrase proprement : des cases, une majuscule, un point', () => {
+  it('écrit chaque phrase proprement : des cases, une majuscule, un point (ou des mots seuls, en minuscules)', () => {
     for (const { exercise } of all) {
       const boxes = boxesOf(exercise.text);
       expect(boxes.length, exercise.id).toBeGreaterThan(0);
@@ -95,10 +142,12 @@ describe('Accords', () => {
       }
       for (const side of ['start', 'answer'] as const) {
         const sentence = sentenceOf(exercise.text, side);
-        expect(sentence, exercise.id).not.toMatch(/[{}|]|'|\s{2}|\s[.,!?]/);
-        expect(sentence, exercise.id).toMatch(/^[A-ZÀ-Ý].*[.!?]$/u);
+        expect(sentence, exercise.id).not.toMatch(/[{}|]|'|\s{2}|\s[.,]|[^\s][!?]/);
+        if (sentence.includes(' / ')) expect(sentence, exercise.id).toMatch(/^\p{Ll}[^.!?]*\p{Ll}$/u);
+        else expect(sentence, exercise.id).toMatch(/^[A-ZÀ-Ý].*[.!?…]$/u);
       }
-      expect(exercise.instruction, exercise.id).toMatch(/^(Transpose au (pluriel|singulier)|Remplace \S+ par \S+)\.$/);
+      expect(exercise.instruction, exercise.id).toMatch(/^Transpose au (pluriel|singulier|féminin)\.$|^Remplace/);
+      if (exercise.instruction.startsWith('Remplace')) expect(exercise.instruction, exercise.id).toMatch(SWAP);
     }
   });
 
@@ -107,7 +156,8 @@ describe('Accords', () => {
       const changed = boxesOf(exercise.text).filter((b) => !isTrap(b));
       const plural = changed.filter((b) => /^(les|des|ils|elles|nous)$/i.test(b.answer.split(' ')[0]!) || /(s|x|nt)$/.test(b.answer));
       if (exercise.instruction === 'Transpose au pluriel.') expect(plural.length, exercise.id).toBeGreaterThan(0);
-      if (exercise.instruction === 'Transpose au singulier.') expect(changed.some((b) => /^(les|des|mes|tes|ses|ces|ils|elles)$/i.test(b.start.split(' ')[0]!)), exercise.id).toBe(true);
+      if (exercise.instruction === 'Transpose au singulier.') expect(changed.some((b) => /^(les|des|mes|tes|ses|ces|ils|elles|nous)$/i.test(b.start.split(' ')[0]!)), exercise.id).toBe(true);
+      if (exercise.instruction === 'Transpose au féminin.') expect(changed.every((b) => !/(s|x)$/.test(b.answer) || /(s|x)$/.test(b.start)), exercise.id).toBe(true);
     }
   });
 
@@ -120,8 +170,15 @@ describe('Accords', () => {
   });
 
   it('a des pièges (des mots qui ne changent pas) à partir de la jaune', () => {
-    const jaune = accordBelt('jaune')!;
-    expect(jaune.texts.filter((e) => boxesOf(e.text).some(isTrap)).length).toBeGreaterThanOrEqual(8);
+    for (const belt of ACCORDS.slice(1)) {
+      expect(belt.texts.filter((e) => boxesOf(e.text).some(isTrap)).length, belt.belt).toBeGreaterThanOrEqual(8);
+    }
+  });
+
+  it('met la majuscule en début de phrase, pas aux mots seuls', () => {
+    expect(boxesOf('{Son|Ses} {genou|genoux} gonfle. {Il|Ils} {est|sont} bleu.').map((b) => b.capital)).toEqual([true, false, true, false]);
+    expect(boxesOf('{cet|cette} {acteur|actrice} / {un|une} {musicien|musicienne}').some((b) => b.capital)).toBe(false);
+    expect(sentenceOf('{cet|cette} {acteur|actrice} / {réel|réelle}', 'answer')).toBe('cette actrice / réelle');
   });
 
   it('lit les cases : mot de départ, réponse, autres réponses justes, majuscule', () => {
@@ -154,6 +211,21 @@ describe('Accords', () => {
     expect(tip('{la|les}')).toMatch(/petit mot devant le nom/);
     expect(tip('{Les horloges|L’horloge}')).toMatch(/Au singulier/);
     expect(tip('{fatiguée|fatigué}')).toMatch(/masculin/);
+    expect(tip('{Mon}')).toMatch(/voyelle/);
+    expect(tip('{souris}')).toMatch(/-s, -x ou -z/);
+    expect(tip('{cheval|chevaux}')).toMatch(/-aux/);
+    expect(tip('{travaux|travail}')).toMatch(/-ail/);
+    expect(tip('{genou|genoux}')).toMatch(/-x/);
+    expect(tip('{ce|ces}')).toMatch(/ces/);
+    expect(tip('{ces|cette}')).toMatch(/Au singulier/);
+    expect(tip('{cet|cette}')).toMatch(/Au féminin/);
+    expect(tip('{a|ont}')).toMatch(/avoir/);
+    expect(tip('{Nous effaçons|J’efface}')).toMatch(/Je devient nous/);
+    expect(tip('{acteur|actrice}')).toMatch(/-trice/);
+    expect(tip('{boucher|bouchère}')).toMatch(/-ère/);
+    expect(tip('{gardien|gardienne}')).toMatch(/double/);
+    expect(tip('{sportif|sportive}')).toMatch(/-ve/);
+    expect(tip('{cheval|jument}')).toMatch(/changent complètement/);
   });
 
   it('tire des phrases pas vues la dernière fois', () => {

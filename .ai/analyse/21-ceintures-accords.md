@@ -83,6 +83,17 @@ Contrairement à la Conjugaison et au Calcul posé, **la noire a ses fiches** : 
    correction et vérifie que les données redonnent les mêmes. Coquille corrigée : « La barque charive » (n° 11).
    Pas d'attente entre deux cases d'une phrase (les lettres tapées vite se perdaient), un instant en fin de phrase.
 2. **Orange et rose** : féminins, négations, ce / cet → ces, a → ont, pluriels en -aux, animaux.
+   **Faite le 16/11/2026 (0.63.0)** : orange (objectif CE2) : 36 exercices des fiches n° 19-30 + 10 des nôtres ;
+   rose : 18 des fiches n° 31-36 + 12 des nôtres. Nouvelle consigne « Transpose au féminin. », et « Remplace
+   Snoopy (mâle) par Didoune (femelle). ». Les fiches n° 25-26 donnent **des mots seuls** (« cet invité /
+   l’employé / votre ami ») : ils restent en minuscules, la majuscule n'est mise que si le mot de départ en a une
+   en début de phrase. Pièges nouveaux : « ne », les verbes qui ne changent pas au féminin, « Mon ancien
+   instituteur » (mon reste devant une voyelle, comme le signale la fiche n° 29), souris, nez, gaz. `tipFor`
+   connaît maintenant -al / -ail → -aux, -x des mots en -eau, -eu, -ou, ce / cet / cette ↔ ces, a ↔ ont, est ↔
+   sont, je → nous, tu → vous, les féminins en -trice, -euse, -ère, -esse, -ve, -che, la consonne doublée
+   (gardienne, réelle) et les mots qui changent (cheval, jument). Les règles sont vérifiées dans l'ordre : le -s
+   et le -e passent avant le -nt du verbe (« bruyants → bruyant » n'est pas un verbe). Coquille de la fiche
+   n° 30 : « une ouvrière » n'est pas marqué en vert, mais « un » change bien.
 3. **Vert clair, vert foncé, bleu clair** : les textes, leur / leurs, participes avec avoir puis avec être.
 4. **Bleu foncé, violette, marron, noire** : apposition, même et tout, participes avec le COD avant ; progrès et
   autocollants de la matière.
