@@ -1,5 +1,5 @@
 // Ceintures d'accords : « Je transpose un texte… » (voir .ai/analyse/21-ceintures-accords.md).
-// Exercices des fiches Charivari « Je prépare la ceinture… » (n° 1 à 78, de la blanche au bleu clair),
+// Exercices des fiches Charivari « Je prépare la ceinture… » (n° 1 à 114, de la blanche à la noire),
 // corrections relues, complétés par les nôtres. Une faute ici apprendrait une faute à l'enfant :
 // accords.test.ts vérifie chaque phrase.
 //
@@ -8,6 +8,7 @@
 // Plusieurs réponses justes se séparent par « / » : « {maitre|maitres/maîtres} ».
 // Des mots seuls (« {cet|cette} {invité|invitée} / {un|une} {musicien|musicienne} ») restent en minuscules.
 // Ce qui change sans être à taper s'écrit entre crochets : « [Toufou|Toufou et Rex] {était|étaient} ».
+// « Complète les terminaisons » : la case donne le début du mot, « {parl…|parle} » ; ce début est déjà tapé.
 // Les identifiants (« blanche.3 ») servent de clés dans le profil : ne jamais les changer
 // ni les réutiliser ; un nouvel exercice prend le numéro suivant.
 
@@ -105,12 +106,52 @@ const FEMININE_OF: Record<string, string> = { le: 'la', un: 'une', ce: 'cette', 
 /** Des mots en -s qui ne changent jamais : l'astuce des noms en -s, -x, -z ne leur va pas. */
 const SMALL_WORDS = new Set(['très', 'après', 'plus', 'puis', 'jamais', 'toujours', 'toutefois', 'dans', 'sous', 'les', 'des', 'mes', 'tes', 'ses', 'ces', 'nos', 'vos', 'nous', 'vous']);
 
-/** L'astuce montrée après une erreur, d'après ce qui change dans la case. */
-export function tipFor(box: Box): string {
+/** « {parl…|parle} » : le début du mot, déjà tapé dans la case ; vide pour une case ordinaire. */
+export const prefillOf = (box: Box) => (box.start.endsWith('…') ? box.start.slice(0, -1) : '');
+
+/** Le verbe avoir juste avant la case (« j’ai », « les a », « l’ai tellement ») : pour l'accord du participe. */
+const AFTER_AVOIR = /(^|\s|’)(a|ai|as|ont|avons|avez|avait|avais|avaient|avoir)\s(\p{L}+ment\s|bien\s|beaucoup\s)?$/u;
+const AFTER_ETRE = /(^|\s|’)(est|sont|était|étaient|sera|seront|serait|seraient|être|été)\s(\p{L}+ment\s|très\s|bien\s|trop\s)?$/u;
+const PARTICIPLE = /(é|i|u|is|it)(e?s?)$/;
+
+/** Le texte autour de la case : la phrase transposée avant elle, et ce qui la suit. */
+export interface Around {
+  before: string;
+  after: string;
+}
+
+/** L'astuce de la case n° `index` du texte, d'après ce qui l'entoure. */
+export function tipAt(text: string, index: number): string {
+  const pieces = parseAccord(text);
+  let before = '';
+  let seen = 0;
+  for (const [i, piece] of pieces.entries()) {
+    if (typeof piece === 'string') before += piece;
+    else if (seen++ === index) {
+      const next = pieces[i + 1];
+      const words = normalizeWords(before);
+      return tipFor(piece, { before: /\s$/.test(before) && words ? `${words} ` : words, after: typeof next === 'string' ? next : '' });
+    } else before += shown(piece, piece.answer);
+  }
+  return tipFor(boxesOf(text)[index]!);
+}
+
+/** L'astuce montrée après une erreur, d'après ce qui change dans la case (et ce qui l'entoure, si on le sait). */
+export function tipFor(box: Box, around?: Around): string {
   const start = normalizeWords(box.start);
   const answer = normalizeWords(box.answer);
+  if (start.endsWith('…')) return 'Cherche le mot qui commande l’accord. Le sujet peut être après le verbe : les souvenirs que raconte ma grand-mère. Qui raconte ? Ma grand-mère.';
   if (start === answer) {
+    if (around && /^(fait|laissé)$/.test(start) && /^\s+\p{L}+(er|ir|re)\b/u.test(around.after)) return 'Ce mot ne change pas : fait suivi d’un verbe à l’infinitif ne change jamais (ça les a fait rigoler).';
+    if (around && AFTER_AVOIR.test(around.before) && PARTICIPLE.test(start)) return 'Ce mot ne change pas. Avec avoir, le participe passé ne s’accorde pas avec le sujet : il a joué, ils ont joué. Il s’accorde seulement avec un mot placé avant (la clé que j’ai prise).';
+    if (around && /(é|ée|és|ées|u|ue|ues|us)$/.test(start) && !SMALL_WORDS.has(start)) return 'Ce mot ne change pas : il va avec un mot qui, lui, ne change pas (mon oncle était déçu).';
     if (/ment$/.test(start)) return 'Ce mot ne change jamais : les mots en -ment (vraiment, notamment) restent pareils.';
+    if (/ant$/.test(start)) return 'Ce mot ne change pas : le participe présent en -ant ne change jamais (en sautant, en broutant).';
+    if (/^(tout|tous|toute|toutes)$/.test(start)) return 'Ce mot ne change pas : tout va avec le nom qui le suit, et ce nom ne change pas (tout le village, tout leur travail).';
+    if (start === 'même') return around && /^\s+si\b/.test(around.after) ? 'Ce mot ne change pas : dans « même si », même ne change jamais.' : 'Ce mot ne change pas : même va avec le nom qui le suit, et ce nom ne change pas (à la même heure).';
+    if (/^(bleu|vert|rouge|jaune|gris|noir|blanc|rose|violet) (clair|foncé|vif|pâle)$/.test(start)) return 'Ce mot ne change pas : une couleur en deux mots ne change jamais (des voitures bleu foncé).';
+    if (/^(orange|marron)$/.test(start)) return 'Ce mot ne change pas : orange et marron sont aussi des noms, ils ne changent jamais (des fleurs orange).';
+    if (start === 'l’a' || start === 'l’ai' || start === 'l’avons') return 'Ce mot ne change pas : l’ veut dire le ou la, il reste pareil au féminin (mon père l’a traité, mon père l’a traitée).';
     if ((/[éiu]$/.test(start) && start.length > 3) || start === 'été' || start === 'fait') return 'Ce mot ne change pas. Avec avoir, le participe passé ne s’accorde pas avec le sujet : il a joué, ils ont joué.';
     if (/^(mon|ton|son)$/.test(start)) return 'Ce mot ne change pas. Mon, ton et son restent devant une voyelle (mon ancienne maitresse) et devant un nom masculin (son cousin).';
     if (SMALL_WORDS.has(start)) return 'Ce mot ne change pas : il reste comme il est.';
@@ -118,15 +159,28 @@ export function tipFor(box: Box): string {
     if (/[sx]$/.test(start)) return 'Ce mot ne change pas : il ne va pas avec le sujet. Le crocodile attrape ses proies, les crocodiles attrapent leurs proies.';
     return 'Ce mot ne change pas : il reste comme il est.';
   }
+  if (/^(l’|les )(a|ai|as|avoir|avais|avait)$/.test(start) && /^(l’|les )(a|ai|as|avoir|avais|avait)$/.test(answer)) {
+    return start.startsWith('les')
+      ? 'Devant le verbe, les devient l’ au singulier : je les ai trouvés, je l’ai trouvé. Avoir ne change pas, son sujet reste le même.'
+      : 'Devant le verbe, le ou la devient les : je l’ai trouvé, je les ai trouvés. Avoir ne change pas, son sujet reste le même.';
+  }
+  if (/-t?-?(il|elle|ils|elles)$/.test(start) || /-t?-?(il|elle|ils|elles)$/.test(answer)) return 'Quand le sujet est après le verbe, le verbe s’accorde quand même : va-t-elle, vont-elles ; arrivera-t-il, arriveront-elles.';
+  if (/-mêmes?$/.test(answer)) return 'Même change avec le pronom : lui-même, eux-mêmes ; elle-même, elles-mêmes.';
   if (/^(je|j’|tu|nous|vous)(\s|$)|^j’/.test(start) || /^(je|j’|tu|nous|vous)(\s|$)|^j’/.test(answer)) {
     return 'Je devient nous, tu devient vous, et le verbe change avec : je chante, nous chantons ; tu chantes, vous chantez.';
   }
   if (/^(c’est|ce sont)$/.test(start) && /^(c’est|ce sont)$/.test(answer)) return 'C’est devient ce sont au pluriel : c’est mon ami, ce sont mes amis.';
   if (/(^|\s|’)(est|sont)$/.test(start) && /(^|\s|’)(est|sont)$/.test(answer)) return 'Le verbe être : il est, ils sont. Il n’est pas, ils ne sont pas.';
+  if (/^(qu’|s’|si )?ils?$/.test(start) && /^(qu’|s’|si )?elles?$/.test(answer)) return 'Au féminin, il devient elle et ils devient elles.';
+  if (/^(qu’|s’|si )?elles?$/.test(start) && /^(qu’|s’|si )?ils?$/.test(answer)) return 'Au masculin, elle devient il et elles devient ils.';
   if (start.includes(' ') || answer.includes(' ')) {
-    return /^(les|des) /.test(answer)
-      ? 'Au pluriel, le petit mot devant le nom devient les ou des, et le nom prend un -s.'
-      : 'Au singulier, le petit mot devant le nom devient le, la, l’, un ou une, et le nom perd son -s.';
+    if (/^(les|des|aux|mes|tes|ses|ces|nos|vos|leurs) /.test(start)) return 'Au singulier, le petit mot devant le nom devient le, la, l’, un ou une, et le nom perd son -s.';
+    if (/^(les|des|aux|mes|tes|ses|ces|nos|vos|leurs) /.test(answer)) return 'Au pluriel, le petit mot devant le nom devient les ou des, et le nom prend un -s.';
+    return 'Quand le nom change, le petit mot devant change avec lui : un effort, une volonté ; le chemin, la route.';
+  }
+  if (start === 'lui' && answer === 'leur') return 'Lui devient leur au pluriel, sans -s : il lui donne du foin, il leur donne du foin.';
+  if (/^(tout|tous|toute|toutes)$/.test(start) && /^(tout|tous|toute|toutes)$/.test(answer) && !(start === 'tous' && answer === 'toutes')) {
+    return 'Tout change avec le mot qu’il accompagne : tout le jour, toute la nuit, tous les jours, toutes les nuits.';
   }
   if (answer === 'leurs') return 'Au pluriel, ses devient leurs : l’éléphant et ses oreilles, les éléphants et leurs oreilles.';
   if (answer === 'leur') return 'Au pluriel, son et sa deviennent leur quand chacun en a un seul : l’éléphant et sa trompe, les éléphants et leur trompe.';
@@ -139,7 +193,6 @@ export function tipFor(box: Box): string {
     if (/^(les|des|de|mes|tes|ses|nos|vos|leurs)$/.test(start)) return 'Au singulier, le petit mot devant le nom change : les devient le, la ou l’, des devient un, une ou du.';
     return 'Le petit mot devant le nom change aussi : le, la et l’ deviennent les, un et une deviennent des, mon devient mes, notre devient nos.';
   }
-  if (/^ils?$/.test(start) && /^elles?$/.test(answer)) return 'Au féminin, il devient elle et ils devient elles.';
   if (start === 'tous' && answer === 'toutes') return 'Au féminin, tous devient toutes : tous les ânes, toutes les ânesses.';
   if (start === 'il' || start === 'elle' || start === 'ils' || start === 'elles') return 'Il devient ils, elle devient elles. Et dans l’autre sens.';
   if ((start === 'a' && answer === 'ont') || (start === 'ont' && answer === 'a')) return 'Le verbe avoir : il a, ils ont.';
@@ -147,11 +200,19 @@ export function tipFor(box: Box): string {
   if (/^(jument|femme|fille|poule|cane|chèvre|vache|biche|louve)$/.test(answer)) return 'Au féminin, certains mots changent complètement : un cheval, une jument ; un homme, une femme.';
   if (/a(l|il)$/.test(start) && /aux$/.test(answer)) return 'Au pluriel, -al devient -aux : un cheval, des chevaux. Quelques mots en -ail aussi : un travail, des travaux.';
   if (/aux$/.test(start) && /a(l|il)$/.test(answer)) return 'Au singulier, -aux redevient -al : des chevaux, un cheval. Parfois -ail : des travaux, un travail.';
+  if (around && AFTER_AVOIR.test(around.before) && PARTICIPLE.test(start) && PARTICIPLE.test(answer)) {
+    return 'Avec avoir, le participe passé s’accorde avec le mot placé avant le verbe : la lettre que j’ai écrite ; les clés, je les ai prises.';
+  }
+  if (around && AFTER_ETRE.test(around.before) && start.replace(/e?s?$/, '') === answer.replace(/e?s?$/, '')) {
+    return 'Après être, le mot s’accorde avec le sujet : elle est partie, ils sont contents.';
+  }
+  if (/ient$/.test(start) && /iennent$/.test(answer)) return 'Quand le sujet est au pluriel, le verbe se termine par -nt : il vient, ils viennent ; il entretient, ils entretiennent.';
+  if (/iennent$/.test(start) && /ient$/.test(answer)) return 'Quand le sujet est au singulier, le verbe ne se termine pas par -nt : ils viennent, il vient.';
   if (answer === `${start}x`) return 'Les mots en -eau, -au, -eu et quelques mots en -ou prennent un -x : des bateaux, des genoux.';
   if (start === `${answer}x`) return 'Au singulier, le -x s’en va : des genoux, un genou.';
   if (answer === `${start}s`) return 'Au pluriel, le nom et l’adjectif prennent un -s : des chats noirs.';
   if (start === `${answer}s`) return 'Au singulier, le nom et l’adjectif perdent leur -s : un chat noir.';
-  if (start === `${answer}e` || start === `${answer}es`) return 'Au masculin, on enlève souvent le -e du féminin : contente, content.';
+  if (start === `${answer}e` || start === `${answer}es` || (/s$/.test(answer) && start === `${answer.slice(0, -1)}es`)) return 'Au masculin, on enlève souvent le -e du féminin : contente, content.';
   if (answer === `${start}e` || answer === `${start}es` || (/s$/.test(start) && answer === `${start.slice(0, -1)}es`)) return 'Au féminin, on ajoute souvent un -e : content, contente.';
   if (/nt$/.test(answer) && !/nt$/.test(start)) return 'Quand le sujet est au pluriel, le verbe se termine par -nt : ils jouent, ils jouaient.';
   if (/nt$/.test(start) && !/nt$/.test(answer)) return 'Quand le sujet est au singulier, le verbe ne se termine pas par -nt : il joue, il jouait.';
@@ -162,7 +223,10 @@ export function tipFor(box: Box): string {
   if (/teur$/.test(start) && /trice$/.test(answer)) return 'Au féminin, -teur devient souvent -trice : un acteur, une actrice.';
   if (/eur$/.test(start) && /euse$/.test(answer)) return 'Au féminin, -eur devient souvent -euse : un menteur, une menteuse.';
   if (/e[rt]$/.test(start) && /è[rt]e$/.test(answer)) return 'Au féminin, -er devient -ère : un boucher, une bouchère. Et inquiet devient inquiète.';
-  if (answer === `${start}${start.slice(-1)}e`) return 'Au féminin, on double souvent la dernière lettre avant le -e : réel, réelle ; gardien, gardienne.';
+  if (/euse$/.test(start) && /eux$/.test(answer)) return 'Au masculin, -euse devient -eux : heureuse, heureux.';
+  if (/euse$/.test(start) && /eur$/.test(answer)) return 'Au masculin, -euse devient -eur : menteuse, menteur.';
+  if (/ère$/.test(start) && /er$/.test(answer)) return 'Au masculin, -ère devient -er : bouchère, boucher.';
+  if (answer === `${start}${start.slice(-1)}e` || answer === `${start}${start.slice(-1)}es`) return 'Au féminin, on double souvent la dernière lettre avant le -e : réel, réelle ; gardien, gardienne.';
   if (/f$/.test(start) && /ve$/.test(answer)) return 'Au féminin, -f devient -ve : sportif, sportive.';
   if (/x$/.test(start) && /se$/.test(answer)) return 'Au féminin, -eux devient -euse : heureux, heureuse.';
   if (/c$/.test(start) && /che$/.test(answer)) return 'Au féminin, -c devient -che : blanc, blanche.';
@@ -176,10 +240,11 @@ export const SWAP = /^Remplace (\p{Lu}\S*)(?: \(mâle\))? par (\p{Lu}\S*)(?: \(f
 export function startSentence(exercise: AccordExercise): string {
   const swap = SWAP.exec(exercise.instruction);
   const start = sentenceOf(exercise.text, 'start');
-  return swap ? start.replace(swap[2]!, swap[1]!) : start;
+  return swap ? start.replaceAll(swap[2]!, swap[1]!) : start;
 }
 
 const PLURAL = 'Transpose au pluriel.';
+const ENDINGS = 'Complète les terminaisons manquantes.';
 const SINGULAR = 'Transpose au singulier.';
 const FEMININE = 'Transpose au féminin.';
 
@@ -537,6 +602,121 @@ export const ACCORDS: readonly AccordBelt[] = [
       [33, SINGULAR, '{Ce sont|C’est} {des|un} {livres|livre} que j’{aime} beaucoup.'],
       [34, FEMININE, '{Le|La} {voisin|voisine}, {surpris|surprise} par l’orage, {est} {rentré|rentrée} en courant.'],
       [35, 'Remplace le serveur par la serveuse.', '{Le|La} {serveur|serveuse}, {pressé|pressée} et {souriant|souriante}, {est} {arrivé|arrivée} avec les desserts. {Il|Elle} {est} {très} {apprécié|appréciée} des clients.'],
+    ]),
+  },
+  {
+    belt: 'bleu-fonce',
+    skill: 'J’accorde l’adjectif placé en tête de phrase : « Formées de grains, elles… ». Les mots en -ant après « en » ne changent pas. Je trouve le sujet, même quand il est après le verbe.',
+    unit: 'texte',
+    tips: [
+      'Un adjectif ou un participe en tête de phrase s’accorde avec le sujet qui vient après : formée de gaz, la comète ; formées de gaz, les comètes.',
+      'Le participe présent en -ant ne change jamais : en sautant, en broutant, une cicatrice lui barrant le visage.',
+      'Le sujet peut être placé après le verbe : les souvenirs que raconte ma grand-mère. Qui raconte ? Ma grand-mère : raconte s’accorde avec elle.',
+      'Quand le nom change, le petit mot devant change avec lui : un effort, une volonté ; cet homme, cette femme.',
+    ],
+    practiceSize: 1,
+    testSize: 2,
+    texts: exercises('bleu-fonce', [
+      // La correction écrit « trainée » (orthographe rectifiée) : ce mot ne change pas, on garde celui de la fiche.
+      [1, 'Remplace la comète par les comètes.', '{La|Les} {comète|comètes} {est|sont} {un|des} {astre|astres} {brillant|brillants}. {Elle|Elles} {est|sont} comme {une|des} {boule|boules} de neige et quand {elle|elles} {s’approche|s’approchent} du soleil, la glace {fond}. {Formée|Formées} de grains de poussière et de gaz, {elle|elles} {est|sont} {accompagnée|accompagnées} d’une traînée.', 79],
+      // « Il en existe » ne change pas : un piège.
+      [2, 'Remplace le nuage par les nuages.', '{Issu|Issus} de l’évaporation de l’eau, {il|ils} {fait|font} partie du cycle de l’eau. {Il} en existe de plusieurs sortes. {Le|Les} {nuage|nuages} {est|sont} {composé|composés} {essentiellement} d’eau et se {déplace|déplacent} en étant {poussé|poussés} par les vents.', 80],
+      [3, 'Remplace Grandma par Grandpa.', 'Georges détestait Grandpa. C’était {une|un} {vieille femme|vieil homme} {grincheuse|grincheux} et {égoïste} qui avait des dents jaunes. {Elle|Il} était {râleuse|râleur} et passait {ses} journées {assise|assis} en se balançant dans un fauteuil. Grandpa était {méchante|méchant} et {très} {capricieuse|capricieux}. Serait-{elle|il} {une|un} {affreuse|affreux} {sorcière|sorcier} ?', 81],
+      [4, 'Remplace l’effort par la volonté.', '{Il|Elle} est souvent {souhaité|souhaitée}, {demandé|demandée}, et même {exigé|exigée}. Chaque fois, {l’effort|la volonté} doit être {régulier|régulière}, {soutenu|soutenue}, {important|importante}, en un mot, {réel|réelle}. {Encouragé|Encouragée} ou pas, {il|elle} demande parfois {un effort|une volonté} {surhumain|surhumaine} !', 82],
+      [5, 'Remplace Fabrice par Fabrice et Julien.', '[Fabrice|Fabrice et Julien] {est|sont} {apprenti|apprentis} {acrobate|acrobates}. {Il|Ils} {prépare|préparent} un spectacle. Sur scène, {vêtu|vêtus} d’un accoutrement {coloré}, {il|ils} {effectue|effectuent} des pirouettes en {sautant} sur un fil. Le public {applaudit} {ses|leurs} efforts.', 83],
+      [6, 'Remplace le journal par les revues.', '{Acheté|Achetées} en kiosque, {envoyé|envoyées} aux abonnés, ou {distribué|distribuées} sur le quai des gares, {le journal|les revues} {a|ont} {toujours} du succès. {Peuplé|Peuplées} d’évènements sportifs, d’actualité ou bien de mode, {il|elles} {trouve|trouvent} acquéreur. {Il|Elles} {finit|finissent} souvent en étant {jeté|jetées} à la poubelle.', 84],
+      // Les fiches n° 85-86 donnent le début du mot : l'enfant écrit la fin (le début est déjà tapé).
+      [7, ENDINGS, 'Les deux enfants dont {parl…|parle} Kélian {habit…|habitent} ici. Les souvenirs que {racont…|raconte} ma grand-mère {étai…|étaient} toujours {passionnan…|passionnants}.', 85],
+      [8, ENDINGS, 'Les valises que {recherch…|recherche} Fanny pour son voyage se {trouv…|trouvent} au grenier. Mia et Eglantine {admir…|admirent} les photos des pays que {visit…|visite} François.', 86],
+      [9, 'Remplace les pandas par le panda.', '{Les|Le} {pandas|panda} {géants|géant} {vivent|vit} en Chine, {cachés|caché} dans la montagne. En hiver, {les pandas|le panda} {s’amusent|s’amuse} en se roulant dans la neige. Malgré {leurs|ses} 130 kilos, {ils|il} {sont|est} {très} {bons|bon} {grimpeurs|grimpeur}. {Ils|Il} {ne sont|n’est} pas comme {les ours|l’ours} qui {dorment|dort} tout l’hiver ; {ils|il} {n’hibernent|n’hiberne} pas.', 87],
+      [10, 'Remplace les dodos par le dodo.', 'L’île Maurice a autrefois abrité {des animaux|un animal} aujourd’hui {disparus|disparu} : {les dodos|le dodo}. {Les|Le} {dodos|dodo} {étaient|était} {des|un} {oiseaux|oiseau} {coureurs|coureur} de la famille des pigeons. {Ils|Il} {ressemblaient|ressemblait} à une {grosse} dinde. {Ils|Il} {étaient|était} {dotés|doté} de deux pattes {jaunes} et d’un plumage sombre.', 88],
+      [11, 'Remplace un type par une femme.', 'C’est alors que je remarquais {un type|une femme} à l’allure bizarre, {assis|assise} juste en face de moi, et qui me regardait. Un peu {caché|cachée} par un autre client, je voyais {qu’il|qu’elle} était {grand|grande} et {rond|ronde}, {bronzé|bronzée} et {très} {musclé|musclée}. La joue de {cet homme|cette femme} était {déformée} par une cicatrice lui {barrant} le visage.', 89],
+      [12, 'Remplace les chèvres par la chèvre.', '{Les|La} {chèvres|chèvre} {sont|est} {de|un} {petits|petit} {animaux|animal} {très} {agiles|agile}. On {les|la} trouve dans toutes les régions du globe. {Herbivores|Herbivore}, {elles|elle} se {nourrissent|nourrit} en {broutant} toutes sortes de végétaux. {Ces|Cette} {bonnes|bonne} {grimpeuses|grimpeuse} {sont|est} {élevées|élevée} depuis longtemps pour {leur|son} lait.', 90],
+      [13, 'Remplace le dauphin par les dauphins.', '{Joueur|Joueurs} et {curieux}, {le|les} {dauphin|dauphins} {suit|suivent} souvent les bateaux. {Il|Ils} {saute|sautent} hors de l’eau en {poussant} de petits cris. {Le|Les} {dauphin|dauphins} {est|sont} {un|des} {animal|animaux} {très} {intelligent|intelligents}.'],
+      [14, 'Remplace la fusée par les fusées.', '{Lancée|Lancées} depuis la Guyane, {la|les} {fusée|fusées} {monte|montent} {rapidement} dans le ciel. En {quittant} la Terre, {elle|elles} {emporte|emportent} {un|des} {satellite|satellites} {neuf|neufs}.'],
+      [15, ENDINGS, 'Les fleurs que {cueill…|cueille} ma sœur {sent…|sentent} bon. Dans la forêt {viv…|vivent} des loups {affam…|affamés}.'],
+    ]),
+  },
+  {
+    belt: 'violette',
+    skill: 'Je transforme des textes plus longs. Je sais quand tout et même changent : tout le village, tous les pas, eux-mêmes.',
+    unit: 'texte',
+    tips: [
+      'Tout change avec le nom qu’il accompagne : tout le village, toute la nuit, tous les jours, toutes les fleurs.',
+      'Même change avec le pronom : lui-même, eux-mêmes ; elle-même, elles-mêmes. Dans « même si », il ne change jamais.',
+      'Lui devient leur au pluriel, sans -s : il lui donne du foin, il leur donne du foin.',
+      'Les mots qui vont avec un autre nom ne changent pas : l’ensemble des portées s’appelle une partition.',
+    ],
+    practiceSize: 1,
+    testSize: 2,
+    texts: exercises('violette', [
+      // La fiche marque « passé » en vert, mais il ne change pas (avec avoir) : un piège.
+      [1, 'Remplace la vache par les vaches.', 'C’est l’hiver, Paul le fermier donne de la nourriture {à la vache|aux vaches} : il {lui|leur} {remplit} la mangeoire de foin. Bien {nourrie|nourries}, {la vache|les vaches} {pourra|pourront} donner du lait de bonne qualité. {La|Les} {vache|vaches} {est|sont} {élevée|élevées} pour la production laitière. {Elle|Elles} {a|ont} {passé} l’été dans les pâturages.', 91],
+      [2, 'Remplace caillou par cailloux.', 'En entrant dans la forêt, le petit Poucet a {déposé} {un caillou|des cailloux} sur le chemin. En s’enfonçant dans le bois, il a {continué} à semer {un caillou|des cailloux} tout au long de sa marche. {Perdus} au cœur du bois, le petit Poucet et ses frères n’eurent plus qu’à suivre le chemin du retour de {caillou|cailloux} en {caillou|cailloux}.', 92],
+      [3, 'Remplace les noms de métier (horticulteur, jardinier, fleuriste) au singulier par le pluriel.', '{L’horticulteur|Les horticulteurs} {est|sont} {un|des} {spécialiste|spécialistes} qui {cultive|cultivent} des plantes d’ornement. {Tout} {son|leur} travail {consiste} à produire des arbres et des fleurs pour {le jardinier|les jardiniers} et {le fleuriste|les fleuristes}. {Le|Les} {jardinier|jardiniers} {cultive|cultivent} et {entretient|entretiennent} des plantes ornementales ou potagères. {Le|Les} {fleuriste|fleuristes} {achète|achètent} et {revend|revendent} des fleurs pour les particuliers.', 93],
+      [4, 'Remplace les plantes par la plante.', 'La photosynthèse est le phénomène par lequel {les|la} {plantes|plante} {produisent|produit} des réserves de nourriture à partir de l’eau et du gaz carbonique de l’air. Ces réserves de nourriture {sont} {appelées} glucides. {Les|La} {plantes|plante} {fixent|fixe} les glucides grâce à la chlorophylle, en {employant} comme source d’énergie la lumière solaire.', 94],
+      [5, 'Remplace la note par les notes.', 'La musique a son alphabet, {la note|les notes}. {La|Les} {note|notes} {donne|donnent} le son (do, ré, mi, fa, sol, la, si) mais aussi le temps (noire, blanche, croche, etc.). La ligne d’écriture s’appelle la portée. L’ensemble des portées d’une œuvre {s’appelle} une partition. {La|Les} {note|notes} {haute|hautes} {est|sont} {représentée|représentées} avec la clé de sol ; pour {la note|les notes} {basse|basses}, c’est la clé de fa.', 95],
+      // Une lettre : « Cher oncle, » sur sa ligne.
+      [6, 'Remplace journée par journées.', 'Cher oncle,\nJe te remercie pour {la|les} {belle|belles} {journée|journées} {passée|passées} ensemble. C’était une joie de me promener avec toi en vélo à travers champs ! Tu m’as fait découvrir la campagne, les bosquets, la faune et la flore de ton petit pays. {Même} si la pluie a interrompu quelques instants les balades, j’ai {tout} {aimé} de {cette|ces} {journée|journées} bien {agréable|agréables}.', 96],
+      [7, 'Remplace le pompier par les pompiers.', '{Le|Les} {pompier|pompiers} {arrive|arrivent} {toujours} {très} vite. {Il|Ils} {arrose|arrosent} le feu {lui-même|eux-mêmes} et {sauve|sauvent} {tout} le village. {Tout} le monde {le|les} {remercie}.'],
+      [8, 'Remplace la danseuse par les danseuses.', '{La|Les} {danseuse|danseuses} {est|sont} {toute|toutes} {contente|contentes}. {Elle|Elles} {a|ont} {répété} {tout} l’après-midi. {Elle|Elles} {connaît|connaissent} maintenant {tous} les pas par cœur.'],
+      [9, 'Remplace le chat par les chats.', '{Le|Les} {chat|chats} {dort|dorment} {toute} la journée. Le soir, {il|ils} {fait|font} {sa|leur} toilette {lui-même|eux-mêmes}, puis {il|ils} {part|partent} chasser. {Il|Ils} {revient|reviennent} {toujours} à la {même} heure.'],
+    ]),
+  },
+  {
+    belt: 'marron',
+    skill: 'Avec avoir, j’accorde le participe passé avec le mot placé avant : la voiture que j’ai achetée. Une couleur en deux mots ne change pas : bleu foncé.',
+    goal: 'CM2',
+    unit: 'texte',
+    tips: [
+      'Avec avoir, le participe passé s’accorde avec le complément placé avant le verbe : la voiture que j’ai achetée, les voitures que j’ai achetées.',
+      'S’il n’y a rien avant, il ne s’accorde pas : j’ai acheté des voitures.',
+      'Le, la et les devant le verbe remplacent un nom : je la frotte, je les frotte.',
+      'Une couleur en deux mots ne change jamais : des voitures bleu foncé. Orange et marron non plus : des fleurs orange.',
+      'Quand le sujet est après le verbe, le verbe s’accorde quand même : va-t-elle, vont-elles.',
+    ],
+    practiceSize: 1,
+    testSize: 2,
+    texts: exercises('marron', [
+      [1, SINGULAR, '{Les|Le} {pandas|panda} {sont|est} {des|un} {mammifères|mammifère} {volumineux} et {massifs|massif}. {Ils|Il} se {nourrissent|nourrit} {essentiellement} de bambous. {Ils|Il} {les} {cueillent|cueille} en utilisant {leur|son} {faux} pouce et {les} {mastiquent|mastique} pendant plusieurs heures.', 97],
+      [2, 'Remplace la voiture par les voitures.', '{La|Les} {petite|petites} {voiture|voitures} que j’ai {achetée|achetées} pour mon neveu {est|sont} {bleu foncé}. S’il {la|les} frotte sur le sol, {la|les} soulève puis {la|les} repose, {elle|elles} {peut|peuvent} avancer {toute|toutes} {seule|seules}. {Va-t-elle|Vont-elles} {lui} plaire ?', 98],
+      [3, 'Remplace les médicaments par le médicament.', '{Les|Le} {médicaments|médicament} que le médecin {a} {prescrits|prescrit} {n’étaient|n’était} pas {disponibles|disponible} à la pharmacie du village. {Vont-ils|Va-t-il} être {présents|présent} à l’officine du centre commercial ?', 99],
+      [4, 'Remplace la pièce de théâtre par les pièces de théâtre.', 'J’ai {beaucoup} {apprécié} {la|les} {pièce|pièces} de théâtre que j’ai {vue|vues} au festival d’Avignon. {Elle|Elles} {était|étaient} {interprétée|interprétées} par de jeunes acteurs {très} dynamiques. Je {la|les} recommande à mes amis.', 100],
+      [5, 'Remplace le chemin par la route.', '{Le chemin|La route} que nous avons {emprunté|empruntée} à vélo est {très} {sinueux|sinueuse}. Les coureurs du Tour de France {le|la} {connaissent} bien. C’est {un chemin|une route} {sélectif|sélective} qu’ils ont {parcouru|parcourue} à de nombreuses reprises.', 101],
+      [6, 'Remplace les cerises par les abricots.', 'Les {cerises|abricots} que j’ai {ramassées|ramassés} ce matin {sont} bien {mûres|mûrs} ! {Elles|Ils} {seront} {utilisées|utilisés} pour faire des confitures.', 102],
+      [7, 'Remplace le ballon par les ballons.', '{Le|Les} {ballon|ballons} {rouge|rouges} que j’ai {gonflé|gonflés} hier {est|sont} déjà {dégonflé|dégonflés}. Je {l’avais|les avais} pourtant {rangé|rangés} dans le garage.'],
+      [8, 'Remplace la robe par les robes.', '{La|Les} {robe|robes} que ma tante a {cousue|cousues} {est|sont} {vert clair}. Je {l’ai|les ai} {portée|portées} pour la fête et tout le monde {l’a|les a} {trouvée|trouvées} {jolie|jolies}.'],
+      [9, SINGULAR, '{Les|La} {fleurs|fleur} que tu {as} {cueillies|cueillie} {sont|est} {orange}. {Elles|Elle} {sentent|sent} bon dans {ces|ce} {vases|vase} {marron}.'],
+    ]),
+  },
+  {
+    belt: 'noire',
+    skill: 'J’accorde le participe passé quand le, la ou les est placé avant : je l’ai trouvée, je les ai trouvés.',
+    unit: 'texte',
+    tips: [
+      'Avec avoir, le participe s’accorde avec le, la ou les placé avant : la clé, je l’ai prise ; les clés, je les ai prises.',
+      'L’ veut dire le ou la : regarde le nom qu’il remplace. Le sac, je l’ai pris ; la clé, je l’ai prise.',
+      'Fait suivi d’un verbe à l’infinitif ne change jamais : ça les a fait rigoler.',
+      'Le verbe avoir ne change pas quand son sujet ne change pas : mon père l’a traité, mon père les a traités.',
+    ],
+    practiceSize: 1,
+    testSize: 2,
+    texts: exercises('noire', [
+      [1, 'Remplace mon moniteur par mes moniteurs.', 'À cause de {mon moniteur|mes moniteurs} de ski, j’ai raté ma troisième étoile. {Il|Ils} {était|étaient} {nul|nuls} ! {Tellement} {mauvais} que mon père {l’a|les a} {traité|traités} de {bon|bons} à rien. {Mon moniteur|Mes moniteurs}, ça {l’a|les a} {fait} rigoler.', 103],
+      [2, 'Remplace mon moniteur par ma monitrice.', 'À cause de {mon moniteur|ma monitrice} de ski, j’ai raté ma troisième étoile. {Il|Elle} était {nul|nulle} ! {Tellement} {mauvais|mauvaise} que mon père {l’a} {traité|traitée} de {bon|bonne} à rien. {Mon moniteur|Ma monitrice}, ça {l’a} {fait} rigoler.', 104],
+      [3, 'Remplace mon moniteur par mes monitrices.', 'À cause de {mon moniteur|mes monitrices} de ski, j’ai raté ma troisième étoile. {Il|Elles} {était|étaient} {nul|nulles} ! {Tellement} {mauvais|mauvaises} que mon père {l’a|les a} {traité|traitées} de {bon|bonnes} à rien. {Mon moniteur|Mes monitrices}, ça {l’a|les a} {fait} rigoler.', 105],
+      [4, 'Remplace le texte par l’histoire.', '{Le texte|L’histoire} que j’ai {lu|lue} en classe ce matin était {très} {compliqué|compliquée}. {Il|Elle} était {imprimé|imprimée} sur un vieux papier jauni. Je l’ai {trouvé|trouvée} trop {long|longue} et {ennuyeux|ennuyeuse}. {S’il|Si elle} était {illustré|illustrée}, {il|elle} serait plus {attractif|attractive} !', 106],
+      [5, 'Remplace le texte par les textes.', '{Le texte|Les textes} que j’ai {lu|lus} en classe ce matin {était|étaient} {très} {compliqué|compliqués}. {Il|Ils} {était|étaient} {imprimé|imprimés} sur un vieux papier jauni. Je {l’ai|les ai} {trouvé|trouvés} trop {long|longs} et {ennuyeux}. {S’il|S’ils} {était|étaient} {illustré|illustrés}, {il|ils} {serait|seraient} plus {attractif|attractifs} !', 107],
+      [6, 'Remplace le chemisier par la chemise.', '{Mon|Ma} {vieux|vieille} {chemisier|chemise} {noir|noire} est {devenu|devenue} trop {petit|petite} pour moi. {Il|Elle} est trop {serré|serrée}. Dommage, je l’ai {tellement} {aimé|aimée}, {ce chemisier|cette chemise} !', 108],
+      [7, 'Remplace le chemisier par les chemisiers.', '{Mon|Mes} {vieux} {chemisier|chemisiers} {noir|noirs} {est|sont} {devenu|devenus} trop {petit|petits} pour moi. {Il|Ils} {est|sont} trop {serré|serrés}. Dommage, je {l’ai|les ai} {tellement} {aimé|aimés}, {ce chemisier|ces chemisiers} !', 109],
+      [8, 'Remplace le courrier par la lettre.', 'À cause de la grève, {le courrier|la lettre} que j’ai {écrit|écrite} et {posté|postée} hier {n’est} {parti|partie} qu’aujourd’hui. Mon oncle était {déçu} de ne pas l’avoir {reçu|reçue}. {Arrivera-t-il|Arrivera-t-elle} demain ?', 110],
+      [9, 'Remplace le courrier par les lettres.', 'À cause de la grève, {le courrier|les lettres} que j’ai {écrit|écrites} et {posté|postées} hier {n’est|ne sont} {parti|parties} qu’aujourd’hui. Mon oncle était {déçu} de ne pas {l’avoir|les avoir} {reçu|reçues}. {Arrivera-t-il|Arriveront-elles} demain ?', 111],
+      [10, 'Remplace jeu électronique par console.', '{Mon jeu électronique|Ma console} est {tombé|tombée} en panne. Je l’ai {débranché|débranchée} et l’ai {remis|remise} dans sa boite. Ensuite je l’ai {rapporté|rapportée} au magasin : ils m’ont {dit} {qu’il|qu’elle} était encore {garanti|garantie}. Ouf !', 112],
+      [11, 'Remplace sac par clé.', 'J’ai {perdu} {mon sac|ma clé}. Je l’ai {pris|prise} hier pour faire des courses. Je l’ai {posé|posée} dans l’entrée en rentrant. Pourtant, {il|elle} est {noir|noire} et {doré|dorée} : je devrais {le|la} voir facilement. Est-ce toi qui me l’as {emprunté|empruntée} ?', 113],
+      [12, 'Remplace clés par sac.', 'J’ai {perdu} {mes clés|mon sac}. Je {les ai|l’ai} {prises|pris} hier pour faire des courses. Je {les ai|l’ai} {posées|posé} dans l’entrée en rentrant. Pourtant, {elles|il} {sont|est} {noires|noir} et {dorées|doré} : je devrais {les|le} voir facilement. Est-ce toi qui me {les as|l’as} {empruntées|emprunté} ?', 114],
+      [13, 'Remplace le gâteau par la tarte.', '{Le gâteau|La tarte} que maman a {préparé|préparée} était {délicieux|délicieuse}. Nous {l’avons} {mangé|mangée} en entier. {Il|Elle} nous a {plu} à tous !'],
+      [14, 'Remplace mon cousin par mes cousines.', '{Mon cousin|Mes cousines} {est|sont} {venu|venues} hier. Je {l’ai|les ai} {emmené|emmenées} au cinéma et je {l’ai|les ai} {trouvé|trouvées} {ravi|ravies}. {Il|Elles} {a|ont} {adoré} le film !'],
+      [15, 'Remplace les pommes par le melon.', '{Les pommes|Le melon} que j’ai {achetées|acheté} au marché {sont|est} {mûres|mûr}. Je {les ai|l’ai} {lavées|lavé} puis je {les ai|l’ai} {coupées|coupé}.'],
     ]),
   },
 ];

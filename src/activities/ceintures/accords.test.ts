@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { AccordSession } from './accord-session';
-import { accordBelt, ACCORDS, boxesOf, isRight, isTrap, parseAccord, pickAccords, sentenceOf, shown, startSentence, SWAP, tipFor } from './accords';
+import { accordBelt, ACCORDS, boxesOf, isRight, isTrap, parseAccord, pickAccords, prefillOf, sentenceOf, shown, startSentence, SWAP, tipAt, tipFor } from './accords';
 
 /**
- * Les fiches Charivari recopiées à part : la phrase de départ et sa correction (n° 1 à 78). Les données de
+ * Les fiches Charivari recopiées à part : la phrase de départ et sa correction (n° 1 à 114). Les données de
  * l'app doivent redonner exactement les mêmes. « La barque charive » (n° 11) est corrigée ici aussi.
  */
 const FICHES: Record<string, [string, string]> = {
@@ -174,6 +174,42 @@ const FICHES: Record<string, [string, string]> = {
   'bleu-clair.27': ['Le loup, blessé et affamé, est caché dans la forêt.', 'La louve, blessée et affamée, est cachée dans la forêt.'],
   'bleu-clair.28': ['Il était allé chasser et est rentré bredouille.', 'Elle était allée chasser et est rentrée bredouille.'],
   'bleu-clair.29': ['Le lapin est chassé par le chat.', 'La lapine est chassée par la chatte.'],
+  'bleu-fonce.1': ['La comète est un astre brillant. Elle est comme une boule de neige et quand elle s’approche du soleil, la glace fond. Formée de grains de poussière et de gaz, elle est accompagnée d’une traînée.', 'Les comètes sont des astres brillants. Elles sont comme des boules de neige et quand elles s’approchent du soleil, la glace fond. Formées de grains de poussière et de gaz, elles sont accompagnées d’une traînée.'],
+  'bleu-fonce.2': ['Issu de l’évaporation de l’eau, il fait partie du cycle de l’eau. Il en existe de plusieurs sortes. Le nuage est composé essentiellement d’eau et se déplace en étant poussé par les vents.', 'Issus de l’évaporation de l’eau, ils font partie du cycle de l’eau. Il en existe de plusieurs sortes. Les nuages sont composés essentiellement d’eau et se déplacent en étant poussés par les vents.'],
+  'bleu-fonce.3': ['Georges détestait Grandma. C’était une vieille femme grincheuse et égoïste qui avait des dents jaunes. Elle était râleuse et passait ses journées assise en se balançant dans un fauteuil. Grandma était méchante et très capricieuse. Serait-elle une affreuse sorcière ?', 'Georges détestait Grandpa. C’était un vieil homme grincheux et égoïste qui avait des dents jaunes. Il était râleur et passait ses journées assis en se balançant dans un fauteuil. Grandpa était méchant et très capricieux. Serait-il un affreux sorcier ?'],
+  'bleu-fonce.4': ['Il est souvent souhaité, demandé, et même exigé. Chaque fois, l’effort doit être régulier, soutenu, important, en un mot, réel. Encouragé ou pas, il demande parfois un effort surhumain !', 'Elle est souvent souhaitée, demandée, et même exigée. Chaque fois, la volonté doit être régulière, soutenue, importante, en un mot, réelle. Encouragée ou pas, elle demande parfois une volonté surhumaine !'],
+  'bleu-fonce.5': ['Fabrice est apprenti acrobate. Il prépare un spectacle. Sur scène, vêtu d’un accoutrement coloré, il effectue des pirouettes en sautant sur un fil. Le public applaudit ses efforts.', 'Fabrice et Julien sont apprentis acrobates. Ils préparent un spectacle. Sur scène, vêtus d’un accoutrement coloré, ils effectuent des pirouettes en sautant sur un fil. Le public applaudit leurs efforts.'],
+  'bleu-fonce.6': ['Acheté en kiosque, envoyé aux abonnés, ou distribué sur le quai des gares, le journal a toujours du succès. Peuplé d’évènements sportifs, d’actualité ou bien de mode, il trouve acquéreur. Il finit souvent en étant jeté à la poubelle.', 'Achetées en kiosque, envoyées aux abonnés, ou distribuées sur le quai des gares, les revues ont toujours du succès. Peuplées d’évènements sportifs, d’actualité ou bien de mode, elles trouvent acquéreur. Elles finissent souvent en étant jetées à la poubelle.'],
+  'bleu-fonce.7': ['Les deux enfants dont parl… Kélian habit… ici. Les souvenirs que racont… ma grand-mère étai… toujours passionnan….', 'Les deux enfants dont parle Kélian habitent ici. Les souvenirs que raconte ma grand-mère étaient toujours passionnants.'],
+  'bleu-fonce.8': ['Les valises que recherch… Fanny pour son voyage se trouv… au grenier. Mia et Eglantine admir… les photos des pays que visit… François.', 'Les valises que recherche Fanny pour son voyage se trouvent au grenier. Mia et Eglantine admirent les photos des pays que visite François.'],
+  'bleu-fonce.9': ['Les pandas géants vivent en Chine, cachés dans la montagne. En hiver, les pandas s’amusent en se roulant dans la neige. Malgré leurs 130 kilos, ils sont très bons grimpeurs. Ils ne sont pas comme les ours qui dorment tout l’hiver ; ils n’hibernent pas.', 'Le panda géant vit en Chine, caché dans la montagne. En hiver, le panda s’amuse en se roulant dans la neige. Malgré ses 130 kilos, il est très bon grimpeur. Il n’est pas comme l’ours qui dort tout l’hiver ; il n’hiberne pas.'],
+  'bleu-fonce.10': ['L’île Maurice a autrefois abrité des animaux aujourd’hui disparus : les dodos. Les dodos étaient des oiseaux coureurs de la famille des pigeons. Ils ressemblaient à une grosse dinde. Ils étaient dotés de deux pattes jaunes et d’un plumage sombre.', 'L’île Maurice a autrefois abrité un animal aujourd’hui disparu : le dodo. Le dodo était un oiseau coureur de la famille des pigeons. Il ressemblait à une grosse dinde. Il était doté de deux pattes jaunes et d’un plumage sombre.'],
+  'bleu-fonce.11': ['C’est alors que je remarquais un type à l’allure bizarre, assis juste en face de moi, et qui me regardait. Un peu caché par un autre client, je voyais qu’il était grand et rond, bronzé et très musclé. La joue de cet homme était déformée par une cicatrice lui barrant le visage.', 'C’est alors que je remarquais une femme à l’allure bizarre, assise juste en face de moi, et qui me regardait. Un peu cachée par un autre client, je voyais qu’elle était grande et ronde, bronzée et très musclée. La joue de cette femme était déformée par une cicatrice lui barrant le visage.'],
+  'bleu-fonce.12': ['Les chèvres sont de petits animaux très agiles. On les trouve dans toutes les régions du globe. Herbivores, elles se nourrissent en broutant toutes sortes de végétaux. Ces bonnes grimpeuses sont élevées depuis longtemps pour leur lait.', 'La chèvre est un petit animal très agile. On la trouve dans toutes les régions du globe. Herbivore, elle se nourrit en broutant toutes sortes de végétaux. Cette bonne grimpeuse est élevée depuis longtemps pour son lait.'],
+  'violette.1': ['C’est l’hiver, Paul le fermier donne de la nourriture à la vache : il lui remplit la mangeoire de foin. Bien nourrie, la vache pourra donner du lait de bonne qualité. La vache est élevée pour la production laitière. Elle a passé l’été dans les pâturages.', 'C’est l’hiver, Paul le fermier donne de la nourriture aux vaches : il leur remplit la mangeoire de foin. Bien nourries, les vaches pourront donner du lait de bonne qualité. Les vaches sont élevées pour la production laitière. Elles ont passé l’été dans les pâturages.'],
+  'violette.2': ['En entrant dans la forêt, le petit Poucet a déposé un caillou sur le chemin. En s’enfonçant dans le bois, il a continué à semer un caillou tout au long de sa marche. Perdus au cœur du bois, le petit Poucet et ses frères n’eurent plus qu’à suivre le chemin du retour de caillou en caillou.', 'En entrant dans la forêt, le petit Poucet a déposé des cailloux sur le chemin. En s’enfonçant dans le bois, il a continué à semer des cailloux tout au long de sa marche. Perdus au cœur du bois, le petit Poucet et ses frères n’eurent plus qu’à suivre le chemin du retour de cailloux en cailloux.'],
+  'violette.3': ['L’horticulteur est un spécialiste qui cultive des plantes d’ornement. Tout son travail consiste à produire des arbres et des fleurs pour le jardinier et le fleuriste. Le jardinier cultive et entretient des plantes ornementales ou potagères. Le fleuriste achète et revend des fleurs pour les particuliers.', 'Les horticulteurs sont des spécialistes qui cultivent des plantes d’ornement. Tout leur travail consiste à produire des arbres et des fleurs pour les jardiniers et les fleuristes. Les jardiniers cultivent et entretiennent des plantes ornementales ou potagères. Les fleuristes achètent et revendent des fleurs pour les particuliers.'],
+  'violette.4': ['La photosynthèse est le phénomène par lequel les plantes produisent des réserves de nourriture à partir de l’eau et du gaz carbonique de l’air. Ces réserves de nourriture sont appelées glucides. Les plantes fixent les glucides grâce à la chlorophylle, en employant comme source d’énergie la lumière solaire.', 'La photosynthèse est le phénomène par lequel la plante produit des réserves de nourriture à partir de l’eau et du gaz carbonique de l’air. Ces réserves de nourriture sont appelées glucides. La plante fixe les glucides grâce à la chlorophylle, en employant comme source d’énergie la lumière solaire.'],
+  'violette.5': ['La musique a son alphabet, la note. La note donne le son (do, ré, mi, fa, sol, la, si) mais aussi le temps (noire, blanche, croche, etc.). La ligne d’écriture s’appelle la portée. L’ensemble des portées d’une œuvre s’appelle une partition. La note haute est représentée avec la clé de sol ; pour la note basse, c’est la clé de fa.', 'La musique a son alphabet, les notes. Les notes donnent le son (do, ré, mi, fa, sol, la, si) mais aussi le temps (noire, blanche, croche, etc.). La ligne d’écriture s’appelle la portée. L’ensemble des portées d’une œuvre s’appelle une partition. Les notes hautes sont représentées avec la clé de sol ; pour les notes basses, c’est la clé de fa.'],
+  'violette.6': ['Cher oncle,\nJe te remercie pour la belle journée passée ensemble. C’était une joie de me promener avec toi en vélo à travers champs ! Tu m’as fait découvrir la campagne, les bosquets, la faune et la flore de ton petit pays. Même si la pluie a interrompu quelques instants les balades, j’ai tout aimé de cette journée bien agréable.', 'Cher oncle,\nJe te remercie pour les belles journées passées ensemble. C’était une joie de me promener avec toi en vélo à travers champs ! Tu m’as fait découvrir la campagne, les bosquets, la faune et la flore de ton petit pays. Même si la pluie a interrompu quelques instants les balades, j’ai tout aimé de ces journées bien agréables.'],
+  'marron.1': ['Les pandas sont des mammifères volumineux et massifs. Ils se nourrissent essentiellement de bambous. Ils les cueillent en utilisant leur faux pouce et les mastiquent pendant plusieurs heures.', 'Le panda est un mammifère volumineux et massif. Il se nourrit essentiellement de bambous. Il les cueille en utilisant son faux pouce et les mastique pendant plusieurs heures.'],
+  'marron.2': ['La petite voiture que j’ai achetée pour mon neveu est bleu foncé. S’il la frotte sur le sol, la soulève puis la repose, elle peut avancer toute seule. Va-t-elle lui plaire ?', 'Les petites voitures que j’ai achetées pour mon neveu sont bleu foncé. S’il les frotte sur le sol, les soulève puis les repose, elles peuvent avancer toutes seules. Vont-elles lui plaire ?'],
+  'marron.3': ['Les médicaments que le médecin a prescrits n’étaient pas disponibles à la pharmacie du village. Vont-ils être présents à l’officine du centre commercial ?', 'Le médicament que le médecin a prescrit n’était pas disponible à la pharmacie du village. Va-t-il être présent à l’officine du centre commercial ?'],
+  'marron.4': ['J’ai beaucoup apprécié la pièce de théâtre que j’ai vue au festival d’Avignon. Elle était interprétée par de jeunes acteurs très dynamiques. Je la recommande à mes amis.', 'J’ai beaucoup apprécié les pièces de théâtre que j’ai vues au festival d’Avignon. Elles étaient interprétées par de jeunes acteurs très dynamiques. Je les recommande à mes amis.'],
+  'marron.5': ['Le chemin que nous avons emprunté à vélo est très sinueux. Les coureurs du Tour de France le connaissent bien. C’est un chemin sélectif qu’ils ont parcouru à de nombreuses reprises.', 'La route que nous avons empruntée à vélo est très sinueuse. Les coureurs du Tour de France la connaissent bien. C’est une route sélective qu’ils ont parcourue à de nombreuses reprises.'],
+  'marron.6': ['Les cerises que j’ai ramassées ce matin sont bien mûres ! Elles seront utilisées pour faire des confitures.', 'Les abricots que j’ai ramassés ce matin sont bien mûrs ! Ils seront utilisés pour faire des confitures.'],
+  'noire.1': ['À cause de mon moniteur de ski, j’ai raté ma troisième étoile. Il était nul ! Tellement mauvais que mon père l’a traité de bon à rien. Mon moniteur, ça l’a fait rigoler.', 'À cause de mes moniteurs de ski, j’ai raté ma troisième étoile. Ils étaient nuls ! Tellement mauvais que mon père les a traités de bons à rien. Mes moniteurs, ça les a fait rigoler.'],
+  'noire.2': ['À cause de mon moniteur de ski, j’ai raté ma troisième étoile. Il était nul ! Tellement mauvais que mon père l’a traité de bon à rien. Mon moniteur, ça l’a fait rigoler.', 'À cause de ma monitrice de ski, j’ai raté ma troisième étoile. Elle était nulle ! Tellement mauvaise que mon père l’a traitée de bonne à rien. Ma monitrice, ça l’a fait rigoler.'],
+  'noire.3': ['À cause de mon moniteur de ski, j’ai raté ma troisième étoile. Il était nul ! Tellement mauvais que mon père l’a traité de bon à rien. Mon moniteur, ça l’a fait rigoler.', 'À cause de mes monitrices de ski, j’ai raté ma troisième étoile. Elles étaient nulles ! Tellement mauvaises que mon père les a traitées de bonnes à rien. Mes monitrices, ça les a fait rigoler.'],
+  'noire.4': ['Le texte que j’ai lu en classe ce matin était très compliqué. Il était imprimé sur un vieux papier jauni. Je l’ai trouvé trop long et ennuyeux. S’il était illustré, il serait plus attractif !', 'L’histoire que j’ai lue en classe ce matin était très compliquée. Elle était imprimée sur un vieux papier jauni. Je l’ai trouvée trop longue et ennuyeuse. Si elle était illustrée, elle serait plus attractive !'],
+  'noire.5': ['Le texte que j’ai lu en classe ce matin était très compliqué. Il était imprimé sur un vieux papier jauni. Je l’ai trouvé trop long et ennuyeux. S’il était illustré, il serait plus attractif !', 'Les textes que j’ai lus en classe ce matin étaient très compliqués. Ils étaient imprimés sur un vieux papier jauni. Je les ai trouvés trop longs et ennuyeux. S’ils étaient illustrés, ils seraient plus attractifs !'],
+  'noire.6': ['Mon vieux chemisier noir est devenu trop petit pour moi. Il est trop serré. Dommage, je l’ai tellement aimé, ce chemisier !', 'Ma vieille chemise noire est devenue trop petite pour moi. Elle est trop serrée. Dommage, je l’ai tellement aimée, cette chemise !'],
+  'noire.7': ['Mon vieux chemisier noir est devenu trop petit pour moi. Il est trop serré. Dommage, je l’ai tellement aimé, ce chemisier !', 'Mes vieux chemisiers noirs sont devenus trop petits pour moi. Ils sont trop serrés. Dommage, je les ai tellement aimés, ces chemisiers !'],
+  'noire.8': ['À cause de la grève, le courrier que j’ai écrit et posté hier n’est parti qu’aujourd’hui. Mon oncle était déçu de ne pas l’avoir reçu. Arrivera-t-il demain ?', 'À cause de la grève, la lettre que j’ai écrite et postée hier n’est partie qu’aujourd’hui. Mon oncle était déçu de ne pas l’avoir reçue. Arrivera-t-elle demain ?'],
+  'noire.9': ['À cause de la grève, le courrier que j’ai écrit et posté hier n’est parti qu’aujourd’hui. Mon oncle était déçu de ne pas l’avoir reçu. Arrivera-t-il demain ?', 'À cause de la grève, les lettres que j’ai écrites et postées hier ne sont parties qu’aujourd’hui. Mon oncle était déçu de ne pas les avoir reçues. Arriveront-elles demain ?'],
+  'noire.10': ['Mon jeu électronique est tombé en panne. Je l’ai débranché et l’ai remis dans sa boite. Ensuite je l’ai rapporté au magasin : ils m’ont dit qu’il était encore garanti. Ouf !', 'Ma console est tombée en panne. Je l’ai débranchée et l’ai remise dans sa boite. Ensuite je l’ai rapportée au magasin : ils m’ont dit qu’elle était encore garantie. Ouf !'],
+  'noire.11': ['J’ai perdu mon sac. Je l’ai pris hier pour faire des courses. Je l’ai posé dans l’entrée en rentrant. Pourtant, il est noir et doré : je devrais le voir facilement. Est-ce toi qui me l’as emprunté ?', 'J’ai perdu ma clé. Je l’ai prise hier pour faire des courses. Je l’ai posée dans l’entrée en rentrant. Pourtant, elle est noire et dorée : je devrais la voir facilement. Est-ce toi qui me l’as empruntée ?'],
+  'noire.12': ['J’ai perdu mes clés. Je les ai prises hier pour faire des courses. Je les ai posées dans l’entrée en rentrant. Pourtant, elles sont noires et dorées : je devrais les voir facilement. Est-ce toi qui me les as empruntées ?', 'J’ai perdu mon sac. Je l’ai pris hier pour faire des courses. Je l’ai posé dans l’entrée en rentrant. Pourtant, il est noir et doré : je devrais le voir facilement. Est-ce toi qui me l’as emprunté ?'],
 };
 
 describe('Accords', () => {
@@ -203,9 +239,11 @@ describe('Accords', () => {
         const sentence = sentenceOf(exercise.text, side);
         expect(sentence, exercise.id).not.toMatch(/[{}|[\]]|'|\s{2}|\s[.,]|[^\s][!?]/);
         if (sentence.includes(' / ')) expect(sentence, exercise.id).toMatch(/^\p{Ll}[^.!?]*\p{Ll}$/u);
-        else expect(sentence, exercise.id).toMatch(/^[A-ZÀ-Ý].*[.!?…]$/u);
+        else expect(sentence, exercise.id).toMatch(/^[A-ZÀ-Ý].*[.!?…]$/su);
       }
-      expect(exercise.instruction, exercise.id).toMatch(/^Transpose au (pluriel|singulier|féminin)\.$|^Remplace .+ par .+\.$/);
+      expect(exercise.instruction, exercise.id).toMatch(/^Transpose au (pluriel|singulier|féminin)\.$|^Remplace .+ par .+\.$|^Complète les terminaisons manquantes\.$/);
+      // « Complète les terminaisons » : chaque case donne le début du mot à finir.
+      if (exercise.instruction.startsWith('Complète')) for (const box of boxes) expect(box.answer.startsWith(prefillOf(box)) && prefillOf(box) !== '', exercise.id).toBe(true);
       // « Remplace Lina par Enzo. » : le prénom n'est pas dans une case, il est changé dans la phrase de départ.
       const swap = SWAP.exec(exercise.instruction);
       if (swap) expect(sentenceOf(exercise.text, 'answer'), exercise.id).toContain(swap[2]);
@@ -249,7 +287,7 @@ describe('Accords', () => {
   });
 
   it('montre des textes, un à l’entraînement et deux en conditions réelles, au vert clair et au vert foncé', () => {
-    for (const id of ['vert-clair', 'vert-fonce'] as const) {
+    for (const id of ['vert-clair', 'vert-fonce', 'bleu-fonce', 'violette', 'marron', 'noire'] as const) {
       expect(accordBelt(id), id).toMatchObject({ unit: 'texte', practiceSize: 1, testSize: 2 });
     }
     expect(accordBelt('bleu-clair')!.unit).toBeUndefined();
@@ -318,6 +356,45 @@ describe('Accords', () => {
     expect(tip('{n’est|ne sont}')).toMatch(/être/);
     expect(tip('{Il|Elle}')).toMatch(/Au féminin/);
     expect(tip('{devenus|devenues}')).toMatch(/Au féminin/);
+    expect(tip('{sautant}')).toMatch(/-ant/);
+    expect(tip('{parl…|parle}')).toMatch(/sujet peut être après/);
+    expect(tip('{lui|leur}')).toMatch(/sans -s/);
+    expect(tip('{lui-même|eux-mêmes}')).toMatch(/eux-mêmes/);
+    expect(tip('{Tout}')).toMatch(/tout va avec le nom/);
+    expect(tip('{toute|toutes}')).toMatch(/Tout change/);
+    expect(tip('{bleu foncé}')).toMatch(/deux mots/);
+    expect(tip('{orange}')).toMatch(/orange et marron/);
+    expect(tip('{Va-t-elle|Vont-elles}')).toMatch(/sujet est après le verbe/);
+    expect(tip('{l’a|les a}')).toMatch(/devient les/);
+    expect(tip('{qu’il|qu’elle}')).toMatch(/Au féminin/);
+    expect(tip('{Elles|Ils}')).toMatch(/Au masculin/);
+    expect(tip('{ramassées|ramassés}')).toMatch(/Au masculin/);
+    expect(tip('{entretient|entretiennent}')).toMatch(/-nt/);
+    expect(tip('{l’effort|la volonté}')).toMatch(/Quand le nom change/);
+    expect(tip('{à la vache|aux vaches}')).toMatch(/Au pluriel/);
+  });
+
+  it('choisit l’astuce d’après les mots autour de la case', () => {
+    const text = 'J’ai {perdu} {mes clés|mon sac}. Je {les ai|l’ai} {prises|pris}. Mon oncle était {déçu}. Ça {l’a} {fait} rigoler. Elle est {partie|parties}. {Même} si.';
+    expect(tipAt(text, 0)).toMatch(/Avec avoir, le participe passé ne s’accorde pas/);
+    expect(tipAt(text, 3)).toMatch(/placé avant le verbe/);
+    expect(tipAt(text, 4)).toMatch(/un mot qui, lui, ne change pas/);
+    expect(tipAt(text, 5)).toMatch(/l’ veut dire le ou la/);
+    expect(tipAt(text, 6)).toMatch(/infinitif/);
+    expect(tipAt(text, 7)).toMatch(/Après être/);
+    expect(tipAt(text, 8)).toMatch(/même si/);
+    // Sans les mots autour, l'astuce d'avant.
+    expect(tipFor(boxesOf(text)[4]!)).toMatch(/avoir/);
+  });
+
+  it('donne le début du mot à finir, et rien pour une case ordinaire', () => {
+    const [parle, enfant] = boxesOf('Les enfants dont {parl…|parle} {Les enfants|L’enfant}.');
+    expect(prefillOf(parle!)).toBe('parl');
+    expect(prefillOf(enfant!)).toBe('');
+  });
+
+  it('change tous les prénoms de la phrase de départ', () => {
+    expect(startSentence({ id: 'x', instruction: 'Remplace Grandma par Grandpa.', text: 'Grandpa {est} là. Grandpa {dort}.' })).toBe('Grandma est là. Grandma dort.');
   });
 
   it('tire des phrases pas vues la dernière fois', () => {

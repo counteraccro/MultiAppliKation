@@ -4,7 +4,7 @@ import { soundToggle } from '../../components/sound-toggle';
 import { h } from '../../core/dom';
 import { sounds } from '../../core/sound';
 import type { AccordSession } from './accord-session';
-import { boxesOf, isRight, normalizeWords, parseAccord, shown, tipFor, type AccordExercise, type Box } from './accords';
+import { boxesOf, isRight, normalizeWords, parseAccord, prefillOf, shown, tipAt, type AccordExercise, type Box } from './accords';
 import { withNbsp } from './sentence';
 
 /** À la fin d'une phrase, un instant pour la relire ; entre deux cases, pas d'attente (on tape vite). */
@@ -114,9 +114,8 @@ export function renderAccordScreen(root: HTMLElement, options: AccordScreenOptio
   function submit() {
     const at = session.current();
     if (!at) return;
-    const box = boxesOf(at.exercise.text)[at.index]!;
     const correct = session.answer(typing);
-    typing = '';
+    typing = state === 'asking' ? prefill() : '';
     const sentenceDone = session.current()?.exercise !== at.exercise;
     if (options.test) {
       sounds.placed();
@@ -135,7 +134,8 @@ export function renderAccordScreen(root: HTMLElement, options: AccordScreenOptio
       streak = 0;
       sounds.wrong();
       renderStreak(false);
-      feedback.textContent = withNbsp(tipFor(box));
+      typing = '';
+      feedback.textContent = withNbsp(tipAt(at.exercise.text, at.index));
       keyboard.setSubmitLabel('Continuer');
     }
     renderText();
@@ -158,8 +158,15 @@ export function renderAccordScreen(root: HTMLElement, options: AccordScreenOptio
     feedback.textContent = '';
     keyboard.setSubmitLabel('OK');
     instruction.textContent = exercise.instruction;
+    typing = prefill();
     renderText();
     renderProgress();
+  }
+
+  /** « Complète les terminaisons » : le début du mot de la case en cours, déjà tapé. */
+  function prefill(): string {
+    const at = session.current();
+    return at ? prefillOf(boxesOf(at.exercise.text)[at.index]!) : '';
   }
 
   function undo() {

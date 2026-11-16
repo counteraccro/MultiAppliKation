@@ -2340,6 +2340,8 @@ button.belt-row:active {
 .accord-text {
   font-size: clamp(1.2rem, 5vw, 1.8rem);
   line-height: 1.9;
+  /* Une lettre : « Cher oncle, » sur sa ligne. */
+  white-space: pre-line;
 }
 
 .accord-box {

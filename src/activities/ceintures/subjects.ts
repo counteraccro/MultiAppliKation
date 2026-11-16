@@ -42,7 +42,7 @@ export const SUBJECTS: readonly Subject[] = [
   { id: 'numeration', label: 'Numération', emoji: '🔢', belts: NUMERATION, unfinished: true },
   { id: 'grammaire', label: 'Grammaire', emoji: '🖍️', belts: GRAMMAIRE },
   { id: 'mesures', label: 'Mesures', emoji: '📏', belts: MESURES },
-  { id: 'accords', label: 'Accords', emoji: '🔗', belts: ACCORDS, unfinished: true },
+  { id: 'accords', label: 'Accords', emoji: '🔗', belts: ACCORDS },
 ];
 
 export const isHomophoneBelt = (belt: SubjectBelt): belt is HomophoneBelt => 'groups' in belt;

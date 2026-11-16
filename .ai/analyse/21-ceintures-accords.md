@@ -78,7 +78,7 @@ Contrairement à la Conjugaison et au Calcul posé, **la noire a ses fiches** : 
    `tipFor` choisit l'astuce d'après ce qui change dans la case : -nt du verbe, -s du nom, petit mot devant le
    nom, -e du féminin, mot qui ne change pas), `accord-session.ts` (comptée case par case, un seul essai),
    `accord-screen.ts` (les cases dans la phrase, mot de départ en gris, clavier de lettres avec les touches ’ et -),
-   tuile « 🔗 Accords » (matière marquée `unfinished`), leçon (règles, puis une phrase par consigne, ce qui change
+   tuile « 🔗 Accords » (matière marquée `unfinished` jusqu'à l'étape 4), leçon (règles, puis une phrase par consigne, ce qui change
    surligné), correction du test phrase par phrase. `accords.test.ts` recopie à part chaque phrase des fiches et sa
    correction et vérifie que les données redonnent les mêmes. Coquille corrigée : « La barque charive » (n° 11).
    Pas d'attente entre deux cases d'une phrase (les lettres tapées vite se perdaient), un instant en fin de phrase.
@@ -108,3 +108,22 @@ Contrairement à la Conjugaison et au Calcul posé, **la noire a ses fiches** : 
    Coquilles des fiches : n° 41 marque « à » en vert, n° 48 oublie le dernier « Ils ».
 4. **Bleu foncé, violette, marron, noire** : apposition, même et tout, participes avec le COD avant ; progrès et
   autocollants de la matière.
+   **Faite le 16/11/2026 (0.65.0)** : les quatre ceintures sont des textes (1 / 2). Bleu foncé : 12 textes des
+   fiches n° 79-90 + 3 des nôtres ; violette : 6 des fiches n° 91-96 + 3 ; marron (objectif CM2) : 6 des fiches
+   n° 97-102 + 3 ; noire : 12 des fiches n° 103-114 + 3. La matière est **complète** (plus `unfinished` :
+   l'autocollant « dernière ceinture » vient avec la noire).
+   - Nouvelle consigne **« Complète les terminaisons manquantes. »** (fiches n° 85-86, sujet après le verbe) : la
+     case montre le début du mot, `{parl…|parle}`, et ce début est **déjà tapé** quand la case s'ouvre ; l'enfant
+     tape la fin (il peut aussi effacer).
+   - **L'astuce regarde les mots autour de la case** (`tipAt`) : après avoir (« j’ai », « les a », « l’ai
+     tellement »), le participe s'accorde avec ce qui est placé avant, ou ne change pas ; après être, il s'accorde
+     avec le sujet ; « fait » suivi d'un infinitif ne change pas ; « même si ». Nouvelles astuces : le participe
+     présent en -ant, tout / même, lui → leur, les couleurs (bleu foncé, orange, marron), va-t-elle / vont-elles,
+     l’a → les a, un nom qui en remplace un autre (l’effort → la volonté), les masculins en -eux, -eur, -er.
+   - « Remplace Grandma par Grandpa » change le prénom partout dans le texte de départ (il y était deux fois).
+   - Une lettre (fiche n° 96) garde « Cher oncle, » sur sa ligne (`white-space: pre-line`).
+   - Pièges nouveaux : les participes avec avoir sans rien avant (j’ai perdu mon sac, elles ont passé l’été),
+     « Il en existe », les mots qui vont avec un autre nom (le public applaudit, l’ensemble s’appelle), bleu foncé,
+     orange, « Tout leur travail », « Même si ».
+   - Coquilles des fiches : n° 91 marque « passé » en vert (il ne change pas) ; n° 79 et 88 écrivent « trainée »
+     et « ile » dans la correction seulement : on garde le mot de départ.
