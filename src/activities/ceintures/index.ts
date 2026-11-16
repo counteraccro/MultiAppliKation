@@ -35,7 +35,10 @@ import { pickSentences, PracticeSession } from './practice-session';
 import { capitalize, fullSentence, parseSentence, withNbsp } from './sentence';
 import { renderSentenceScreen } from './sentence-screen';
 import { STICKER_SECTIONS, STICKERS, unlockStickers } from './stickers';
-import { isGrammarBelt, isHomophoneBelt, isMentalBelt, isNumerationBelt, isPosedBelt, isTableBelt, type Subject, type SubjectBelt } from './subjects';
+import { isAccordBelt, isGrammarBelt, isHomophoneBelt, isMentalBelt, isNumerationBelt, isPosedBelt, isTableBelt, type Subject, type SubjectBelt } from './subjects';
+import { pickAccords, sentenceOf, type AccordBelt } from './accords';
+import { AccordSession, type AccordMistake } from './accord-session';
+import { drawAccord, renderAccordScreen } from './accord-screen';
 import { decodeMarks, GRAMMAR_PRACTICE_SIZE, GRAMMAR_TEST_SIZE, pickGrammar, type GrammarBelt, type GrammarQuestion } from './grammaire';
 import { drawSentence, renderGrammarScreen } from './grammar-screen';
 import { MENTAL_PRACTICE_SIZE, MENTAL_TEST_SIZE, MENTAL_TEST_TIME_MS, passesMental, pickCalcs, type MentalBelt } from './calcul-mental';
@@ -56,7 +59,7 @@ import { VerbTestSession, type VerbMistake } from './verb-test';
 
 // Voir .ai/analyse/11-ceintures.md : les ceintures de la classe, homophones puis conjugaison (12-ceintures-conjugaison.md)
 // tables (13-ceintures-tables.md), calcul posé (15-ceintures-calcul-pose.md), calcul mental (16-ceintures-calcul-mental.md)
-// numération (18-ceintures-numeration.md) et grammaire (19-ceintures-grammaire.md).
+// numération (18-ceintures-numeration.md), grammaire (19-ceintures-grammaire.md) et accords (21-ceintures-accords.md).
 // Accueil (les matières), échelle d'une matière, leçon, entraînement et test d'une ceinture,
 // progrès et autocollants.
 export const ceintures: Activity = {
@@ -160,7 +163,9 @@ export const ceintures: Activity = {
                 ? practiceNumeration(subject, belt)
                 : isGrammarBelt(belt)
                   ? practiceGrammar(subject, belt)
-                  : practiceVerb(subject, belt);
+                  : isAccordBelt(belt)
+                    ? practiceAccords(subject, belt)
+                    : practiceVerb(subject, belt);
 
     const practiceSentences = (subject: Subject, belt: HomophoneBelt) =>
       show(() => {
@@ -287,6 +292,22 @@ export const ceintures: Activity = {
         });
       });
 
+    /** Accords : 3 phrases à transposer, case par case, chaque case corrigée tout de suite. */
+    const practiceAccords = (subject: Subject, belt: AccordBelt) =>
+      show(() => {
+        const seen = progressOf(load(), subject).lastPractice?.[belt.belt];
+        const session = new AccordSession(pickAccords(belt, belt.practiceSize, seen));
+        return renderAccordScreen(root, {
+          session,
+          label: label(belt),
+          onQuit: () => ladder(subject),
+          onDone: ({ bestStreak }) => {
+            const result = session.result();
+            practiceDone(subject, belt, session.exercises.map((e) => e.id), result, result.toPractice, bestStreak);
+          },
+        });
+      });
+
     function practiceDone(subject: Subject, belt: SubjectBelt, ids: string[], result: Score, toPractice: string[], bestStreak: number) {
       const data = load();
       recordPractice(data, subject, belt.belt, ids, result);
@@ -308,7 +329,9 @@ export const ceintures: Activity = {
                 ? testNumeration(subject, belt)
                 : isGrammarBelt(belt)
                   ? testGrammar(subject, belt)
-                  : testVerbs(subject, belt);
+                  : isAccordBelt(belt)
+                    ? testAccords(subject, belt)
+                    : testVerbs(subject, belt);
 
     const testSentences = (subject: Subject, belt: HomophoneBelt) =>
       show(() => {
@@ -433,6 +456,23 @@ export const ceintures: Activity = {
           onDone: () => {
             const result = session.result();
             testDone(subject, belt, result, 'phrases justes', result.mistakes.length > 0 ? grammarCorrections(result.mistakes) : undefined);
+          },
+        });
+      });
+
+    /** Accords : 6 phrases sans aide, réussi à 90 % des cases justes. */
+    const testAccords = (subject: Subject, belt: AccordBelt) =>
+      show(() => {
+        const seen = progressOf(load(), subject).lastPractice?.[belt.belt];
+        const session = new AccordSession(pickAccords(belt, belt.testSize, seen));
+        return renderAccordScreen(root, {
+          session,
+          test: true,
+          label: `En conditions réelles · ${label(belt)}`,
+          onQuit: () => ladder(subject),
+          onDone: () => {
+            const result = session.result();
+            testDone(subject, belt, result, 'mots justes', result.mistakes.length > 0 ? accordCorrections(result.mistakes) : undefined);
           },
         });
       });
@@ -678,6 +718,27 @@ function grammarCorrections(mistakes: TableMistake<GrammarQuestion>[]): HTMLElem
           h('span', { class: 'gram-sentence gram-fixed' }, ...drawSentence(question.pieces, question.expected, { nature, given })),
         );
       }),
+    ),
+  );
+}
+
+/** La correction d'un test d'accords : chaque phrase fausse à part, telle qu'il l'a écrite (les fautes barrées, la bonne forme dessous). */
+function accordCorrections(mistakes: AccordMistake[]): HTMLElement {
+  return h(
+    'div',
+    { class: 'to-practice sentences test-corrections' },
+    h('h2', {}, 'La correction'),
+    h(
+      'ul',
+      {},
+      ...mistakes.map(({ exercise, typed }) =>
+        h(
+          'li',
+          { class: 'accord-correction' },
+          h('small', { class: 'correction-context' }, `${exercise.instruction} ${sentenceOf(exercise.text, 'start')}`),
+          h('span', { class: 'accord-text' }, ...drawAccord(exercise, typed, { checked: true })),
+        ),
+      ),
     ),
   );
 }

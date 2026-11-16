@@ -13,9 +13,10 @@ import { capitalize, parseSentence, withNbsp } from './sentence';
 import type { PosedBelt } from './calcul-pose';
 import { PosedDivision, solve, type PosedOperation } from './posed';
 import { posedGrid } from './posed-screen';
-import { isGrammarBelt, isHomophoneBelt, isMentalBelt, isNumerationBelt, isPosedBelt, isTableBelt, type SubjectBelt } from './subjects';
+import { isAccordBelt, isGrammarBelt, isHomophoneBelt, isMentalBelt, isNumerationBelt, isPosedBelt, isTableBelt, type SubjectBelt } from './subjects';
 import type { MentalBelt } from './calcul-mental';
 import type { NumerationBelt } from './numeration';
+import { isTrap, parseAccord, sentenceOf, shown, type AccordBelt } from './accords';
 import { grammarQuestion, TAGS, type GrammarBelt } from './grammaire';
 import { drawSentence } from './grammar-screen';
 import { factText } from './table-practice';
@@ -35,6 +36,7 @@ export interface LessonActions {
  * Calcul mental : les astuces de la classe, et des calculs expliqués.
  * Numération : les astuces des leçons de la classe, et des questions expliquées.
  * Grammaire : les règles des leçons G de la classe, et des phrases coloriées comme en classe.
+ * Accords : les règles des leçons O de la classe, et une phrase transposée par consigne.
  */
 export function renderLesson(
   root: HTMLElement,
@@ -63,7 +65,9 @@ export function renderLesson(
                 ? numerationCards(belt)
                 : isGrammarBelt(belt)
                   ? grammarCards(belt)
-                  : conjugationCards(belt)),
+                  : isAccordBelt(belt)
+                    ? accordCards(belt)
+                    : conjugationCards(belt)),
       h('button', { class: 'button primary lesson-practice', type: 'button', onclick: onPractice }, 'S’entraîner'),
     ),
   );
@@ -256,6 +260,37 @@ function grammarCards(belt: GrammarBelt): HTMLElement[] {
             const question = grammarQuestion(belt.belt, task, i);
             return h('li', { class: 'gram-sentence' }, ...drawSentence(question.pieces, question.expected, { nature: task.mode === 'nature' }));
           }),
+        ),
+      ),
+    ),
+  ];
+}
+
+/** Les règles, puis une phrase par consigne : la phrase de départ, et transposée, ce qui change en couleur. */
+function accordCards(belt: AccordBelt): HTMLElement[] {
+  const examples = belt.texts.filter((e, i, all) => all.findIndex((other) => other.instruction === e.instruction) === i);
+  return [
+    h('article', { class: 'lesson-card' }, h('h2', {}, 'La leçon'), h('ul', { class: 'lesson-rules' }, ...belt.tips.map((tip) => h('li', {}, withNbsp(tip))))),
+    h(
+      'article',
+      { class: 'lesson-card' },
+      h('h2', {}, 'Des exemples'),
+      h(
+        'ul',
+        { class: 'lesson-rules' },
+        ...examples.map((exercise) =>
+          h(
+            'li',
+            {},
+            h('strong', {}, exercise.instruction),
+            h('br'),
+            withNbsp(sentenceOf(exercise.text, 'start')),
+            h('br'),
+            '→ ',
+            ...parseAccord(exercise.text).map((piece) =>
+              typeof piece === 'string' ? withNbsp(piece) : isTrap(piece) ? piece.start : h('mark', { class: 'accord-changed' }, shown(piece, piece.answer)),
+            ),
+          ),
         ),
       ),
     ),

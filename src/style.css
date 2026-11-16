@@ -2336,6 +2336,55 @@ button.belt-row:active {
   animation: pop 0.25s ease-out;
 }
 
+/* Accords : la phrase transposée, les mots à transformer dans des cases. */
+.accord-text {
+  font-size: clamp(1.2rem, 5vw, 1.8rem);
+  line-height: 1.9;
+}
+
+.accord-box {
+  min-width: 1.2em;
+  margin: 0.1em 0;
+}
+
+/* Le mot de départ, en gris : à transformer. */
+.accord-box.is-waiting {
+  border: 2px dashed var(--border);
+  border-radius: 0.3em;
+  color: var(--text-soft);
+}
+
+.accord-box.current.is-empty {
+  color: #9bb8e0;
+}
+
+.accord-box.is-wrong {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.2;
+  vertical-align: middle;
+}
+
+.accord-box.is-wrong .fixed-answer {
+  border-top: 0.05em dashed currentColor;
+}
+
+.accord-instruction {
+  color: var(--text);
+}
+
+.accord-correction .accord-text {
+  display: block;
+  font-size: 1.1rem;
+}
+
+.lesson-rules .accord-changed {
+  border-radius: 0.2em;
+  background: #ffe9a8;
+  color: inherit;
+}
+
 .choice-buttons {
   width: 100%;
   max-width: 520px;

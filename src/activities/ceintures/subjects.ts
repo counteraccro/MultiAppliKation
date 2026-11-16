@@ -1,9 +1,11 @@
 // Les matières du classeur, une tuile chacune à l'accueil des Ceintures
 // (voir .ai/analyse/11-ceintures.md, 12-ceintures-conjugaison.md, 13-ceintures-tables.md
-// 15-ceintures-calcul-pose.md, 16-ceintures-calcul-mental.md, 18-ceintures-numeration.md, 19-ceintures-grammaire.md et 20-ceintures-mesures.md). Les autres
+// 15-ceintures-calcul-pose.md, 16-ceintures-calcul-mental.md, 18-ceintures-numeration.md, 19-ceintures-grammaire.md, 20-ceintures-mesures.md
+// et 21-ceintures-accords.md). Les autres
 // s'ajoutent ici, une à la fois.
 // Les identifiants servent de clés dans le profil : ne jamais les changer.
 
+import { ACCORDS, type AccordBelt } from './accords';
 import { CALCUL_MENTAL, type MentalBelt } from './calcul-mental';
 import { CALCUL_POSE, type PosedBelt } from './calcul-pose';
 import { CONJUGAISON, type ConjugationBelt } from './conjugaison';
@@ -15,12 +17,12 @@ import { TABLE_BELTS, type TableBelt } from './tables';
 
 /**
  * Une ceinture d'une matière : phrases à trous (homophones), verbes à conjuguer, tables, opérations à poser,
- * calculs de tête, questions de numération ou de mesures, ou phrases à colorier (grammaire).
+ * calculs de tête, questions de numération ou de mesures, phrases à colorier (grammaire) ou à transposer (accords).
  */
-export type SubjectBelt = HomophoneBelt | ConjugationBelt | TableBelt | PosedBelt | MentalBelt | NumerationBelt | GrammarBelt;
+export type SubjectBelt = HomophoneBelt | ConjugationBelt | TableBelt | PosedBelt | MentalBelt | NumerationBelt | GrammarBelt | AccordBelt;
 
 export interface Subject {
-  id: 'homophones' | 'conjugaison' | 'tables' | 'calcul-pose' | 'calcul-mental' | 'numeration' | 'grammaire' | 'mesures';
+  id: 'homophones' | 'conjugaison' | 'tables' | 'calcul-pose' | 'calcul-mental' | 'numeration' | 'grammaire' | 'mesures' | 'accords';
   label: string;
   emoji: string;
   /** Les ceintures de la matière, de la plus basse à la plus haute. */
@@ -40,6 +42,7 @@ export const SUBJECTS: readonly Subject[] = [
   { id: 'numeration', label: 'Numération', emoji: '🔢', belts: NUMERATION, unfinished: true },
   { id: 'grammaire', label: 'Grammaire', emoji: '🖍️', belts: GRAMMAIRE },
   { id: 'mesures', label: 'Mesures', emoji: '📏', belts: MESURES },
+  { id: 'accords', label: 'Accords', emoji: '🔗', belts: ACCORDS, unfinished: true },
 ];
 
 export const isHomophoneBelt = (belt: SubjectBelt): belt is HomophoneBelt => 'groups' in belt;
@@ -48,3 +51,4 @@ export const isPosedBelt = (belt: SubjectBelt): belt is PosedBelt => 'operation'
 export const isMentalBelt = (belt: SubjectBelt): belt is MentalBelt => 'drawCalc' in belt;
 export const isNumerationBelt = (belt: SubjectBelt): belt is NumerationBelt => 'kinds' in belt;
 export const isGrammarBelt = (belt: SubjectBelt): belt is GrammarBelt => 'tasks' in belt;
+export const isAccordBelt = (belt: SubjectBelt): belt is AccordBelt => 'texts' in belt;

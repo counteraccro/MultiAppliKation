@@ -37,7 +37,7 @@ c'est le principe même des ceintures.
 | Conjugaison | 11 | 20 min | Plus tard : clavier de lettres et verbes déjà faits, temps à ajouter |
 | Tables de multiplication | 13 (+ brillante) | 1 min | **Troisième matière** (0.31.0, sans les divisions) : voir [13-ceintures-tables.md](13-ceintures-tables.md) |
 | Calcul mental | 16 | 2 min, 1 erreur au plus | Plus tard : pavé de chiffres |
-| Accords | 11 | 20 min | Plus tard : transposer des phrases entières (saisie longue) |
+| Accords | 11 | 20 min | **Neuvième matière** (analyse du 16/11/2026, mots à trous) : voir [21-ceintures-accords.md](21-ceintures-accords.md) |
 | Numération | 12 (jusqu'à or) | 20 min | **Sixième matière** (commencée le 01/11/2026 : blanche, jaune, orange, rose, verte, bleue, violette, marron, noire, bronze, argent) : voir [18-ceintures-numeration.md](18-ceintures-numeration.md) |
 | Grandeurs et mesures | 8 (+ brillante) | 20 min | **Huitième matière**, les 9 ceintures faites le 08/11/2026 (0.58.0) : voir [20-ceintures-mesures.md](20-ceintures-mesures.md) |
 | Grammaire | 11 | 20 min | Faite le 06/11/2026 : voir [19-ceintures-grammaire.md](19-ceintures-grammaire.md) |

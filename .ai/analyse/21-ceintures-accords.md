@@ -1,0 +1,88 @@
+# Ceintures : les Accords
+
+Neuvième matière de l'activité « Ceintures » (voir [11-ceintures.md](11-ceintures.md)). Demandée le 16/11/2026,
+à partir :
+
+- du classeur (« Ceintures d'accords — Je transpose un texte… », p. 6 de `Suivi ceintures 25-26.pdf`) ;
+- des fiches Charivari ` Entrainement accords.pdf` (espace au début du nom ; 19 pages, **114 fiches** avec leur
+  correction, les mots qui changent écrits en vert). Le texte extrait du PDF a des trous : les fiches se lisent
+  sur les images (voir la mémoire « lire-pdf-swift ») ;
+- des leçons d'orthographe de la classe (`Leçons Joliot Curie.pdf`, p. 115 à 126) : O4 pluriel des noms, O5
+  féminin des noms, O7 pluriel des adjectifs, O8 féminin des adjectifs, O11 à O13 homophones (a / ont, ses / ces,
+  leur / leurs, tout), O14 é ou er, O15 accords du participe passé.
+
+## Ce que l'utilisateur a décidé (16/11/2026)
+
+- **Mots à trous** : le texte s'affiche déjà transposé, sauf les mots à accorder, dans des cases qui montrent le
+  mot de départ. L'enfant retape chaque case dans sa nouvelle forme, au clavier de lettres. Des cases **pièges**
+  gardent leur forme (« très », un adjectif déjà juste, « chienne reste au singulier ») : savoir ce qui change
+  fait partie de la compétence. Recopier tout le texte, comme en classe, a été écarté : jusqu'à 60 mots au clavier
+  d'un téléphone.
+- **Phrases : les fiches Charivari, complétées par les nôtres** (relues, vérifiées par des tests), comme les
+  Homophones.
+
+## Les ceintures
+
+| Ceinture | Classeur (« Je transpose un texte… ») | Fiches | Consignes des fiches |
+| --- | --- | --- | --- |
+| Blanche | De courtes phrases, singulier → pluriel | n° 1-12 | Transpose au pluriel / au singulier (3 phrases de 3 mots) |
+| Jaune | Phrases plus longues, singulier → pluriel et féminin → masculin ; adjectifs (O4, O5, O7, O8) | n° 13-18 | + Remplace Lina par Enzo |
+| Orange — **objectif CE2** | Phrases négatives ; ce, cet → ces ; a → ont (O11, O12) ; féminins en -trice, -ère, -elle (O5) | n° 19-30 | + Transpose au féminin (des mots seuls aussi : « le gardien / ce collégien ») |
+| Rose | Plusieurs verbes pour un sujet ; noms en -s, -x, -z ; pluriels en -ou, -ail, -au (O4) ; féminins en -ive, -che, -onne ; animaux (O5) | n° 31-36 | + Remplace Snoopy (mâle) par Didoune (femelle) |
+| Vert clair | Leur / leurs (O13) | n° 37-54 | Un petit texte : « Remplace l'éléphant par les éléphants » |
+| Vert foncé — **objectif CM1** | Avec avoir, le participe ne s'accorde pas avec le sujet (O14, O15) ; adverbes invariables | n° 55-66 | Texte au passé composé |
+| Bleu clair | Le sujet séparé de son verbe ; participe avec être (O15) | n° 67-78 | Phrases et textes (« Le docteur, le seul de la région, vient… ») |
+| Bleu foncé | Adjectifs en apposition ; participes présents invariables | n° 79-90 | Textes ; « Complète les terminaisons » (n° 85-86, sujet inversé) |
+| Violette | Même ; tout (O13) | n° 91-96 | Textes plus longs |
+| Marron — **objectif CM2** | Accord des participes passés (O15) ; adjectifs de couleur (O7) | n° 97-102 | « Les petites voitures que j'ai achetées… sont bleu foncé » |
+| Noire | Participe quand le COD est un pronom placé avant | n° 103-114 | Le même texte de trois façons (mes moniteurs / ma monitrice / mes monitrices) |
+
+Contrairement à la Conjugaison et au Calcul posé, **la noire a ses fiches** : la matière peut être complète.
+
+## Comment ça marche (proposé)
+
+- **Une fiche = un exercice** : la consigne (« Transpose au pluriel », « Remplace le renard par la renarde »),
+  puis le texte transposé avec ses cases. Une case peut tenir plusieurs mots quand ils changent ensemble
+  (« L'avion » → « Les avions », « Il est passé » → « Ils sont passés »).
+- **Écrire un exercice** : le texte de départ et la correction, mot à mot, sur le modèle des phrases à trous des
+  Homophones : `{L'avion|Les avions} {décolle|décollent}.` ; une case piège s'écrit `{très}` (même forme). Les
+  tests vérifient que la phrase de départ et la correction se reconstituent, que chaque mot vert de la fiche est
+  dans une case, et qu'il y a des pièges à partir de la jaune.
+- **L'écran** : la case en cours est encadrée et montre le mot de départ en gris ; l'enfant tape la nouvelle
+  forme (ou retape le même mot), OK passe à la case suivante. Toucher une case y revient. La majuscule de début
+  de phrase est mise toute seule, comme aux Homophones.
+- **Corrigé** : à l'entraînement, chaque case est corrigée tout de suite ; en conditions réelles, tout est
+  corrigé à la fin. Correction selon la règle commune (`correction-erreurs`) : le texte de l'enfant, les mots faux
+  barrés, la bonne forme en dessous, puis l'astuce de la leçon (« -al → -aux : un cheval, des chevaux », O4).
+- **Leçon** de chaque ceinture : la compétence du classeur en phrases courtes pour enfants, les règles des leçons
+  O4 à O15 qui la concernent, et un exemple corrigé.
+
+## Choix faits sans lui demander, à valider
+
+- **Entraînement** : 3 phrases (blanche à rose, une fiche) ou 1 texte (vert clair à noire), au hasard, de
+  préférence pas ceux de la dernière fois.
+- **Entraînement en conditions réelles** : 6 phrases ou 2 textes ; réussi à 90 % des cases justes, comme les
+  Homophones (le classeur dit « entre 80 et 100 % » selon la matière).
+- Une case est juste si le mot est exactement écrit (accents compris) ; « maitre » et « maître » sont acceptés
+  tous les deux (les fiches suivent l'orthographe rectifiée : maitre, abimé, trainée).
+- Les fiches Charivari ont quelques coquilles (« La barque charive », « courait après oiseau ») : corrigées et
+  notées en commentaire, comme pour la Conjugaison.
+
+## Étapes proposées
+
+1. **L'écran et les premières ceintures** : la notation des cases, l'écran de transposition (clavier de lettres,
+   cases, correction), la tuile « Accords » dans les Ceintures, la blanche et la jaune (fiches + les nôtres),
+   leur leçon, l'entraînement et les conditions réelles.
+   **Faite le 16/11/2026 (0.62.0)** : `accords.ts` (notation `{départ|réponse/autre}`, `{mot}` pour un piège ;
+   blanche : 36 phrases des fiches n° 1-12 + 12 des nôtres ; jaune : 18 des fiches n° 13-18 + 9 des nôtres ;
+   `tipFor` choisit l'astuce d'après ce qui change dans la case : -nt du verbe, -s du nom, petit mot devant le
+   nom, -e du féminin, mot qui ne change pas), `accord-session.ts` (comptée case par case, un seul essai),
+   `accord-screen.ts` (les cases dans la phrase, mot de départ en gris, clavier de lettres avec les touches ’ et -),
+   tuile « 🔗 Accords » (matière marquée `unfinished`), leçon (règles, puis une phrase par consigne, ce qui change
+   surligné), correction du test phrase par phrase. `accords.test.ts` recopie à part chaque phrase des fiches et sa
+   correction et vérifie que les données redonnent les mêmes. Coquille corrigée : « La barque charive » (n° 11).
+   Pas d'attente entre deux cases d'une phrase (les lettres tapées vite se perdaient), un instant en fin de phrase.
+2. **Orange et rose** : féminins, négations, ce / cet → ces, a → ont, pluriels en -aux, animaux.
+3. **Vert clair, vert foncé, bleu clair** : les textes, leur / leurs, participes avec avoir puis avec être.
+4. **Bleu foncé, violette, marron, noire** : apposition, même et tout, participes avec le COD avant ; progrès et
+  autocollants de la matière.
