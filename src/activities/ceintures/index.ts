@@ -292,7 +292,7 @@ export const ceintures: Activity = {
         });
       });
 
-    /** Accords : 3 phrases à transposer, case par case, chaque case corrigée tout de suite. */
+    /** Accords : 3 phrases (ou 1 texte) à transposer, case par case, chaque case corrigée tout de suite. */
     const practiceAccords = (subject: Subject, belt: AccordBelt) =>
       show(() => {
         const seen = progressOf(load(), subject).lastPractice?.[belt.belt];
@@ -300,6 +300,7 @@ export const ceintures: Activity = {
         return renderAccordScreen(root, {
           session,
           label: label(belt),
+          unit: belt.unit,
           onQuit: () => ladder(subject),
           onDone: ({ bestStreak }) => {
             const result = session.result();
@@ -460,7 +461,7 @@ export const ceintures: Activity = {
         });
       });
 
-    /** Accords : 6 phrases sans aide, réussi à 90 % des cases justes. */
+    /** Accords : 6 phrases (ou 2 textes) sans aide, réussi à 90 % des cases justes. */
     const testAccords = (subject: Subject, belt: AccordBelt) =>
       show(() => {
         const seen = progressOf(load(), subject).lastPractice?.[belt.belt];
@@ -469,6 +470,7 @@ export const ceintures: Activity = {
           session,
           test: true,
           label: `En conditions réelles · ${label(belt)}`,
+          unit: belt.unit,
           onQuit: () => ladder(subject),
           onDone: () => {
             const result = session.result();

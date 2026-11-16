@@ -95,5 +95,16 @@ Contrairement à la Conjugaison et au Calcul posé, **la noire a ses fiches** : 
    et le -e passent avant le -nt du verbe (« bruyants → bruyant » n'est pas un verbe). Coquille de la fiche
    n° 30 : « une ouvrière » n'est pas marqué en vert, mais « un » change bien.
 3. **Vert clair, vert foncé, bleu clair** : les textes, leur / leurs, participes avec avoir puis avec être.
+   **Faite le 16/11/2026 (0.64.0)** : vert clair (18 textes des fiches n° 37-54 + 3 des nôtres) et vert foncé
+   (objectif CM1, 12 textes des fiches n° 55-66 + 3 des nôtres) sont des **textes** (`unit: 'texte'`) : 1 texte à
+   l'entraînement, 2 en conditions réelles, « Texte 1 sur 2 » à l'écran, « 2 textes, sans aide » sur la ceinture,
+   deux exemples seulement dans la leçon. Le bleu clair est surtout fait de phrases (29 des fiches n° 67-78, dont
+   3 textes, + 6 des nôtres) : il reste à 3 / 6. Nouvelle notation `[Toufou|Toufou et Rex]` pour ce qui change
+   sans être à taper (fiches n° 57-59). La consigne « Remplace X par Y » est libre. Le changement de prénom
+   automatique (« Remplace Lina par Enzo ») ne vaut que pour des noms à majuscule. Les noms propres gardent leur
+   majuscule dans les cases (« les Grecs »). Pièges nouveaux : les participes avec avoir (ils ont joué), les mots
+   en -ment, et les mots qui ne vont pas avec le sujet (« Il attrape ses proies » → « leurs proies »). `tipFor`
+   connaît leur / leurs, c'est / ce sont, il → elle, tous → toutes. Pas de touche œ : « l'oeil » est accepté.
+   Coquilles des fiches : n° 41 marque « à » en vert, n° 48 oublie le dernier « Ils ».
 4. **Bleu foncé, violette, marron, noire** : apposition, même et tout, participes avec le COD avant ; progrès et
   autocollants de la matière.

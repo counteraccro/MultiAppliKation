@@ -21,6 +21,8 @@ export interface AccordScreenOptions {
   test?: boolean;
   /** Ex. « Ceinture blanche ». */
   label: string;
+  /** Des textes plutôt que des phrases. */
+  unit?: 'texte';
   onDone(summary: { bestStreak: number }): void;
   onQuit(): void;
 }
@@ -183,11 +185,11 @@ export function renderAccordScreen(root: HTMLElement, options: AccordScreenOptio
     if (streak >= STREAK_SHOWN_FROM) streakEl.classList.add(milestone ? 'milestone' : 'bump');
   }
 
-  /** Un point par phrase. */
+  /** Un point par phrase (ou par texte). */
   function renderProgress() {
     const done = session.exercises.filter((e) => session.typedIn(e).length === boxesOf(e.text).length).length;
     progress.replaceChildren(...session.exercises.map((_, i) => h('span', { class: i < done ? 'dot done' : 'dot' })));
-    progressText.textContent = `Phrase ${Math.min(done + 1, session.exercises.length)} sur ${session.exercises.length}`;
+    progressText.textContent = `${options.unit === 'texte' ? 'Texte' : 'Phrase'} ${Math.min(done + 1, session.exercises.length)} sur ${session.exercises.length}`;
     if (undoButton) undoButton.hidden = session.attempted === 0;
   }
 

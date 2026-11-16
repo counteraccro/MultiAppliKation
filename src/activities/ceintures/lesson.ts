@@ -268,7 +268,10 @@ function grammarCards(belt: GrammarBelt): HTMLElement[] {
 
 /** Les règles, puis une phrase par consigne : la phrase de départ, et transposée, ce qui change en couleur. */
 function accordCards(belt: AccordBelt): HTMLElement[] {
-  const examples = belt.texts.filter((e, i, all) => all.findIndex((other) => other.instruction === e.instruction) === i);
+  // Les textes ont chacun leur consigne : deux exemples suffisent.
+  const examples = belt.texts
+    .filter((e, i, all) => all.findIndex((other) => other.instruction === e.instruction) === i)
+    .slice(0, belt.unit === 'texte' ? 2 : 5);
   return [
     h('article', { class: 'lesson-card' }, h('h2', {}, 'La leçon'), h('ul', { class: 'lesson-rules' }, ...belt.tips.map((tip) => h('li', {}, withNbsp(tip))))),
     h(

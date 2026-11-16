@@ -134,7 +134,7 @@ function testHint(belt: SubjectBelt): string {
   if (isMentalBelt(belt)) return `${MENTAL_TEST_SIZE} calculs en 2 minutes`;
   if (isNumerationBelt(belt)) return `${NUMERATION_TEST_SIZE} questions, sans aide`;
   if (isGrammarBelt(belt)) return `${GRAMMAR_TEST_SIZE} phrases, sans aide`;
-  if (isAccordBelt(belt)) return `${belt.testSize} phrases, sans aide`;
+  if (isAccordBelt(belt)) return `${belt.testSize} ${belt.unit ?? 'phrase'}s, sans aide`;
   return '3 verbes, sans aide';
 }
 

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { AccordSession } from './accord-session';
-import { accordBelt, ACCORDS, boxesOf, isRight, isTrap, parseAccord, pickAccords, sentenceOf, startSentence, SWAP, tipFor } from './accords';
+import { accordBelt, ACCORDS, boxesOf, isRight, isTrap, parseAccord, pickAccords, sentenceOf, shown, startSentence, SWAP, tipFor } from './accords';
 
 /**
- * Les fiches Charivari recopiées à part : la phrase de départ et sa correction (n° 1 à 36). Les données de
+ * Les fiches Charivari recopiées à part : la phrase de départ et sa correction (n° 1 à 78). Les données de
  * l'app doivent redonner exactement les mêmes. « La barque charive » (n° 11) est corrigée ici aussi.
  */
 const FICHES: Record<string, [string, string]> = {
@@ -115,6 +115,65 @@ const FICHES: Record<string, [string, string]> = {
   'rose.16': ['Le chat blanc et agressif s’enfuit.', 'La chatte blanche et agressive s’enfuit.'],
   'rose.17': ['Le garçon mignon monte le cheval brun.', 'La fille mignonne monte la jument brune.'],
   'rose.18': ['L’affreux canard et le coq maladif picorent.', 'L’affreuse cane et la poule maladive picorent.'],
+  'vert-clair.1': ['L’éléphant entend très bien grâce à ses grandes oreilles et il a un bon odorat grâce à sa trompe. On dit que l’éléphant a peur de la souris !', 'Les éléphants entendent très bien grâce à leurs grandes oreilles et ils ont un bon odorat grâce à leur trompe. On dit que les éléphants ont peur des souris !'],
+  'vert-clair.2': ['Les crocodiles sont de redoutables prédateurs. Ils attrapent leurs proies avec leurs larges mâchoires. Les crocodiles peuvent vivre très vieux. En captivité, ils peuvent même dépasser l’âge de 100 ans !', 'Le crocodile est un redoutable prédateur. Il attrape ses proies avec ses larges mâchoires. Le crocodile peut vivre très vieux. En captivité, il peut même dépasser l’âge de 100 ans !'],
+  'vert-clair.3': ['Les crocodiles sont sensibles aux vibrations dans l’eau. Leurs yeux sont situés en haut de leur tête.', 'Le crocodile est sensible aux vibrations dans l’eau. Ses yeux sont situés en haut de sa tête.'],
+  'vert-clair.4': ['L’éléphant est le plus gros animal terrestre du monde. L’éléphant d’Afrique mesure 4 mètres de haut.', 'Les éléphants sont les plus gros animaux terrestres du monde. Les éléphants d’Afrique mesurent 4 mètres de haut.'],
+  'vert-clair.5': ['Le renard est rusé. Il est souvent associé à la ruse dans les contes. Il est craintif et parfois cruel. Le renard vit généralement en groupe, il est carnivore et aussi très sociable.', 'La renarde est rusée. Elle est souvent associée à la ruse dans les contes. Elle est craintive et parfois cruelle. La renarde vit généralement en groupe, elle est carnivore et aussi très sociable.'],
+  'vert-clair.6': ['La limace est un animal au corps mou. Sa bouche contient une langue garnie de dents. Elle n’est pas l’amie du jardinier car elle dévore les jeunes plants !', 'Les limaces sont des animaux au corps mou. Leur bouche contient une langue garnie de dents. Elles ne sont pas les amies du jardinier car elles dévorent les jeunes plants !'],
+  'vert-clair.7': ['Tous les ânes ont de grandes oreilles refroidissantes. L’âne est têtu mais très intelligent.', 'Toutes les ânesses ont de grandes oreilles refroidissantes. L’ânesse est têtue mais très intelligente.'],
+  'vert-clair.8': ['L’âne est plus petit que son cousin le cheval. Il reste l’ami de l’homme. Autrefois, l’âne était utilisé pour transporter des biens et des personnes.', 'L’ânesse est plus petite que son cousin le cheval. Elle reste l’amie de l’homme. Autrefois, l’ânesse était utilisée pour transporter des biens et des personnes.'],
+  'vert-clair.9': ['Les girafes vivent entre quinze et vingt ans. Leur cou mesure à lui tout seul deux mètres !', 'La girafe vit entre quinze et vingt ans. Son cou mesure à lui tout seul deux mètres !'],
+  'vert-clair.10': ['Les girafes ont un long cou et ne parlent pas. Elles peuvent mesurer jusqu’à cinq mètres de haut !', 'La girafe a un long cou et ne parle pas. Elle peut mesurer jusqu’à cinq mètres de haut !'],
+  'vert-clair.11': ['L’alligator adulte est très féroce. Il défend son territoire et pond des œufs.', 'Les alligators adultes sont très féroces. Ils défendent leur territoire et pondent des œufs.'],
+  'vert-clair.12': ['L’alligator a peur de l’homme. Il se jette dans l’eau pour se cacher. Il chasse.', 'Les alligators ont peur de l’homme. Ils se jettent dans l’eau pour se cacher. Ils chassent.'],
+  'vert-clair.13': ['Le chat est le seul félin domestiqué. Il conserve toutefois son caractère sauvage.', 'Les chats sont les seuls félins domestiqués. Ils conservent toutefois leur caractère sauvage.'],
+  'vert-clair.14': ['Le chat est un gros dormeur et il marque son territoire en laissant son odeur. Le chat est indépendant.', 'Les chats sont des gros dormeurs et ils marquent leur territoire en laissant leur odeur. Les chats sont indépendants.'],
+  'vert-clair.15': ['Le cheval a été domestiqué par l’homme. Certains chevaux sont devenus célèbres !', 'La jument a été domestiquée par l’homme. Certaines juments sont devenues célèbres !'],
+  'vert-clair.16': ['Le plus grand lion vit en Afrique où il a longtemps été chassé. Il est plus petit que le tigre.', 'La plus grande lionne vit en Afrique où elle a longtemps été chassée. Elle est plus petite que le tigre.'],
+  'vert-clair.17': ['Le loup n’est pas dangereux pour l’homme. Il est présent dans beaucoup de légendes.', 'La louve n’est pas dangereuse pour l’homme. Elle est présente dans beaucoup de légendes.'],
+  'vert-clair.18': ['Le chien est considéré comme le meilleur ami de l’homme. Sa fidélité est impressionnante !', 'Les chiens sont considérés comme les meilleurs amis de l’homme. Leur fidélité est impressionnante !'],
+  'vert-fonce.1': ['La loutre est un mammifère semi-aquatique pratiquement nocturne. Elle est essentiellement piscivore. Elle se nourrit de différents poissons. Elle se reproduit à partir de 2 ou 3 ans.', 'Les loutres sont des mammifères semi-aquatiques pratiquement nocturnes. Elles sont essentiellement piscivores. Elles se nourrissent de différents poissons. Elles se reproduisent à partir de 2 ou 3 ans.'],
+  'vert-fonce.2': ['Les trous noirs sont des objets dans l’univers très massifs mais beaucoup plus petits que les étoiles. Ils engloutissent tout ce qui se trouve à leur proximité, même la lumière.', 'Le trou noir est un objet dans l’univers très massif mais beaucoup plus petit que les étoiles. Il engloutit tout ce qui se trouve à sa proximité, même la lumière.'],
+  'vert-fonce.3': ['Papa n’avait vraiment pas le moral, alors Réglisse a été contente qu’il propose d’emmener Albert au parc.', 'Maman n’avait vraiment pas le moral, alors Charles et Réglisse ont été contents qu’elle propose d’emmener Albert au parc.'],
+  'vert-fonce.4': ['Toufou était extrêmement impatient de sortir. Il a rencontré une chienne et a reniflé son derrière ! Il réagit toujours comme cela quand il rencontre une inconnue.', 'Toufou et Rex étaient extrêmement impatients de sortir. Ils ont rencontré une chienne et ont reniflé son derrière ! Ils réagissent toujours comme cela quand ils rencontrent une inconnue.'],
+  'vert-fonce.5': ['À la récré, Noé a parlé à un garçon. Il a joué avec lui. Il a bien aimé, finalement, ce premier jour d’école !', 'À la récré, Noé et Victor ont parlé à un garçon. Ils ont joué avec lui. Ils ont bien aimé, finalement, ce premier jour d’école !'],
+  'vert-fonce.6': ['Le Grec a été un bon marin. Il partait vraiment loin en mer. Il a rapporté des marchandises et a beaucoup perfectionné sa technique de navigation.', 'Les Grecs ont été de bons marins. Ils partaient vraiment loin en mer. Ils ont rapporté des marchandises et ont beaucoup perfectionné leur technique de navigation.'],
+  'vert-fonce.7': ['L’homme préhistorique se réunissait notamment dans des grottes. Puis, il a bâti des villages, a cultivé des champs et a élevé des animaux.', 'Les hommes préhistoriques se réunissaient notamment dans des grottes. Puis, ils ont bâti des villages, ont cultivé des champs et ont élevé des animaux.'],
+  'vert-fonce.8': ['Le pharaon est le roi d’Égypte. Il s’enrichit grâce au travail des paysans. Il est tellement puissant qu’il est considéré comme un dieu vivant.', 'Les pharaons sont les rois d’Égypte. Ils s’enrichissent grâce au travail des paysans. Ils sont tellement puissants qu’ils sont considérés comme des dieux vivants.'],
+  'vert-fonce.9': ['Le premier empereur de Chine était vraiment puissant et cruel ! Il a fait édifier des palais somptueux. L’empereur a fait construire la Grande Muraille de Chine.', 'Les premières impératrices de Chine étaient vraiment puissantes et cruelles ! Elles ont fait édifier des palais somptueux. Les impératrices ont fait construire la Grande Muraille de Chine.'],
+  'vert-fonce.10': ['Le tigre n’a pas peur de l’eau. Il nage très bien. Le tigre rugit et souffle. C’est le plus grand des félins et ses crocs sont énormes.', 'Les tigres n’ont pas peur de l’eau. Ils nagent très bien. Les tigres rugissent et soufflent. Ce sont les plus grands des félins et leurs crocs sont énormes.'],
+  'vert-fonce.11': ['Le coquillage est la « maison » que se construit le mollusque (animal à corps mou) pour se protéger. Le coquillage grandit en même temps que le corps de l’animal.', 'Les coquillages sont les « maisons » que se construisent les mollusques (animaux à corps mou) pour se protéger. Les coquillages grandissent en même temps que le corps des animaux.'],
+  'vert-fonce.12': ['Les poissons vivent exclusivement dans l’eau. Ils se déplacent grâce à leurs nageoires. Couverts d’écailles, ils sont parfaitement adaptés à la vie aquatique. Les poissons grandissent toute leur vie.', 'La carpe vit exclusivement dans l’eau. Elle se déplace grâce à ses nageoires. Couverte d’écailles, elle est parfaitement adaptée à la vie aquatique. La carpe grandit toute sa vie.'],
+  'bleu-clair.1': ['Mon frère, prêt pour l’école, portait son cartable.', 'Mes frères, prêts pour l’école, portaient leur cartable.'],
+  'bleu-clair.2': ['Ma sœur est devenue journaliste.', 'Mes sœurs sont devenues journalistes.'],
+  'bleu-clair.3': ['Cette série, c’est ma préférée.', 'Ces séries, ce sont mes préférées.'],
+  'bleu-clair.4': ['Le chat est poursuivi par le chien.', 'Les chats sont poursuivis par les chiens.'],
+  'bleu-clair.5': ['Le docteur, le seul de la région, vient examiner le malade.', 'Les docteurs, les seuls de la région, viennent examiner les malades.'],
+  'bleu-clair.6': ['Ma sœur est allée au marché.', 'Mes sœurs sont allées au marché.'],
+  'bleu-clair.7': ['C’est la matière que je préfère !', 'Ce sont les matières que je préfère !'],
+  'bleu-clair.8': ['Le seigneur, entouré par sa cour, regardera le tournoi.', 'Les seigneurs, entourés par leur cour, regarderont le tournoi.'],
+  'bleu-clair.9': ['Le grain est picoré par la poule.', 'Les grains sont picorés par les poules.'],
+  'bleu-clair.10': ['Le postier, comme tous les matins, fait sa tournée. Il est précis, déterminé et rapide. Il est allé partout pour la distribution. C’est un homme appliqué.', 'Les postiers, comme tous les matins, font leur tournée. Ils sont précis, déterminés et rapides. Ils sont allés partout pour la distribution. Ce sont des hommes appliqués.'],
+  'bleu-clair.11': ['Les fraises, présentes dans le jardin, sont très bonnes. Elles sont juteuses et sucrées. Elles sont ramassées avec délicatesse. Ce sont de vraies merveilles !', 'La fraise, présente dans le jardin, est très bonne. Elle est juteuse et sucrée. Elle est ramassée avec délicatesse. C’est une vraie merveille !'],
+  'bleu-clair.12': ['Le cheval a été, il y a longtemps, domestiqué par l’homme. Il est grand, intelligent, sensible et loyal. Il est le meilleur ami de l’homme.', 'La jument a été, il y a longtemps, domestiquée par l’homme. Elle est grande, intelligente, sensible et loyale. Elle est la meilleure amie de l’homme.'],
+  'bleu-clair.13': ['Les lapins sont entrés dans le terrier.', 'Le lapin est entré dans le terrier.'],
+  'bleu-clair.14': ['Les loups, à la tombée de la nuit, hurleront à la lune.', 'Le loup, à la tombée de la nuit, hurlera à la lune.'],
+  'bleu-clair.15': ['Ce sont mes meilleures amies !', 'C’est ma meilleure amie !'],
+  'bleu-clair.16': ['Mes frères, après le repas, font la vaisselle.', 'Mon frère, après le repas, fait la vaisselle.'],
+  'bleu-clair.17': ['Tes amies sont parties en voyage.', 'Ton amie est partie en voyage.'],
+  'bleu-clair.18': ['Les chiens, impatients de sortir, regardaient par la fenêtre et jappaient.', 'Le chien, impatient de sortir, regardait par la fenêtre et jappait.'],
+  'bleu-clair.19': ['Ce sont des jupes soldées.', 'C’est une jupe soldée.'],
+  'bleu-clair.20': ['Les lionnes, ces femelles puissantes, chassent.', 'La lionne, cette femelle puissante, chasse.'],
+  'bleu-clair.21': ['Les yeux étincelants, pétillants de bonheur, sont beaux à regarder.', 'L’œil étincelant, pétillant de bonheur, est beau à regarder.'],
+  'bleu-clair.22': ['Ce garçon, tous les matins, arrive débrayé et décoiffé à l’école.', 'Cette fille, tous les matins, arrive débrayée et décoiffée à l’école.'],
+  'bleu-clair.23': ['Il est parti en voyage avec ses amis.', 'Elle est partie en voyage avec ses amies.'],
+  'bleu-clair.24': ['Le coq est mangé par le renard.', 'La poule est mangée par la renarde.'],
+  'bleu-clair.25': ['Le maitre est gentil, agréable et toujours ponctuel.', 'La maitresse est gentille, agréable et toujours ponctuelle.'],
+  'bleu-clair.26': ['Il est pourtant arrivé en retard, complètement décoiffé et il était énervé de cela.', 'Elle est pourtant arrivée en retard, complètement décoiffée et elle était énervée de cela.'],
+  'bleu-clair.27': ['Le loup, blessé et affamé, est caché dans la forêt.', 'La louve, blessée et affamée, est cachée dans la forêt.'],
+  'bleu-clair.28': ['Il était allé chasser et est rentré bredouille.', 'Elle était allée chasser et est rentrée bredouille.'],
+  'bleu-clair.29': ['Le lapin est chassé par le chat.', 'La lapine est chassée par la chatte.'],
 };
 
 describe('Accords', () => {
@@ -142,12 +201,14 @@ describe('Accords', () => {
       }
       for (const side of ['start', 'answer'] as const) {
         const sentence = sentenceOf(exercise.text, side);
-        expect(sentence, exercise.id).not.toMatch(/[{}|]|'|\s{2}|\s[.,]|[^\s][!?]/);
+        expect(sentence, exercise.id).not.toMatch(/[{}|[\]]|'|\s{2}|\s[.,]|[^\s][!?]/);
         if (sentence.includes(' / ')) expect(sentence, exercise.id).toMatch(/^\p{Ll}[^.!?]*\p{Ll}$/u);
         else expect(sentence, exercise.id).toMatch(/^[A-ZÀ-Ý].*[.!?…]$/u);
       }
-      expect(exercise.instruction, exercise.id).toMatch(/^Transpose au (pluriel|singulier|féminin)\.$|^Remplace/);
-      if (exercise.instruction.startsWith('Remplace')) expect(exercise.instruction, exercise.id).toMatch(SWAP);
+      expect(exercise.instruction, exercise.id).toMatch(/^Transpose au (pluriel|singulier|féminin)\.$|^Remplace .+ par .+\.$/);
+      // « Remplace Lina par Enzo. » : le prénom n'est pas dans une case, il est changé dans la phrase de départ.
+      const swap = SWAP.exec(exercise.instruction);
+      if (swap) expect(sentenceOf(exercise.text, 'answer'), exercise.id).toContain(swap[2]);
     }
   });
 
@@ -173,6 +234,25 @@ describe('Accords', () => {
     for (const belt of ACCORDS.slice(1)) {
       expect(belt.texts.filter((e) => boxesOf(e.text).some(isTrap)).length, belt.belt).toBeGreaterThanOrEqual(8);
     }
+  });
+
+  it('change sans case ce qui est entre crochets', () => {
+    const text = '[Toufou|Toufou et Rex] {était|étaient} content. {Il|Ils} {joue|jouent}.';
+    expect(sentenceOf(text, 'start')).toBe('Toufou était content. Il joue.');
+    expect(sentenceOf(text, 'answer')).toBe('Toufou et Rex étaient content. Ils jouent.');
+    expect(boxesOf(text).map((b) => b.capital)).toEqual([false, true, false]);
+  });
+
+  it('garde la majuscule des noms propres', () => {
+    const [, grecs] = boxesOf('{Le|Les} {Grec|Grecs} {a|ont} navigué.');
+    expect(shown(grecs!, 'grecs')).toBe('Grecs');
+  });
+
+  it('montre des textes, un à l’entraînement et deux en conditions réelles, au vert clair et au vert foncé', () => {
+    for (const id of ['vert-clair', 'vert-fonce'] as const) {
+      expect(accordBelt(id), id).toMatchObject({ unit: 'texte', practiceSize: 1, testSize: 2 });
+    }
+    expect(accordBelt('bleu-clair')!.unit).toBeUndefined();
   });
 
   it('met la majuscule en début de phrase, pas aux mots seuls', () => {
@@ -212,6 +292,8 @@ describe('Accords', () => {
     expect(tip('{Les horloges|L’horloge}')).toMatch(/Au singulier/);
     expect(tip('{fatiguée|fatigué}')).toMatch(/masculin/);
     expect(tip('{Mon}')).toMatch(/voyelle/);
+    expect(tip('{proies}')).toMatch(/ne va pas avec le sujet/);
+    expect(tip('{bâti}')).toMatch(/avoir/);
     expect(tip('{souris}')).toMatch(/-s, -x ou -z/);
     expect(tip('{cheval|chevaux}')).toMatch(/-aux/);
     expect(tip('{travaux|travail}')).toMatch(/-ail/);
@@ -226,6 +308,16 @@ describe('Accords', () => {
     expect(tip('{gardien|gardienne}')).toMatch(/double/);
     expect(tip('{sportif|sportive}')).toMatch(/-ve/);
     expect(tip('{cheval|jument}')).toMatch(/changent complètement/);
+    expect(tip('{ses|leurs}')).toMatch(/leurs/);
+    expect(tip('{sa|leur}')).toMatch(/chacun en a un seul/);
+    expect(tip('{leurs|ses}')).toMatch(/Au singulier/);
+    expect(tip('{leur|son}')).toMatch(/son ou sa/);
+    expect(tip('{rencontré}')).toMatch(/avoir/);
+    expect(tip('{vraiment}')).toMatch(/-ment/);
+    expect(tip('{C’est|Ce sont}')).toMatch(/ce sont/);
+    expect(tip('{n’est|ne sont}')).toMatch(/être/);
+    expect(tip('{Il|Elle}')).toMatch(/Au féminin/);
+    expect(tip('{devenus|devenues}')).toMatch(/Au féminin/);
   });
 
   it('tire des phrases pas vues la dernière fois', () => {

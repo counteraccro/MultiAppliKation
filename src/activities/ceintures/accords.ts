@@ -1,5 +1,5 @@
 // Ceintures d'accords : « Je transpose un texte… » (voir .ai/analyse/21-ceintures-accords.md).
-// Exercices des fiches Charivari « Je prépare la ceinture… » (n° 1 à 36, de la blanche à la rose),
+// Exercices des fiches Charivari « Je prépare la ceinture… » (n° 1 à 78, de la blanche au bleu clair),
 // corrections relues, complétés par les nôtres. Une faute ici apprendrait une faute à l'enfant :
 // accords.test.ts vérifie chaque phrase.
 //
@@ -7,6 +7,7 @@
 // « {L’avion|Les avions} {décolle|décollent}. ». Une case piège garde sa forme : « {très} ».
 // Plusieurs réponses justes se séparent par « / » : « {maitre|maitres/maîtres} ».
 // Des mots seuls (« {cet|cette} {invité|invitée} / {un|une} {musicien|musicienne} ») restent en minuscules.
+// Ce qui change sans être à taper s'écrit entre crochets : « [Toufou|Toufou et Rex] {était|étaient} ».
 // Les identifiants (« blanche.3 ») servent de clés dans le profil : ne jamais les changer
 // ni les réutiliser ; un nouvel exercice prend le numéro suivant.
 
@@ -32,6 +33,8 @@ export interface AccordBelt {
   /** Les règles des leçons O4 à O15 de la classe. */
   tips: readonly string[];
   texts: readonly AccordExercise[];
+  /** Des textes plutôt que des phrases (vert clair, vert foncé…) : pour les écrans. */
+  unit?: 'texte';
   /** Phrases (ou textes) par entraînement, et par entraînement en conditions réelles. */
   practiceSize: number;
   testSize: number;
@@ -49,9 +52,12 @@ export interface Box {
 export type Piece = string | Box;
 
 const BOX = /\{([^{}]*)\}/g;
+/** « [Toufou|Toufou et Rex] » : le texte de départ, puis le texte transposé. */
+const FIXED = /\[([^[\]|]*)\|([^[\]]*)\]/g;
 
-/** Coupe la phrase en morceaux de texte et en cases, dans l'ordre. */
+/** Coupe la phrase (transposée) en morceaux de texte et en cases, dans l'ordre. */
 export function parseAccord(text: string): Piece[] {
+  text = text.replace(FIXED, '$2');
   const pieces: Piece[] = [];
   let before = '';
   let last = 0;
@@ -82,12 +88,13 @@ export function isRight(box: Box, typed: string): boolean {
   return [box.answer, ...box.also].some((answer) => normalizeWords(answer) === given);
 }
 
-/** La majuscule de début de phrase, mise toute seule. */
-export const shown = (box: Box, word: string) => (box.capital ? word.charAt(0).toUpperCase() + word.slice(1) : word);
+/** La majuscule de début de phrase, mise toute seule ; celle d'un nom propre aussi (« les Grecs »). */
+export const shown = (box: Box, word: string) =>
+  box.capital || /^\p{Lu}/u.test(box.answer) ? word.charAt(0).toUpperCase() + word.slice(1) : word;
 
 /** La phrase de départ (les cases avec leur mot de départ) ou la phrase corrigée. */
 export function sentenceOf(text: string, side: 'start' | 'answer'): string {
-  return parseAccord(text)
+  return parseAccord(side === 'start' ? text.replace(FIXED, '$1') : text)
     .map((piece) => (typeof piece === 'string' ? piece : side === 'start' ? piece.start : shown(piece, piece.answer)))
     .join('');
 }
@@ -96,25 +103,35 @@ const DETERMINERS = /^(le|la|l’|un|une|du|de|les|des|mon|ton|son|ma|ta|sa|mes|
 /** Le petit mot au masculin, et au féminin. */
 const FEMININE_OF: Record<string, string> = { le: 'la', un: 'une', ce: 'cette', cet: 'cette', mon: 'ma', ton: 'ta', son: 'sa' };
 /** Des mots en -s qui ne changent jamais : l'astuce des noms en -s, -x, -z ne leur va pas. */
-const SMALL_WORDS = new Set(['très', 'après', 'plus', 'puis', 'jamais', 'toujours', 'dans', 'sous', 'les', 'des', 'mes', 'tes', 'ses', 'ces', 'nos', 'vos', 'nous', 'vous']);
+const SMALL_WORDS = new Set(['très', 'après', 'plus', 'puis', 'jamais', 'toujours', 'toutefois', 'dans', 'sous', 'les', 'des', 'mes', 'tes', 'ses', 'ces', 'nos', 'vos', 'nous', 'vous']);
 
 /** L'astuce montrée après une erreur, d'après ce qui change dans la case. */
 export function tipFor(box: Box): string {
   const start = normalizeWords(box.start);
   const answer = normalizeWords(box.answer);
   if (start === answer) {
-    if (/^(mon|ton|son)$/.test(start)) return 'Devant une voyelle, mon, ton et son ne changent pas : mon ancienne maitresse.';
-    if (/[sxz]$/.test(start) && !SMALL_WORDS.has(start)) return 'Ce mot ne change pas : il reste comme il est. Les mots en -s, -x ou -z ne changent pas au pluriel : une souris, des souris.';
+    if (/ment$/.test(start)) return 'Ce mot ne change jamais : les mots en -ment (vraiment, notamment) restent pareils.';
+    if ((/[éiu]$/.test(start) && start.length > 3) || start === 'été' || start === 'fait') return 'Ce mot ne change pas. Avec avoir, le participe passé ne s’accorde pas avec le sujet : il a joué, ils ont joué.';
+    if (/^(mon|ton|son)$/.test(start)) return 'Ce mot ne change pas. Mon, ton et son restent devant une voyelle (mon ancienne maitresse) et devant un nom masculin (son cousin).';
+    if (SMALL_WORDS.has(start)) return 'Ce mot ne change pas : il reste comme il est.';
+    if (/(is|os|as|ux|z)$/.test(start) && start !== 'yeux') return 'Ce mot ne change pas : il reste comme il est. Les mots en -s, -x ou -z ne changent pas au pluriel : une souris, des souris.';
+    if (/[sx]$/.test(start)) return 'Ce mot ne change pas : il ne va pas avec le sujet. Le crocodile attrape ses proies, les crocodiles attrapent leurs proies.';
     return 'Ce mot ne change pas : il reste comme il est.';
   }
   if (/^(je|j’|tu|nous|vous)(\s|$)|^j’/.test(start) || /^(je|j’|tu|nous|vous)(\s|$)|^j’/.test(answer)) {
     return 'Je devient nous, tu devient vous, et le verbe change avec : je chante, nous chantons ; tu chantes, vous chantez.';
   }
+  if (/^(c’est|ce sont)$/.test(start) && /^(c’est|ce sont)$/.test(answer)) return 'C’est devient ce sont au pluriel : c’est mon ami, ce sont mes amis.';
+  if (/(^|\s|’)(est|sont)$/.test(start) && /(^|\s|’)(est|sont)$/.test(answer)) return 'Le verbe être : il est, ils sont. Il n’est pas, ils ne sont pas.';
   if (start.includes(' ') || answer.includes(' ')) {
     return /^(les|des) /.test(answer)
       ? 'Au pluriel, le petit mot devant le nom devient les ou des, et le nom prend un -s.'
       : 'Au singulier, le petit mot devant le nom devient le, la, l’, un ou une, et le nom perd son -s.';
   }
+  if (answer === 'leurs') return 'Au pluriel, ses devient leurs : l’éléphant et ses oreilles, les éléphants et leurs oreilles.';
+  if (answer === 'leur') return 'Au pluriel, son et sa deviennent leur quand chacun en a un seul : l’éléphant et sa trompe, les éléphants et leur trompe.';
+  if (start === 'leurs') return 'Au singulier, leurs devient ses : leurs proies, ses proies.';
+  if (start === 'leur') return 'Au singulier, leur devient son ou sa : leur cou, son cou ; leur tête, sa tête.';
   if (DETERMINERS.test(answer)) {
     if (FEMININE_OF[start] === answer) return 'Au féminin, le petit mot devant le nom change : le devient la, un devient une, ce et cet deviennent cette.';
     if (answer === 'ces') return 'Au pluriel, le petit mot ce, cet ou cette devient ces : ce chat, ces chats.';
@@ -122,6 +139,8 @@ export function tipFor(box: Box): string {
     if (/^(les|des|de|mes|tes|ses|nos|vos|leurs)$/.test(start)) return 'Au singulier, le petit mot devant le nom change : les devient le, la ou l’, des devient un, une ou du.';
     return 'Le petit mot devant le nom change aussi : le, la et l’ deviennent les, un et une deviennent des, mon devient mes, notre devient nos.';
   }
+  if (/^ils?$/.test(start) && /^elles?$/.test(answer)) return 'Au féminin, il devient elle et ils devient elles.';
+  if (start === 'tous' && answer === 'toutes') return 'Au féminin, tous devient toutes : tous les ânes, toutes les ânesses.';
   if (start === 'il' || start === 'elle' || start === 'ils' || start === 'elles') return 'Il devient ils, elle devient elles. Et dans l’autre sens.';
   if ((start === 'a' && answer === 'ont') || (start === 'ont' && answer === 'a')) return 'Le verbe avoir : il a, ils ont.';
   if ((start === 'est' && answer === 'sont') || (start === 'sont' && answer === 'est')) return 'Le verbe être : il est, ils sont.';
@@ -133,12 +152,12 @@ export function tipFor(box: Box): string {
   if (answer === `${start}s`) return 'Au pluriel, le nom et l’adjectif prennent un -s : des chats noirs.';
   if (start === `${answer}s`) return 'Au singulier, le nom et l’adjectif perdent leur -s : un chat noir.';
   if (start === `${answer}e` || start === `${answer}es`) return 'Au masculin, on enlève souvent le -e du féminin : contente, content.';
-  if (answer === `${start}e` || answer === `${start}es`) return 'Au féminin, on ajoute souvent un -e : content, contente.';
+  if (answer === `${start}e` || answer === `${start}es` || (/s$/.test(start) && answer === `${start.slice(0, -1)}es`)) return 'Au féminin, on ajoute souvent un -e : content, contente.';
   if (/nt$/.test(answer) && !/nt$/.test(start)) return 'Quand le sujet est au pluriel, le verbe se termine par -nt : ils jouent, ils jouaient.';
   if (/nt$/.test(start) && !/nt$/.test(answer)) return 'Quand le sujet est au singulier, le verbe ne se termine pas par -nt : il joue, il jouait.';
   if (/ons$/.test(answer) && !/ons$/.test(start)) return 'Avec nous, le verbe se termine par -ons : nous arrivons.';
   if (/ez$/.test(answer) && !/ez$/.test(start)) return 'Avec vous, le verbe se termine par -ez : vous traversez.';
-  if (/esse$/.test(answer)) return 'Au féminin, quelques mots prennent -esse : un maitre, une maitresse ; un prince, une princesse.';
+  if (/esses?$/.test(answer)) return 'Au féminin, quelques mots prennent -esse : un maitre, une maitresse ; un prince, une princesse.';
   if (/(eau|ou)$/.test(start) && /lle$/.test(answer)) return 'Quelques mots changent plus au féminin : nouveau, nouvelle ; beau, belle ; fou, folle.';
   if (/teur$/.test(start) && /trice$/.test(answer)) return 'Au féminin, -teur devient souvent -trice : un acteur, une actrice.';
   if (/eur$/.test(start) && /euse$/.test(answer)) return 'Au féminin, -eur devient souvent -euse : un menteur, une menteuse.';
@@ -151,7 +170,7 @@ export function tipFor(box: Box): string {
 }
 
 /** « Remplace Lina par Enzo. » ; « Remplace Snoopy (mâle) par Didoune (femelle). » */
-export const SWAP = /^Remplace (\S+)(?: \(mâle\))? par (\S+)(?: \(femelle\))?\.$/;
+export const SWAP = /^Remplace (\p{Lu}\S*)(?: \(mâle\))? par (\p{Lu}\S*)(?: \(femelle\))?\.$/u;
 
 /** La phrase de départ telle que sur la fiche : avec le prénom de départ quand la consigne en change. */
 export function startSentence(exercise: AccordExercise): string {
@@ -393,6 +412,131 @@ export const ACCORDS: readonly AccordBelt[] = [
       [28, FEMININE, '{Ce|Cette} {bon|bonne} {ami|amie} {est} {franc|franche} et {gentil|gentille}.'],
       [29, FEMININE, '{un|une} {canard|cane} / {le|la} {cerf|biche} / {un|une} {bouc|chèvre} / {le|la} {taureau|vache}'],
       [30, 'Remplace Rex (mâle) par Câline (femelle).', 'Câline {est} {un|une} {chien|chienne} {joueur|joueuse} et {naïf|naïve}.'],
+    ]),
+  },
+  {
+    belt: 'vert-clair',
+    skill: 'Je transforme un petit texte. Je choisis entre leur et leurs.',
+    unit: 'texte',
+    tips: [
+      'Dans un texte, tout ce qui va avec le sujet change, dans toutes les phrases : le nom, il ou elle, les verbes.',
+      'Son et sa deviennent leur quand chacun en a un seul : l’éléphant et sa trompe, les éléphants et leur trompe.',
+      'Ses devient leurs : l’éléphant et ses oreilles, les éléphants et leurs oreilles.',
+      'Leur, devant un nom, prend un -s seulement si le nom est au pluriel : leur trompe, leurs oreilles.',
+      'Les mots qui ne vont pas avec le sujet ne changent pas : le crocodile attrape ses proies, les crocodiles attrapent leurs proies.',
+    ],
+    practiceSize: 1,
+    testSize: 2,
+    texts: exercises('vert-clair', [
+      [1, 'Remplace l’éléphant par les éléphants.', '{L’éléphant|Les éléphants} {entend|entendent} {très} bien grâce à {ses|leurs} {grandes} {oreilles} et {il|ils} {a|ont} un bon odorat grâce à {sa|leur} trompe. On dit que {l’éléphant|les éléphants} {a|ont} peur {de la|des} {souris} !', 37],
+      [2, 'Remplace les crocodiles par le crocodile.', '{Les|Le} {crocodiles|crocodile} {sont|est} {de|un} {redoutables|redoutable} {prédateurs|prédateur}. {Ils|Il} {attrapent|attrape} {leurs|ses} {proies} avec {leurs|ses} {larges} mâchoires. {Les|Le} {crocodiles|crocodile} {peuvent|peut} vivre très vieux. En captivité, {ils|il} {peuvent|peut} même dépasser l’âge de 100 ans !', 38],
+      [3, 'Remplace les crocodiles par le crocodile.', '{Les|Le} {crocodiles|crocodile} {sont|est} {sensibles|sensible} aux vibrations dans l’eau. {Leurs|Ses} {yeux} {sont} situés en haut de {leur|sa} tête.', 39],
+      [4, 'Remplace l’éléphant par les éléphants.', '{L’éléphant|Les éléphants} {est|sont} {le|les} plus {gros} {animal|animaux} {terrestre|terrestres} du monde. {L’éléphant|Les éléphants} d’Afrique {mesure|mesurent} 4 mètres de haut.', 40],
+      // La fiche marque aussi « à » en vert : il ne change pas.
+      [5, 'Remplace le renard par la renarde.', '{Le|La} {renard|renarde} {est} {rusé|rusée}. {Il|Elle} est souvent {associé|associée} à la ruse dans les contes. {Il|Elle} est {craintif|craintive} et parfois {cruel|cruelle}. {Le|La} {renard|renarde} vit généralement en groupe, {il|elle} est carnivore et aussi {très} sociable.', 41],
+      [6, 'Remplace la limace par les limaces.', '{La|Les} {limace|limaces} {est|sont} {un|des} {animal|animaux} au corps {mou}. {Sa|Leur} bouche contient une langue garnie de dents. {Elle|Elles} {n’est|ne sont} pas {l’amie|les amies} du jardinier car {elle|elles} {dévore|dévorent} les jeunes plants !', 42],
+      [7, 'Remplace l’âne par l’ânesse.', '{Tous|Toutes} les {ânes|ânesses} ont de grandes oreilles refroidissantes. {L’âne|L’ânesse} est {têtu|têtue} mais {très} {intelligent|intelligente}.', 43],
+      [8, 'Remplace l’âne par l’ânesse.', '{L’âne|L’ânesse} est plus {petit|petite} que {son} cousin le cheval. {Il|Elle} reste {l’ami|l’amie} de l’homme. Autrefois, {l’âne|l’ânesse} était {utilisé|utilisée} pour transporter des biens et des personnes.', 44],
+      [9, 'Remplace les girafes par la girafe.', '{Les|La} {girafes|girafe} {vivent|vit} entre quinze et vingt ans. {Leur|Son} cou mesure à lui tout seul deux mètres !', 45],
+      [10, 'Remplace les girafes par la girafe.', '{Les|La} {girafes|girafe} {ont|a} un long cou et ne {parlent|parle} pas. {Elles|Elle} {peuvent|peut} mesurer jusqu’à cinq mètres de haut !', 46],
+      [11, 'Remplace l’alligator par les alligators.', '{L’alligator|Les alligators} {adulte|adultes} {est|sont} {très} {féroce|féroces}. {Il|Ils} {défend|défendent} {son|leur} territoire et {pond|pondent} des œufs.', 47],
+      // La fiche oublie de marquer le dernier « Ils » en vert.
+      [12, 'Remplace l’alligator par les alligators.', '{L’alligator|Les alligators} {a|ont} peur de l’homme. {Il|Ils} {se} {jette|jettent} dans l’eau pour se cacher. {Il|Ils} {chasse|chassent}.', 48],
+      [13, 'Remplace le chat par les chats.', '{Le|Les} {chat|chats} {est|sont} {le|les} {seul|seuls} {félin|félins} {domestiqué|domestiqués}. {Il|Ils} {conserve|conservent} {toutefois} {son|leur} caractère sauvage.', 49],
+      // La fiche écrit « des gros dormeurs » ; « de gros dormeurs » est juste aussi.
+      [14, 'Remplace le chat par les chats.', '{Le|Les} {chat|chats} {est|sont} {un|des/de} {gros} {dormeur|dormeurs} et {il|ils} {marque|marquent} {son|leur} territoire en laissant {son|leur} odeur. {Le|Les} {chat|chats} {est|sont} {indépendant|indépendants}.', 50],
+      [15, 'Remplace cheval par jument.', '{Le|La} {cheval|jument} a été {domestiqué|domestiquée} par l’homme. {Certains|Certaines} {chevaux|juments} sont {devenus|devenues} célèbres !', 51],
+      [16, 'Remplace le lion par la lionne.', '{Le|La} plus {grand|grande} {lion|lionne} vit en Afrique où {il|elle} a longtemps été {chassé|chassée}. {Il|Elle} est plus {petit|petite} que le tigre.', 52],
+      [17, 'Remplace le loup par la louve.', '{Le|La} {loup|louve} n’est pas {dangereux|dangereuse} pour l’homme. {Il|Elle} est {présent|présente} dans beaucoup de légendes.', 53],
+      [18, 'Remplace le chien par les chiens.', '{Le|Les} {chien|chiens} {est|sont} {considéré|considérés} comme {le|les} {meilleur|meilleurs} {ami|amis} de l’homme. {Sa|Leur} fidélité est impressionnante !', 54],
+      [19, 'Remplace le hérisson par les hérissons.', '{Le|Les} {hérisson|hérissons} {sort|sortent} la nuit. {Il|Ils} {cherche|cherchent} {sa|leur} nourriture dans les feuilles. {Ses|Leurs} {piquants} {le|les} {protègent} des renards.'],
+      [20, 'Remplace les abeilles par l’abeille.', '{Les abeilles|L’abeille} {butinent|butine} les fleurs du jardin. {Elles|Elle} {rapportent|rapporte} le pollen à {leur|sa} ruche. {Leurs|Ses} {ailes} {battent} très vite.'],
+      [21, 'Remplace la tortue par les tortues.', '{La|Les} {tortue|tortues} {avance|avancent} lentement. {Elle|Elles} {transporte|transportent} {sa|leur} maison sur {son|leur} dos. {Elle|Elles} {peut|peuvent} vivre {très} longtemps.'],
+    ]),
+  },
+  {
+    belt: 'vert-fonce',
+    skill: 'Je transforme un texte au passé composé. Avec avoir, le participe passé ne change pas. Les mots en -ment ne changent jamais.',
+    goal: 'CM1',
+    unit: 'texte',
+    tips: [
+      'Avec avoir, le participe passé ne s’accorde pas avec le sujet : il a joué, ils ont joué, elles ont joué.',
+      'Seul le verbe avoir change : il a, ils ont.',
+      'Les mots en -ment ne changent jamais : vraiment, notamment, pratiquement.',
+      'Très, bien, beaucoup, toujours et parfois ne changent jamais non plus.',
+      'Attention, avec être, le participe s’accorde : ils sont considérés comme des dieux.',
+    ],
+    practiceSize: 1,
+    testSize: 2,
+    texts: exercises('vert-fonce', [
+      [1, 'Remplace la loutre par les loutres.', '{La|Les} {loutre|loutres} {est|sont} {un|des} {mammifère|mammifères} {semi-aquatique|semi-aquatiques} {pratiquement} {nocturne|nocturnes}. {Elle|Elles} {est|sont} {essentiellement} {piscivore|piscivores}. {Elle|Elles} se {nourrit|nourrissent} de différents poissons. {Elle|Elles} se {reproduit|reproduisent} à partir de 2 ou 3 ans.', 55],
+      [2, 'Remplace les trous noirs par le trou noir.', '{Les|Le} {trous|trou} {noirs|noir} {sont|est} {des|un} {objets|objet} dans l’univers {très} {massifs|massif} mais {beaucoup} plus {petits|petit} que les étoiles. {Ils|Il} {engloutissent|engloutit} tout ce qui se trouve à {leur|sa} proximité, même la lumière.', 56],
+      [3, 'Remplace Papa par Maman et Réglisse par Charles et Réglisse.', '[Papa|Maman] n’avait {vraiment} pas le moral, alors [Réglisse|Charles et Réglisse] {a|ont} {été} {contente|contents} qu’{il|elle} propose d’emmener Albert au parc.', 57],
+      // « Chienne reste au singulier », prévient la fiche : un piège.
+      [4, 'Remplace Toufou par Toufou et Rex.', '[Toufou|Toufou et Rex] {était|étaient} {extrêmement} {impatient|impatients} de sortir. {Il|Ils} {a|ont} {rencontré} une {chienne} et {a|ont} {reniflé} son derrière ! {Il|Ils} {réagit|réagissent} toujours comme cela quand {il|ils} {rencontre|rencontrent} une {inconnue}.', 58],
+      [5, 'Remplace Noé par Noé et Victor.', 'À la récré, [Noé|Noé et Victor] {a|ont} {parlé} à un garçon. {Il|Ils} {a|ont} {joué} avec lui. {Il|Ils} {a|ont} bien {aimé}, {finalement}, ce premier jour d’école !', 59],
+      // La fiche accepte « de bons marins » et « des bons marins ».
+      [6, 'Remplace le Grec par les Grecs.', '{Le|Les} {Grec|Grecs} {a|ont} {été} {un|de/des} {bon|bons} {marin|marins}. {Il|Ils} {partait|partaient} {vraiment} loin en mer. {Il|Ils} {a|ont} {rapporté} des marchandises et {a|ont} beaucoup {perfectionné} {sa|leur} technique de navigation.', 60],
+      [7, 'Remplace l’homme préhistorique par les hommes préhistoriques.', '{L’homme|Les hommes} {préhistorique|préhistoriques} se {réunissait|réunissaient} {notamment} dans des grottes. Puis, {il|ils} {a|ont} {bâti} des villages, {a|ont} {cultivé} des champs et {a|ont} {élevé} des animaux.', 61],
+      [8, 'Remplace le pharaon par les pharaons.', '{Le|Les} {pharaon|pharaons} {est|sont} {le|les} {roi|rois} d’Égypte. {Il|Ils} {s’enrichit|s’enrichissent} grâce au travail des paysans. {Il|Ils} {est|sont} {tellement} {puissant|puissants} qu’{il|ils} {est|sont} {considéré|considérés} comme {un|des} {dieu|dieux} {vivant|vivants}.', 62],
+      [9, 'Remplace empereur par impératrices.', '{Le|Les} {premier|premières} {empereur|impératrices} de Chine {était|étaient} {vraiment} {puissant|puissantes} et {cruel|cruelles} ! {Il|Elles} {a|ont} {fait} édifier des palais somptueux. {L’empereur|Les impératrices} {a|ont} {fait} construire la Grande Muraille de Chine.', 63],
+      [10, 'Remplace le tigre par les tigres.', '{Le|Les} {tigre|tigres} n’{a|ont} pas peur de l’eau. {Il|Ils} {nage|nagent} {très} bien. {Le|Les} {tigre|tigres} {rugit|rugissent} et {souffle|soufflent}. {C’est|Ce sont} {le|les} plus {grand|grands} des félins et {ses|leurs} crocs sont énormes.', 64],
+      [11, 'Remplace le coquillage par les coquillages et le mollusque par les mollusques.', '{Le|Les} {coquillage|coquillages} {est|sont} {la|les} « {maison|maisons} » que se {construit|construisent} {le|les} {mollusque|mollusques} ({animal|animaux} à corps {mou|mou/mous}) pour se protéger. {Le|Les} {coquillage|coquillages} {grandit|grandissent} en même temps que le corps {de l’animal|des animaux}.', 65],
+      [12, 'Remplace les poissons par la carpe.', '{Les poissons|La carpe} {vivent|vit} {exclusivement} dans l’eau. {Ils|Elle} se {déplacent|déplace} grâce à {leurs|ses} nageoires. {Couverts|Couverte} d’écailles, {ils|elle} {sont|est} {parfaitement} {adaptés|adaptée} à la vie aquatique. {Les poissons|La carpe} {grandissent|grandit} toute {leur|sa} vie.', 66],
+      [13, 'Remplace le chevalier par les chevaliers.', '{Le|Les} {chevalier|chevaliers} {a|ont} {quitté} {son|leur} château à l’aube. {Il|Ils} {a|ont} {traversé} la forêt et {a|ont} {combattu} {courageusement} le dragon.'],
+      [14, 'Remplace Léo par Léo et Sami.', '[Léo|Léo et Sami] {a|ont} {préparé} un gâteau. {Il|Ils} {a|ont} {mélangé} la farine et les œufs, puis {il|ils} {a|ont} {attendu} {patiemment}. {Il|Ils} {était|étaient} {vraiment} {fier|fiers} !'],
+      [15, 'Remplace la sorcière par les sorcières.', '{La|Les} {sorcière|sorcières} {a|ont} {préparé} une potion. {Elle|Elles} {a|ont} {ajouté} une patte de crapaud et {a|ont} {tourné} {lentement} le chaudron. {Elle|Elles} {était|étaient} {terriblement} {contente|contentes} !'],
+    ]),
+  },
+  {
+    belt: 'bleu-clair',
+    skill: 'Je retrouve le sujet, même quand il est loin du verbe. Avec être, le participe passé s’accorde avec le sujet.',
+    tips: [
+      'Le sujet peut être loin du verbe : le docteur, le seul de la région, vient. Les docteurs, les seuls de la région, viennent.',
+      'Avec être, le participe passé s’accorde avec le sujet : il est parti, elle est partie, ils sont partis, elles sont parties.',
+      'C’est devient ce sont au pluriel : c’est ma préférée, ce sont mes préférées.',
+      'Dans « que je préfère », le sujet est je : préfère ne change pas.',
+      'Au féminin, certains animaux changent de nom : le coq, la poule. D’autres prennent un -e : le lapin, la lapine.',
+    ],
+    practiceSize: 3,
+    testSize: 6,
+    texts: exercises('bleu-clair', [
+      [1, PLURAL, '{Mon|Mes} {frère|frères}, {prêt|prêts} pour l’école, {portait|portaient} {son|leur} cartable.', 67],
+      [2, PLURAL, '{Ma|Mes} {sœur|sœurs/soeurs} {est|sont} {devenue|devenues} {journaliste|journalistes}.', 67],
+      [3, PLURAL, '{Cette|Ces} {série|séries}, {c’est|ce sont} {ma|mes} {préférée|préférées}.', 67],
+      [4, PLURAL, '{Le|Les} {chat|chats} {est|sont} {poursuivi|poursuivis} par {le|les} {chien|chiens}.', 68],
+      [5, PLURAL, '{Le|Les} {docteur|docteurs}, {le|les} {seul|seuls} de la région, {vient|viennent} examiner {le|les} {malade|malades}.', 68],
+      [6, PLURAL, '{Ma|Mes} {sœur|sœurs/soeurs} {est|sont} {allée|allées} au marché.', 68],
+      [7, PLURAL, '{C’est|Ce sont} {la|les} {matière|matières} que {je} {préfère} !', 69],
+      [8, PLURAL, '{Le|Les} {seigneur|seigneurs}, {entouré|entourés} par {sa|leur} cour, {regardera|regarderont} le tournoi.', 69],
+      [9, PLURAL, '{Le|Les} {grain|grains} {est|sont} {picoré|picorés} par {la|les} {poule|poules}.', 69],
+      [10, 'Remplace postier par postiers.', '{Le|Les} {postier|postiers}, comme tous les matins, {fait|font} {sa|leur} tournée. {Il|Ils} {est|sont} {précis}, {déterminé|déterminés} et {rapide|rapides}. {Il|Ils} {est|sont} {allé|allés} partout pour la distribution. {C’est|Ce sont} {un|des} {homme|hommes} {appliqué|appliqués}.', 70],
+      [11, 'Remplace fraises par fraise.', '{Les|La} {fraises|fraise}, {présentes|présente} dans le jardin, {sont|est} {très} {bonnes|bonne}. {Elles|Elle} {sont|est} {juteuses|juteuse} et {sucrées|sucrée}. {Elles|Elle} {sont|est} {ramassées|ramassée} avec délicatesse. {Ce sont|C’est} {de|une} {vraies|vraie} {merveilles|merveille} !', 71],
+      [12, 'Remplace cheval par jument.', '{Le|La} {cheval|jument} a été, il y a longtemps, {domestiqué|domestiquée} par l’homme. {Il|Elle} est {grand|grande}, {intelligent|intelligente}, {sensible} et {loyal|loyale}. {Il|Elle} est {le|la} {meilleur|meilleure} {ami|amie} de l’homme.', 72],
+      [13, SINGULAR, '{Les|Le} {lapins|lapin} {sont|est} {entrés|entré} dans le terrier.', 73],
+      [14, SINGULAR, '{Les|Le} {loups|loup}, à la tombée de la nuit, {hurleront|hurlera} à la lune.', 73],
+      [15, SINGULAR, '{Ce sont|C’est} {mes|ma} {meilleures|meilleure} {amies|amie} !', 73],
+      [16, SINGULAR, '{Mes|Mon} {frères|frère}, après le repas, {font|fait} la vaisselle.', 74],
+      [17, SINGULAR, '{Tes|Ton} {amies|amie} {sont|est} {parties|partie} en voyage.', 74],
+      [18, SINGULAR, '{Les|Le} {chiens|chien}, {impatients|impatient} de sortir, {regardaient|regardait} par la fenêtre et {jappaient|jappait}.', 74],
+      [19, SINGULAR, '{Ce sont|C’est} {des|une} {jupes|jupe} {soldées|soldée}.', 75],
+      [20, SINGULAR, '{Les|La} {lionnes|lionne}, {ces|cette} {femelles|femelle} {puissantes|puissante}, {chassent|chasse}.', 75],
+      // Pas de touche œ au clavier : « l’oeil » est accepté.
+      [21, SINGULAR, '{Les yeux|L’œil/L’oeil} {étincelants|étincelant}, {pétillants|pétillant} de bonheur, {sont|est} {beaux|beau} à regarder.', 75],
+      [22, FEMININE, '{Ce|Cette} {garçon|fille}, tous les matins, {arrive} {débrayé|débrayée} et {décoiffé|décoiffée} à l’école.', 76],
+      [23, FEMININE, '{Il|Elle} est {parti|partie} en voyage avec {ses} {amis|amies}.', 76],
+      [24, FEMININE, '{Le|La} {coq|poule} est {mangé|mangée} par {le|la} {renard|renarde}.', 76],
+      [25, FEMININE, '{Le|La} {maitre|maitresse/maîtresse} est {gentil|gentille}, {agréable} et toujours {ponctuel|ponctuelle}.', 77],
+      [26, FEMININE, '{Il|Elle} est pourtant {arrivé|arrivée} en retard, complètement {décoiffé|décoiffée} et {il|elle} était {énervé|énervée} de cela.', 77],
+      [27, FEMININE, '{Le|La} {loup|louve}, {blessé|blessée} et {affamé|affamée}, est {caché|cachée} dans la forêt.', 78],
+      [28, FEMININE, '{Il|Elle} était {allé|allée} chasser et est {rentré|rentrée} bredouille.', 78],
+      [29, FEMININE, '{Le|La} {lapin|lapine} est {chassé|chassée} par {le|la} {chat|chatte}.', 78],
+      [30, PLURAL, '{Mon|Mes} {cousin|cousins}, {fatigué|fatigués} par le voyage, {est|sont} {allé|allés} se coucher.'],
+      [31, PLURAL, '{La|Les} {voiture|voitures}, {garée|garées} devant l’école, {a|ont} été {réparée|réparées}.'],
+      [32, SINGULAR, '{Les|La} {chanteuses|chanteuse}, {applaudies|applaudie} par le public, {sont|est} {revenues|revenue} sur scène.'],
+      [33, SINGULAR, '{Ce sont|C’est} {des|un} {livres|livre} que j’{aime} beaucoup.'],
+      [34, FEMININE, '{Le|La} {voisin|voisine}, {surpris|surprise} par l’orage, {est} {rentré|rentrée} en courant.'],
+      [35, 'Remplace le serveur par la serveuse.', '{Le|La} {serveur|serveuse}, {pressé|pressée} et {souriant|souriante}, {est} {arrivé|arrivée} avec les desserts. {Il|Elle} {est} {très} {apprécié|appréciée} des clients.'],
     ]),
   },
 ];
